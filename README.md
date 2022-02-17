@@ -1,46 +1,23 @@
-# Forge Template
+# Art Gobblers
 
-A template for quickly getting started with forge
+Art Gobblers gobble art 
 
-## Getting Started
+## Overview 
 
-```
-mkdir my-project
-cd my-project
-forge init --template https://github.com/FrankieIsLost/forge-template
-git submodule update --init --recursive  ## initialize submodule dependencies
-npm install ## install development dependencies
-forge build
-forge test
-```
+### Goop 
 
-## Features
+### Art Gobblers
 
-### Testing Utilities
+### Pages
 
-Includes a `Utilities.sol` contract with common testing methods (like creating users with an initial balance), as well as various other utility contracts.
+### Questions 
 
-### Preinstalled dependencies
+Do we want to pre-genreate whitelist gobblers (and randomly assign on mint) or do we want to generate all of them on the fly? 
 
-`ds-test` for testing, `forge-std` for better cheatcode UX, and `solmate` for optimized contract implementations.  
+Should we buy chainlink and deposit in contract so users don't have to worry about that? 
 
-### Linting
+Tradeoff in customization vs immutability
 
-Pre-configured `solhint` and `prettier-plugin-solidity`. Can be run by
+Philosophy -- 
 
-```
-npm run solhint
-npm run prettier
-```
-
-### CI with Github Actions
-
-Automatically run linting and tests on pull requests.
-
-### Default Configuration
-
-Including `.gitignore`, `.vscode`, `remappings.txt`
-
-## Acknowledgement
-
-Inspired by great dapptools templates like https://github.com/gakonst/forge-template, https://github.com/gakonst/dapptools-template and https://github.com/transmissions11/dapptools-template
+push as much computation off chain, while keeping the process provably random. 

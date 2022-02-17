@@ -1,2 +1,6 @@
 ds-test/=lib/ds-test/src/
 solmate/=lib/solmate/src/
+forge-std/=lib/forge-std/src/
+openzeppelin/=lib/openzeppelin-contracts/contracts/
+chainlink/=lib/chainlink/contracts/src/
+prb-math/=lib/prb-math/contracts/
