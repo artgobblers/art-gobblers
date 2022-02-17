@@ -13,3 +13,6 @@
 [submodule "lib/chainlink"]
 	path = lib/chainlink
 	url = https://github.com/smartcontractkit/chainlink
+[submodule "lib/prb-math"]
+	path = lib/prb-math
+	url = https://github.com/hifi-finance/prb-math
