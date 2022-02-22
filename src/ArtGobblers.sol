@@ -133,14 +133,13 @@ contract ArtGobblers is
         address linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
-        address _goop,
-        address _pages,
         string memory _baseUri
     ) VRFConsumerBase(vrfCoordinator, linkToken) {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
-        goop = Goop(_goop);
-        pages = Pages(_pages);
+        goop = new Goop(address(this));
+        pages = new Pages(address(goop), msg.sender);
+        goop.setPages(address(pages));
         //start price for legendary gobblers is 100 gobblers
         currentLegendaryGobblerStartPrice = 100;
         //first legendary gobbler auction starts 30 days after contract deploy

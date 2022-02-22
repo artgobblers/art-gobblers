@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
-///@notice Goop is an in-game currency for ArtGobblers. It's a standard ERC20 
+///@notice Goop is an in-game token for ArtGobblers. It's a standard ERC20 
 ///@notice that can be burned and minted by the gobblers and pages contract 
 contract Goop is ERC20("Goop", "GOOP", 18) {
 
@@ -14,7 +14,8 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
     error Unauthorized();
 
-    ///@notice reuires sender to be either gobblers or pages contract 
+
+    ///@notice requires sender to be either gobblers or pages contract 
     modifier requiresAuth() {
         if (msg.sender != artGobblers && msg.sender != pages) {
             revert Unauthorized();
@@ -23,8 +24,12 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
     }
 
     ///@notice set addresses with authority to mint and burn
-    constructor(address _artGobblers, address _pages) {
+    constructor(address _artGobblers) {
         artGobblers = _artGobblers;
+    }
+
+    ///@notice set pages address, calables only by gobblers contract
+    function setPages(address _pages) public requiresAuth { 
         pages = _pages;
     }
 

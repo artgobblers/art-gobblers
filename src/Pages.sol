@@ -10,7 +10,7 @@ import {Goop} from "./Goop.sol";
 ///@notice Pages is an ERC721 that can hold art drawn
 contract Pages is
     ERC721("Pages", "PAGE"),
-    Auth(msg.sender, Authority(address(0)))
+    Auth
 {
     using Strings for uint256;
 
@@ -18,7 +18,7 @@ contract Pages is
     uint256 internal currentId;
 
     ///@notice base token URI
-    string internal BASE_URI;
+    string internal constant BASE_URI = "";
 
     ///@notice mint cost, in goop
     uint256 public immutable MINT_COST = 100;
@@ -30,9 +30,8 @@ contract Pages is
 
     error InsufficientBalance();
 
-    constructor(address _goop, string memory _baseUri) {
+    constructor(address _goop, address owner) Auth(owner, Authority(address(0))){
         goop = Goop(_goop);
-        BASE_URI = _baseUri;
     }
 
     ///@notice set whether page is drawn
