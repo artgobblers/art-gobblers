@@ -37,17 +37,63 @@ contract ContractTest is DSTest {
         );
     }
 
-    function testExample() public {
-        address payable alice = users[0];
-        // labels alice's address in call traces as "Alice [<address>]"
-        vm.label(alice, "Alice");
-        console.log("alice's address", alice);
-        address payable bob = users[1];
-        vm.label(bob, "Bob");
+    function testSetMerkleRoot() public {
+        assertTrue(true);
+    }
 
-        vm.prank(alice);
-        (bool sent, ) = bob.call{value: 10 ether}("");
-        assertTrue(sent);
-        assertGt(bob.balance, alice.balance);
+    function testSetMerkleRootTwice() public {
+        assertTrue(true);
+    }
+
+    function testMintFromWhitelist() public {
+        assertTrue(true);
+    }
+
+    function testMintNotInWhitelist() public {
+        assertTrue(true);
+    }
+
+    function testMintFromGoop() public {
+        assertTrue(true);
+    }
+
+    function testMintInssuficientBalance() public {
+        assertTrue(true);
+    }
+
+    function testLegendaryGobblerMintBeforeStart() public {
+        assertTrue(true);
+    }
+
+    function testmintLegendaryGobbler() public {
+        assertTrue(true);
+    }
+
+    function testStartOfNewLegendaryAuction() public {
+        assertTrue(true);
+    }
+
+    function testTokenUriNotMinted() public {
+        assertTrue(true);
+    }
+
+    function testTokenUriMinted() public {
+        assertTrue(true);
+    }
+
+    function testFeedArt() public {
+        assertTrue(true);
+    }
+
+    function testSimpleStaking() public {
+        assertTrue(true);
+    }
+
+    function testClaimRewards() public { 
+        assertTrue(true);
+    }
+
+    function testUnstakeGoop() public { 
+        assertTrue(true);
     }
 }
