@@ -38,6 +38,9 @@ contract ArtGobblers is
     ///@notice mapping to keep track of which addresses have claimed from whitelist
     mapping(address => bool) public claimedWhitelist;
 
+    ///@notice timestamp for when gobblers can start being minted from goop
+    uint256 public goopMintStart;
+
     /// --------------------
     /// -------- VRF -------
     /// --------------------
@@ -144,6 +147,7 @@ contract ArtGobblers is
         currentLegendaryGobblerStartPrice = 100;
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
+        goopMintStart = block.timestamp + 2 days;
         BASE_URI = _baseUri;
     }
 
@@ -172,6 +176,9 @@ contract ArtGobblers is
 
     ///@notice mint from goop, burning the cost
     function mintFromGoop() public {
+        if (block.timestamp < goopMintStart) {
+            revert Unauthorized();
+        }
         //cost is number of gobblers that have been minted so far
         goop.burn(msg.sender, currentId);
         mintGobbler(msg.sender);

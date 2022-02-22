@@ -11,7 +11,6 @@ contract GoopTest is DSTest {
     Utilities internal utils;
     address payable[] internal users;
     Goop internal goop;
-    
 
     //encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");

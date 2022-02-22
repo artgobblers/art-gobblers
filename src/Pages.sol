@@ -8,10 +8,7 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {Goop} from "./Goop.sol";
 
 ///@notice Pages is an ERC721 that can hold art drawn
-contract Pages is
-    ERC721("Pages", "PAGE"),
-    Auth
-{
+contract Pages is ERC721("Pages", "PAGE"), Auth {
     using Strings for uint256;
 
     ///@notice id of last mint
@@ -30,7 +27,9 @@ contract Pages is
 
     error InsufficientBalance();
 
-    constructor(address _goop, address owner) Auth(owner, Authority(address(0))){
+    constructor(address _goop, address owner)
+        Auth(owner, Authority(address(0)))
+    {
         goop = Goop(_goop);
     }
 
