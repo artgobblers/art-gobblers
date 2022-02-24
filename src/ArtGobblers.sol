@@ -5,6 +5,7 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 import {Goop} from "./Goop.sol";
@@ -18,6 +19,7 @@ contract ArtGobblers is
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
+    using PRBMathSD59x18 for int256;
 
     /// ----------------------------
     /// ---- Minting Parameters ----
@@ -40,6 +42,24 @@ contract ArtGobblers is
 
     ///@notice timestamp for when gobblers can start being minted from goop
     uint256 public goopMintStart;
+
+    /// ----------------------------
+    /// ---- Pricing Parameters ----
+    /// ----------------------------
+
+    int256 private immutable priceScale = 0;
+
+    int256 private immutable timeScale = 0;
+
+    int256 private immutable timeShift = 0;
+
+    int256 private immutable initialPrice = 0;
+
+    int256 private immutable periodPriceDecrease = 0;
+
+    uint256 private lastPurchaseTime;
+
+    uint256 private numSold;
 
     /// --------------------
     /// -------- VRF -------
@@ -148,6 +168,7 @@ contract ArtGobblers is
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
         goopMintStart = block.timestamp + 2 days;
+        lastPurchaseTime = block.timestamp;
         BASE_URI = _baseUri;
     }
 
@@ -172,6 +193,7 @@ contract ArtGobblers is
         }
         claimedWhitelist[msg.sender] = true;
         mintGobbler(msg.sender);
+        numSold++;
     }
 
     ///@notice mint from goop, burning the cost
@@ -179,9 +201,26 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        //cost is number of gobblers that have been minted so far
-        goop.burn(msg.sender, currentId);
+        goop.burn(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
+        lastPurchaseTime = block.timestamp;
+        numSold++;
+    }
+
+    function gobblerPrice() public view returns (uint256) {
+        int256 exp = PRBMathSD59x18.fromInt(int256(lastPurchaseTime)) -
+            timeShift +
+            (
+                (
+                    PRBMathSD59x18.fromInt(-1).mul(priceScale).div(
+                        PRBMathSD59x18.fromInt(int256(numSold))
+                    )
+                ).ln().div(timeScale)
+            );
+        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
+            .pow(exp);
+        int256 price = initialPrice.mul(scalingFactor);
+        return uint256(price.toInt());
     }
 
     ///@notice mint gobbler, and request randomness for its attributes
@@ -192,7 +231,7 @@ contract ArtGobblers is
         }
         bytes32 requestId = requestRandomness(chainlinkKeyHash, chainlinkFee);
         //map request id to last minted token id
-        requestIdToTokenId[requestId] = currentId - 1;
+        requestIdToTokenId[requestId] = currentId;
     }
 
     //mint legendary gobbler
@@ -217,10 +256,9 @@ contract ArtGobblers is
             _burn(gobblerIds[i]);
         }
         //mint new gobblers
-        currentId++;
         _mint(msg.sender, ++currentId);
         //emit event with id of last mint
-        emit LegendaryGobblerMint(currentId - 1);
+        emit LegendaryGobblerMint(currentId);
         //start new auction, increasing price by 100 gobblers
         currentLegendaryGobblerAuctionStart = block.timestamp;
         currentLegendaryGobblerStartPrice += 100;
@@ -300,25 +338,11 @@ contract ArtGobblers is
         uint256 r = attributeMap[gobblerId].issuanceRate;
         uint256 m = attributeMap[gobblerId].stakingMultiple;
         uint256 s = stakedGoopBalance[gobblerId];
-        uint256 c = (2 * (m * s + r * r).sqrt()) / 2;
         uint256 t = block.timestamp - stakedGoopTimestamp[gobblerId];
-        uint256 num = 2 *
-            c *
-            m *
-            m *
-            t +
-            c *
-            c *
-            m *
-            m +
-            m *
-            m *
-            t *
-            t -
-            4 *
-            r *
-            r;
-        uint256 total = num / (4 * m);
+
+        uint256 t1 = (m * t * t) / 4;
+        uint256 t2 = t * (m * s + r * r).sqrt();
+        uint256 total = t1 + t2 + s;
         uint256 reward = total - s;
         goop.mint(msg.sender, reward);
         stakedGoopTimestamp[gobblerId] = block.timestamp;
@@ -330,11 +354,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         claimRewards(gobblerId);
-        goop.transferFrom(
-            address(this),
-            msg.sender,
-            stakedGoopBalance[gobblerId]
-        );
+        goop.transfer(msg.sender, stakedGoopBalance[gobblerId]);
         stakedGoopBalance[gobblerId] = 0;
     }
 }
