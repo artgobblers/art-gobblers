@@ -208,7 +208,9 @@ contract ArtGobblers is
     }
 
     function gobblerPrice() public view returns (uint256) {
-        int256 exp = PRBMathSD59x18.fromInt(int256(block.timestamp - lastPurchaseTime)) -
+        int256 exp = PRBMathSD59x18.fromInt(
+            int256(block.timestamp - lastPurchaseTime)
+        ) -
             timeShift +
             (
                 (
