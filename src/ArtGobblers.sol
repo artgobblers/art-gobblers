@@ -47,15 +47,15 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 private immutable priceScale = 0;
+    int256 private immutable priceScale = 1;
 
-    int256 private immutable timeScale = 0;
+    int256 private immutable timeScale = 1;
 
-    int256 private immutable timeShift = 0;
+    int256 private immutable timeShift = 1;
 
-    int256 private immutable initialPrice = 0;
+    int256 private immutable initialPrice = 1;
 
-    int256 private immutable periodPriceDecrease = 0;
+    int256 private immutable periodPriceDecrease = 1;
 
     uint256 private lastPurchaseTime;
 
