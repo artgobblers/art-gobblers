@@ -35,6 +35,8 @@ contract ContractTest is DSTest {
         abi.encodeWithSignature("InsufficientGobblerBalance()");
     bytes noRemainingLegendary =
         abi.encodeWithSignature("NoRemainingLegendaryGobblers()");
+    bytes noAvailableAuctions =
+        abi.encodeWithSignature("NoAvailableAuctions()");
 
     function setUp() public {
         utils = new Utilities();
@@ -110,6 +112,38 @@ contract ContractTest is DSTest {
     }
 
     function testLegendaryGobblerMintBeforeStart() public {
+        vm.expectRevert(noAvailableAuctions);
+        vm.prank(users[0]);
+        //empty id list
+        uint256[] memory ids;
+        gobblers.mintLegendaryGobbler(ids);
+    }
+
+    function testLegendaryGobblerInitialPrice() public {
+        //start of initial auction
+        vm.warp(block.timestamp + 30 days);
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        //initial auction should start at a cost of 100
+        assertEq(cost, 100);
+    }
+
+    function testLegendaryGobblerFinalPrice() public {
+        //30 days for initial auction start, 40 days after initial auction
+        vm.warp(block.timestamp + 70 days);
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        //auction price should be 0 after more than 30 days have passed
+        assertEq(cost, 0);
+    }
+
+    function testLegendaryGobblerMidPrice() public {
+        //30 days for initial auction start, 15 days after initial auction
+        vm.warp(block.timestamp + 45 days);
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        //auction price should be 50 mid way through auction
+        assertEq(cost, 50);
+    }
+
+    function testLegendaryGobblerPriceIncrease() public {
         assertTrue(true);
     }
 
