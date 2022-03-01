@@ -280,7 +280,9 @@ contract ArtGobblers is
         }
         //else, decay linearly over 30 days
         else {
-            cost = currentLegendaryGobblerStartPrice * (30 - daysSinceStart) / 30;
+            cost =
+                (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) /
+                30;
         }
         return cost;
     }
