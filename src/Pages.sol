@@ -65,7 +65,7 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
 
     ///@notice burn goop and mint page
     function mint() public {
-        uint256 price = pagePrice();
+        uint256 price = mintCost();
         if (goop.balanceOf(msg.sender) < price) {
             revert InsufficientBalance();
         }
@@ -73,7 +73,7 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
         _mint(msg.sender, ++currentId);
     }
 
-    function pagePrice() internal view returns (uint256) {
+    function mintCost() public view returns (uint256) {
         uint256 threshold = switchThreshold();
         if (threshold < currentId) {
             return preSwitchPrice();
