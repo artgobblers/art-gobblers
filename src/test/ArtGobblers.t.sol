@@ -85,21 +85,21 @@ contract ContractTest is DSTest {
         gobblers.mintFromWhitelist(proof);
     }
 
-    function testMintFromGoop() public {
-        vm.warp(gobblers.goopMintStart());
-        vm.prank(address(gobblers));
-        goop.mint(users[0], 1);
-        vm.prank(users[0]);
-        gobblers.mintFromGoop();
-        assertEq(gobblers.ownerOf(1), users[0]);
-    }
+    // function testMintFromGoop() public {
+    //     vm.warp(gobblers.goopMintStart());
+    //     vm.prank(address(gobblers));
+    //     goop.mint(users[0], 1);
+    //     vm.prank(users[0]);
+    //     gobblers.mintFromGoop();
+    //     assertEq(gobblers.ownerOf(1), users[0]);
+    // }
 
-    function testMintInssuficientBalance() public {
-        vm.warp(gobblers.goopMintStart());
-        vm.prank(users[0]);
-        gobblers.mintFromGoop();
-        assertEq(gobblers.ownerOf(1), users[0]);
-    }
+    // function testMintInssuficientBalance() public {
+    //     vm.warp(gobblers.goopMintStart());
+    //     vm.prank(users[0]);
+    //     gobblers.mintFromGoop();
+    //     assertEq(gobblers.ownerOf(1), users[0]);
+    // }
 
     function testMintBeforeStart() public {
         vm.prank(address(gobblers));
