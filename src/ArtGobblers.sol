@@ -151,6 +151,8 @@ contract ArtGobblers is
 
     error NoRemainingLegendaryGobblers();
 
+    error NoAvailableAuctions();
+
     constructor(
         address vrfCoordinator,
         address linkToken,
@@ -241,12 +243,11 @@ contract ArtGobblers is
         if (remainingLegendaryGobblers == 0) {
             revert NoRemainingLegendaryGobblers();
         }
-        uint256 daysSinceStart = (block.timestamp -
-            currentLegendaryGobblerAuctionStart) / 1 days;
-        //cost decreases by 1 gobbler per day, with min cost being 0
-        uint256 cost = daysSinceStart > currentLegendaryGobblerStartPrice
-            ? 0
-            : currentLegendaryGobblerStartPrice - daysSinceStart;
+        //auction has not started yet
+        if (block.timestamp < currentLegendaryGobblerAuctionStart) {
+            revert NoAvailableAuctions();
+        }
+        uint256 cost = legendaryGobblerPrice();
         if (gobblerIds.length != cost) {
             revert InsufficientGobblerBalance();
         }
@@ -261,10 +262,27 @@ contract ArtGobblers is
         _mint(msg.sender, ++currentId);
         //emit event with id of last mint
         emit LegendaryGobblerMint(currentId);
-        //start new auction, increasing price by 100 gobblers
-        currentLegendaryGobblerAuctionStart = block.timestamp;
-        currentLegendaryGobblerStartPrice += 100;
+        //start new auction, with double the purchase price, 30 days after start
+        currentLegendaryGobblerAuctionStart += 30 days;
+        currentLegendaryGobblerStartPrice = 2 * cost;
         remainingLegendaryGobblers--;
+    }
+
+    ///@notice calculate legendary gobbler price, according to linear decay function
+    function legendaryGobblerPrice() public view returns (uint256) {
+        uint256 daysSinceStart = (block.timestamp -
+            currentLegendaryGobblerAuctionStart) / 1 days;
+
+        uint256 cost;
+        //if more than 30 days have passed, legendary gobbler is free
+        if (daysSinceStart >= 30) {
+            cost = 0;
+        }
+        //else, decay linearly over 30 days
+        else {
+            cost = currentLegendaryGobblerStartPrice * (30 - daysSinceStart) / 30;
+        }
+        return cost;
     }
 
     ///@notice callback from chainlink VRF. sets active attributes and seed
