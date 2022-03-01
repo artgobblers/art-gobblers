@@ -264,7 +264,8 @@ contract ArtGobblers is
         emit LegendaryGobblerMint(currentId);
         //start new auction, with double the purchase price, 30 days after start
         currentLegendaryGobblerAuctionStart += 30 days;
-        currentLegendaryGobblerStartPrice = 2 * cost;
+        //new start price is max of (100, prev_cost*2)
+        currentLegendaryGobblerStartPrice = cost < 50 ? 100 : cost << 1;
         remainingLegendaryGobblers--;
     }
 
@@ -273,17 +274,10 @@ contract ArtGobblers is
         uint256 daysSinceStart = (block.timestamp -
             currentLegendaryGobblerAuctionStart) / 1 days;
 
-        uint256 cost;
-        //if more than 30 days have passed, legendary gobbler is free
-        if (daysSinceStart >= 30) {
-            cost = 0;
-        }
-        //else, decay linearly over 30 days
-        else {
-            cost =
-                (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) /
-                30;
-        }
+        //if more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days
+        uint256 cost = daysSinceStart >= 30
+            ? 0
+            : (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
         return cost;
     }
 
