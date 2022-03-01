@@ -143,6 +143,18 @@ contract ContractTest is DSTest {
         assertEq(cost, 50);
     }
 
+    function testLegendaryGobblerMinStartPrice() public {
+        //30 days for initial auction start, 15 days after initial auction
+        vm.warp(block.timestamp + 60 days);
+        vm.prank(users[0]);
+        //empty id list
+        uint256[] memory ids;
+        gobblers.mintLegendaryGobbler(ids);
+        uint256 startCost = gobblers.legendaryGobblerPrice();
+        //next gobbler should start at a price of 100
+        assertEq(startCost, 100);
+    }
+
     function testLegendaryGobblerPriceIncrease() public {
         assertTrue(true);
     }
