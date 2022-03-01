@@ -43,13 +43,12 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
     int256 private immutable periodPriceDecrease = 1;
 
     int256 private immutable perPeriodPostSwitchover = 1;
-    
+
     int256 private immutable switchoverTime = 1;
 
     uint256 private lastPurchaseTime;
 
     uint256 private numSold;
-
 
     error InsufficientBalance();
 
@@ -66,7 +65,7 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
 
     ///@notice burn goop and mint page
     function mint() public {
-        uint256 price = pagePrice();
+        uint256 price = mintCost();
         if (goop.balanceOf(msg.sender) < price) {
             revert InsufficientBalance();
         }
@@ -74,19 +73,22 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
         _mint(msg.sender, ++currentId);
     }
 
-    function pagePrice() internal view returns (uint256) {
+    function mintCost() public view returns (uint256) {
         uint256 threshold = switchThreshold();
-        if (threshold < currentId) { 
+        if (threshold < currentId) {
             return preSwitchPrice();
-        }
-        else {
+        } else {
             return postSwitchPrice(threshold);
         }
     }
 
     function switchThreshold() internal view returns (uint256) {
         int256 t = int256(block.timestamp - lastPurchaseTime);
-        int256 exp = PRBMathSD59x18.fromInt(-1).mul(timeScale).mul(t - timeShift).exp();
+        int256 exp = PRBMathSD59x18
+            .fromInt(-1)
+            .mul(timeScale)
+            .mul(t - timeShift)
+            .exp();
         int256 res = priceScale.div(PRBMathSD59x18.fromInt(1) + exp);
         return uint256(res.toInt());
     }
@@ -109,7 +111,11 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
         return uint256(price.toInt());
     }
 
-    function postSwitchPrice(uint256 threshold) internal view returns (uint256) {
+    function postSwitchPrice(uint256 threshold)
+        internal
+        view
+        returns (uint256)
+    {
         int256 t = int256(block.timestamp - lastPurchaseTime).fromInt();
         int256 delta = int256(currentId - threshold).fromInt();
         int256 fInv = delta.div(perPeriodPostSwitchover) + switchoverTime;
