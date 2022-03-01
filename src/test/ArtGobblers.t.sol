@@ -103,11 +103,9 @@ contract ContractTest is DSTest {
     //     assertEq(gobblers.ownerOf(1), users[0]);
     // }
 
-    // function testInitialAuctionPrice() public {
-    //     vm.
-    // }
-
     function testMintBeforeStart() public {
+        vm.prank(address(gobblers));
+        goop.mint(users[0], 1);
         vm.expectRevert(unauthorized);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
