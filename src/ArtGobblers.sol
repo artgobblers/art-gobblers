@@ -275,7 +275,9 @@ contract ArtGobblers is
             currentLegendaryGobblerAuctionStart) / 1 days;
 
         //if more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days
-        uint256 cost = daysSinceStart >= 30 ? 0 : (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
+        uint256 cost = daysSinceStart >= 30
+            ? 0
+            : (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
         return cost;
     }
 
