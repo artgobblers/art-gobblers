@@ -238,6 +238,7 @@ contract ArtGobblers is
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
                         PRBMathSD59x18.fromInt(int256(currentId) + 1)
+
                     )
                 ).ln().div(timeScale)
             );
