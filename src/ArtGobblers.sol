@@ -29,10 +29,10 @@ contract ArtGobblers is
     uint256 internal currentId;
 
     ///@notice base uri for minted gobblers
-    string private BASE_URI;
+    string public BASE_URI;
 
     ///@notice uri for gobblers that have yet to be revealed
-    string private UNREVEALED_URI;
+    string public UNREVEALED_URI;
 
     ///@notice indicator variable for whether merkle root has been set
     bool public merkleRootIsSet = false;
@@ -215,7 +215,10 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        goop.burn(msg.sender, gobblerPrice());
+        //TODO: using a constant price for testing
+        //will update once pricing parameters are finalized
+        // goop.burn(msg.sender, gobblerPrice());
+        goop.burn(msg.sender, 100);
         _mint(msg.sender, ++currentId);
         lastPurchaseTime = block.timestamp;
         numSold++;
@@ -282,7 +285,7 @@ contract ArtGobblers is
         return cost;
     }
 
-    ///@notice get random seed for revealing gobblers 
+    ///@notice get random seed for revealing gobblers
     function getRandomSeed() public returns (bytes32) {
         //a random seed can only be requested when all gobblers from previous seed
         //have been assigned. This prevents a user from requesting additional randomness
@@ -306,41 +309,49 @@ contract ArtGobblers is
         randomSeed = randomness;
     }
 
-    ///@notice knuth shuffle to progressively reveal gobblers using entropy from random seed 
+    ///@notice knuth shuffle to progressively reveal gobblers using entropy from random seed
     function revealGobblers(uint256 numGobblers) public {
         //cant reveal more gobblers than were available when seed was generated
-        if(numGobblers > gobblersToBeAssigned) {
+        if (numGobblers > gobblersToBeAssigned) {
             revert Unauthorized();
         }
-        //knuth shuffle 
-        for(uint256 i = 0; i < numGobblers; i++) {
+        //knuth shuffle
+        for (uint256 i = 0; i < numGobblers; i++) {
             //number of slots that have not been assigned
             uint256 remainingSlots = MAX_SUPPLY - lastRevealedIndex;
-            //randomly pick distance for swap 
+            //randomly pick distance for swap
             uint256 distance = randomSeed % remainingSlots;
-            //select swap slot 
+            //select swap slot
             uint256 swapSlot = lastRevealedIndex + distance;
-            //if index in swap slot is 0, that means slot has never been touched. 
+            //if index in swap slot is 0, that means slot has never been touched.
             //thus, it has the default value, which is the slot index
-            uint128 swapIndex = attributeList[swapSlot].idx == 0 ? uint128(swapSlot) : attributeList[swapSlot].idx;
+            uint128 swapIndex = attributeList[swapSlot].idx == 0
+                ? uint128(swapSlot)
+                : attributeList[swapSlot].idx;
             //current slot is consecutive to last reveal
             uint256 currentSlot = lastRevealedIndex + 1;
-            //again, we derive index based on value 
-            uint128 currentIndex = attributeList[currentSlot].idx == 0 ? uint128(currentSlot) : attributeList[currentSlot].idx;
-            //swap indices 
+            //again, we derive index based on value
+            uint128 currentIndex = attributeList[currentSlot].idx == 0
+                ? uint128(currentSlot)
+                : attributeList[currentSlot].idx;
+            //swap indices
             attributeList[currentSlot].idx = swapIndex;
             attributeList[swapSlot].idx = currentIndex;
-            //select random attributes for current slot 
+            //select random attributes for current slot
             randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
-            attributeList[currentSlot].issuanceRate = uint64(randomSeed % 4);
+            attributeList[currentSlot].issuanceRate =
+                uint64(randomSeed % 4) +
+                1;
             randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
-            attributeList[currentSlot].stakingMultiple = uint64(randomSeed % 128);
+            attributeList[currentSlot].stakingMultiple =
+                uint64(randomSeed % 128) +
+                1;
             //update seed for next iteration
             randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
-            //increment last reveal index 
+            //increment last reveal index
             lastRevealedIndex++;
         }
-        //update gobblers remainig to be assigned 
+        //update gobblers remainig to be assigned
         gobblersToBeAssigned -= numGobblers;
     }
 
@@ -361,7 +372,31 @@ contract ArtGobblers is
             return UNREVEALED_URI;
         }
         //revealed
-        return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        return
+            string(
+                abi.encodePacked(
+                    BASE_URI,
+                    uint256(attributeList[tokenId].idx).toString()
+                )
+            );
+    }
+
+    function getStakingMultiple(uint256 tokenId)
+        public
+        view
+        returns (uint256 multiple)
+    {
+        multiple = tokenId > currentId
+            ? 0
+            : attributeList[tokenId].stakingMultiple;
+    }
+
+    function getIssuanceRate(uint256 tokenId)
+        public
+        view
+        returns (uint256 rate)
+    {
+        rate = tokenId > currentId ? 0 : attributeList[tokenId].issuanceRate;
     }
 
     ///@notice feed gobbler a page
