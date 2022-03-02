@@ -74,8 +74,6 @@ contract ArtGobblers is
 
     uint256 private lastPurchaseTime;
 
-    uint256 private numSold;
-
     /// --------------------
     /// -------- VRF -------
     /// --------------------
@@ -118,11 +116,16 @@ contract ArtGobblers is
     /// -------- Staking  --------
     /// --------------------------
 
-    ///@notice staked balances
-    mapping(uint256 => uint256) public stakedGoopBalance;
+    ///@notice struct holding info required for goop staking reward calculation
+    struct StakingInfo {
+        ///@notice balance at time of last deposit or withdrawal
+        uint256 lastBalance;
+        ///@notice timestamp of last deposit or widthdrawal
+        uint256 lastTimestamp;
+    }
 
-    ///@notice staked balances
-    mapping(uint256 => uint256) public stakedGoopTimestamp;
+    ///@notice mapping from tokenId to staking info
+    mapping(uint256 => StakingInfo) public stakingInfoMap;
 
     /// -------------------------------
     /// ----- Legendary Gobblers  -----
@@ -163,6 +166,8 @@ contract ArtGobblers is
     error InsufficientLinkBalance();
 
     error InsufficientGobblerBalance();
+
+    error InsufficientGoopBalance();
 
     error NoRemainingLegendaryGobblers();
 
@@ -209,8 +214,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         claimedWhitelist[msg.sender] = true;
-        _mint(msg.sender, ++currentId);
-        numSold++;
+        mintGobbler(msg.sender, ++currentId);
     }
 
     ///@notice mint from goop, burning the cost
@@ -221,9 +225,8 @@ contract ArtGobblers is
         //TODO: using fixed cost mint for testing purposes.
         //need to change back once we have parameters for pricing function
         goop.burn(msg.sender, 100);
-        _mint(msg.sender, ++currentId);
+        mintGobbler(msg.sender);
         lastPurchaseTime = block.timestamp;
-        numSold++;
     }
 
     function gobblerPrice() public view returns (uint256) {
@@ -234,7 +237,7 @@ contract ArtGobblers is
             (
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(numSold) + 1)
+                        PRBMathSD59x18.fromInt(int256(currentId) + 1)
                     )
                 ).ln().div(timeScale)
             );
@@ -242,6 +245,12 @@ contract ArtGobblers is
             .pow(exp);
         int256 price = initialPrice.mul(scalingFactor);
         return uint256(price.toInt());
+    }
+
+    function mintGobbler(address mintAddress) internal {
+        _mint(mintAddress, ++currentId);
+        //start generating goop from mint time
+        stakingInfoMap[currentId].lastTimestamp = block.timestamp;
     }
 
     //mint legendary gobbler
@@ -408,55 +417,44 @@ contract ArtGobblers is
         pageIdToGobblerId[pageId] = gobblerId;
     }
 
-    ///@notice stake goop into gobbler
-    function stakeGoop(uint256 gobblerId, uint256 goopAmount) public {
-        if (
-            ownerOf[gobblerId] != msg.sender ||
-            stakedGoopBalance[gobblerId] != 0
-        ) {
-            revert Unauthorized();
-        }
-        goop.transferFrom(msg.sender, address(this), goopAmount);
-        stakedGoopBalance[gobblerId] = goopAmount;
-        stakedGoopTimestamp[gobblerId] = block.timestamp;
-    }
-
-    ///@notice stake multiple gobblers in single transactinoo
-    function multiStakeGoop(
-        uint256[] memory gobblerIds,
-        uint256[] memory goopAmounts
-    ) public {
-        for (uint256 i = 0; i < gobblerIds.length; i++) {
-            stakeGoop(gobblerIds[i], goopAmounts[i]);
-        }
-    }
-
-    ///@notice claim staking rewards
-    ///todo: optimize gas usage
-    function claimRewards(uint256 gobblerId) public {
-        if (ownerOf[gobblerId] != msg.sender) {
-            revert Unauthorized();
-        }
-        uint256 r = attributeList[gobblerId].baseRate;
-        uint256 m = attributeList[gobblerId].stakingMultiple;
-        uint256 s = stakedGoopBalance[gobblerId];
-        uint256 t = block.timestamp - stakedGoopTimestamp[gobblerId];
+    ///@notice calculate the balance of goop that is available to withdraw
+    function goopBalance(uint256 gobblerId) public view returns (uint256) {
+        uint256 r = attributeMap[gobblerId].issuanceRate;
+        uint256 m = attributeMap[gobblerId].stakingMultiple;
+        uint256 s = stakingInfoMap[gobblerId].lastBalance;
+        uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
 
         uint256 t1 = (m * t * t) / 4;
         uint256 t2 = t * (m * s + r * r).sqrt();
         uint256 total = t1 + t2 + s;
-        uint256 reward = total - s;
-        goop.mint(msg.sender, reward);
-        stakedGoopTimestamp[gobblerId] = block.timestamp;
+        return total;
     }
 
-    ///@notice unstake goop
-    function unstakeGoop(uint256 gobblerId) public {
+    ///@notice add goop to gobbler for staking
+    function addGoop(uint256 gobblerId, uint256 goopAmount) public {
         if (ownerOf[gobblerId] != msg.sender) {
             revert Unauthorized();
         }
-        claimRewards(gobblerId);
-        goop.transfer(msg.sender, stakedGoopBalance[gobblerId]);
-        stakedGoopBalance[gobblerId] = 0;
+        //burn goop being added to gobbler
+        goop.burn(msg.sender, goopAmount);
+        //calculate current balance and newly added goop
+        stakingInfoMap[gobblerId].lastBalance =
+            goopBalance(gobblerId) +
+            goopAmount;
+        stakingInfoMap[gobblerId].lastTimestamp = block.timestamp;
+    }
+
+    ///@notice remove goop from gobbler
+    function removeGoop(uint256 gobblerId, uint256 goopAmount) public {
+        if (ownerOf[gobblerId] != msg.sender) {
+            revert Unauthorized();
+        }
+        uint256 balance = goopBalance(gobblerId);
+        if (goopAmount > balance) {
+            revert InsufficientGoopBalance();
+        }
+        stakingInfoMap[gobblerId].lastBalance = balance - goopAmount;
+        stakingInfoMap[gobblerId].lastTimestamp = block.timestamp;
+        goop.mint(msg.sender, goopAmount);
     }
 }
