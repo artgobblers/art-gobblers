@@ -11,7 +11,7 @@ import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 
-contract ContractTest is DSTest {
+contract ArtGobblersTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;
