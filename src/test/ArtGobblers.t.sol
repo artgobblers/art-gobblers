@@ -11,7 +11,7 @@ import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 
-contract ArtGobblersTest is DSTest {
+contract ContractTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;
@@ -159,20 +159,48 @@ contract ArtGobblersTest is DSTest {
         assertTrue(true);
     }
 
-    function testmintLegendaryGobbler() public {
-        assertTrue(true);
+    function testUnmintedUri() public {
+        assertEq(gobblers.tokenURI(1), "");
     }
 
-    function testStartOfNewLegendaryAuction() public {
-        assertTrue(true);
+    function testUnrevealedUri() public {
+        vm.warp(gobblers.goopMintStart());
+        uint256 gobblerCost = 100;
+        vm.prank(address(gobblers));
+        goop.mint(users[0], gobblerCost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoop();
+        //assert gobbler not revealed after mint
+        assertTrue(
+            stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI())
+        );
     }
 
-    function testTokenUriNotMinted() public {
-        assertTrue(true);
-    }
-
-    function testTokenUriMinted() public {
-        assertTrue(true);
+    function testSingleReveal() public {
+        vm.warp(gobblers.goopMintStart());
+        uint256 gobblerCost = 100;
+        vm.prank(address(gobblers));
+        goop.mint(users[0], gobblerCost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoop();
+        assertEq(gobblers.tokenURI(1), gobblers.UNREVEALED_URI());
+        //unrevealed gobblers have 0 value attributes
+        assertEq(gobblers.getStakingMultiple(1), 0);
+        bytes32 requestId = gobblers.getRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        //call back from coordinator
+        vrfCoordinator.callBackWithRandomness(
+            requestId,
+            randomness,
+            address(gobblers)
+        );
+        gobblers.revealGobblers(1);
+        //gobbler should now be revealed
+        assertTrue(
+            !stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI())
+        );
+        assertTrue(gobblers.getStakingMultiple(1) != 0);
+        console.log(gobblers.tokenURI(1));
     }
 
     function testFeedArt() public {
@@ -189,5 +217,15 @@ contract ArtGobblersTest is DSTest {
 
     function testUnstakeGoop() public {
         assertTrue(true);
+    }
+
+    //string equality based on hash
+    function stringEquals(string memory s1, string memory s2)
+        internal
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
 }
