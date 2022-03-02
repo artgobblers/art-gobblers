@@ -245,9 +245,7 @@ contract ContractTest is DSTest {
         assertTrue(true);
     }
 
-    function testSimpleRewards() public {
-
-    }
+    function testSimpleRewards() public {}
 
     function testSimpleStaking() public {
         assertTrue(true);
@@ -261,7 +259,6 @@ contract ContractTest is DSTest {
         assertTrue(true);
     }
 
-<<<<<<< HEAD
     //convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
         vm.warp(gobblers.goopMintStart());
@@ -298,10 +295,5 @@ contract ContractTest is DSTest {
     {
         return
             keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
-=======
-    //convenience function to mint gobbler
-    function mintGobbler(address addr) internal { 
-
->>>>>>> 04cf64f (staking changes)
     }
 }
