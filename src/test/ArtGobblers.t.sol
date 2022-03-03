@@ -10,8 +10,11 @@ import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract ContractTest is DSTest {
+    using Strings for uint256;
+
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;
@@ -159,20 +162,83 @@ contract ContractTest is DSTest {
         assertTrue(true);
     }
 
-    function testmintLegendaryGobbler() public {
-        assertTrue(true);
+    function testUnmintedUri() public {
+        assertEq(gobblers.tokenURI(1), "");
     }
 
-    function testStartOfNewLegendaryAuction() public {
-        assertTrue(true);
+    function testUnrevealedUri() public {
+        vm.warp(gobblers.goopMintStart());
+        uint256 gobblerCost = 100;
+        vm.prank(address(gobblers));
+        goop.mint(users[0], gobblerCost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoop();
+        //assert gobbler not revealed after mint
+        assertTrue(
+            stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI())
+        );
     }
 
-    function testTokenUriNotMinted() public {
-        assertTrue(true);
+    function testSingleReveal() public {
+        mintGobblerToAddress(users[0], 1);
+
+        //unrevealed gobblers have 0 value attributes
+        assertEq(gobblers.getStakingMultiple(1), 0);
+        setRandomnessAndReveal(1, "seed");
+        //gobbler should now be revealed
+        assertTrue(
+            !stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI())
+        );
+        assertTrue(gobblers.getStakingMultiple(1) != 0);
     }
 
-    function testTokenUriMinted() public {
-        assertTrue(true);
+    function testCantSetRandomSeedWithoutRevealing() public {
+        mintGobblerToAddress(users[0], 2);
+        setRandomnessAndReveal(1, "seed");
+        //should fail since there is one remaining gobbler to be revealed with seed
+        vm.expectRevert(unauthorized);
+        setRandomnessAndReveal(1, "seed");
+    }
+
+    function testMultiReveal() public {
+        mintGobblerToAddress(users[0], 100);
+        //first 100 gobblers should be unrevealed
+        for (uint256 i = 1; i <= 100; i++) {
+            assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
+        }
+        setRandomnessAndReveal(50, "seed");
+        //first 50 gobblers should now be revealed
+        for (uint256 i = 1; i <= 50; i++) {
+            assertTrue(
+                !stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI())
+            );
+        }
+        //and next 50 should remain unrevealed
+        for (uint256 i = 51; i <= 100; i++) {
+            assertTrue(
+                stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI())
+            );
+        }
+    }
+
+    //test whether all ids are assigned after full reveal
+    function testAllIdsFullShuffle() public {
+        bool[10001] memory flags;
+        //reveal all
+        for (uint256 i = 0; i < 10; i++) {
+            mintGobblerToAddress(users[0], 1000);
+            setRandomnessAndReveal(1000, i.toString());
+        }
+        //mark ids
+        for (uint256 i = 1; i < 10001; i++) {
+            (uint256 tokenId, , ) = gobblers.attributeList(i);
+            flags[tokenId] = true;
+        }
+        //check that all ids have been marked (excluding 0)
+        assertTrue(!flags[0]);
+        for (uint256 i = 1; i < 10001; i++) {
+            assertTrue(flags[i]);
+        }
     }
 
     function testFeedArt() public {
@@ -189,5 +255,43 @@ contract ContractTest is DSTest {
 
     function testUnstakeGoop() public {
         assertTrue(true);
+    }
+
+    //convenience function to mint single gobbler from goop
+    function mintGobblerToAddress(address addr, uint256 num) internal {
+        vm.warp(gobblers.goopMintStart());
+        vm.startPrank(address(gobblers));
+        goop.mint(addr, 100 * num);
+        vm.stopPrank();
+        vm.startPrank(addr);
+        for (uint256 i = 0; i < num; i++) {
+            gobblers.mintFromGoop();
+        }
+        vm.stopPrank();
+    }
+
+    //convenience function to call back vrf with randomness and reveal gobblers
+    function setRandomnessAndReveal(uint256 numReveal, string memory seed)
+        internal
+    {
+        bytes32 requestId = gobblers.getRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked(seed)));
+        //call back from coordinator
+        vrfCoordinator.callBackWithRandomness(
+            requestId,
+            randomness,
+            address(gobblers)
+        );
+        gobblers.revealGobblers(numReveal);
+    }
+
+    //string equality based on hash
+    function stringEquals(string memory s1, string memory s2)
+        internal
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
 }

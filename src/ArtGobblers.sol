@@ -29,7 +29,10 @@ contract ArtGobblers is
     uint256 internal currentId;
 
     ///@notice base uri for minted gobblers
-    string private BASE_URI;
+    string public BASE_URI;
+
+    ///@notice uri for gobblers that have yet to be revealed
+    string public UNREVEALED_URI;
 
     ///@notice indicator variable for whether merkle root has been set
     bool public merkleRootIsSet = false;
@@ -42,6 +45,18 @@ contract ArtGobblers is
 
     ///@notice timestamp for when gobblers can start being minted from goop
     uint256 public goopMintStart;
+
+    ///@notice maximum number of mintable tokens
+    uint256 public constant MAX_SUPPLY = 10000;
+
+    ///@notice index of last token that has been revealed
+    uint256 public lastRevealedIndex;
+
+    ///@notice remaining gobblers to be assigned from seed
+    uint256 public gobblersToBeAssigned;
+
+    ///@notice random seed obtained from VRF
+    uint256 public randomSeed;
 
     /// ----------------------------
     /// ---- Pricing Parameters ----
@@ -79,14 +94,17 @@ contract ArtGobblers is
     /// -------- Attributes ------
     /// --------------------------
 
-    ///@notice struct holding gobbler active attributes
-    struct ActiveAttributes {
-        uint256 issuanceRate;
-        uint256 stakingMultiple;
+    ///@notice struct holding gobbler attributes
+    struct GobblerAttributes {
+        ///@notice index of token after shuffl e
+        uint128 idx;
+        ///@notice base issuance rate for goop
+        uint64 baseRate;
+        ///@notice multiple on goop issuance
+        uint64 stakingMultiple;
     }
 
-    ///@notice map token ids to active attributes
-    mapping(uint256 => ActiveAttributes) public attributeMap;
+    GobblerAttributes[MAX_SUPPLY + 1] public attributeList;
 
     /// --------------------------
     /// -------- Addresses ------
@@ -132,9 +150,6 @@ contract ArtGobblers is
 
     ///@notice merkle root was set
     event MerkleRootSet(bytes32 merkleRoot);
-
-    ///@notice randomness was fulfilled for given tokenId
-    event RandomnessFulfilled(uint256 tokenId);
 
     ///@notice legendary gobbler was minted
     event LegendaryGobblerMint(uint256 tokenId);
@@ -194,7 +209,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         claimedWhitelist[msg.sender] = true;
-        mintGobbler(msg.sender);
+        _mint(msg.sender, ++currentId);
         numSold++;
     }
 
@@ -203,8 +218,10 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        goop.burn(msg.sender, gobblerPrice());
-        mintGobbler(msg.sender);
+        //TODO: using fixed cost mint for testing purposes.
+        //need to change back once we have parameters for pricing function
+        goop.burn(msg.sender, 100);
+        _mint(msg.sender, ++currentId);
         lastPurchaseTime = block.timestamp;
         numSold++;
     }
@@ -217,7 +234,7 @@ contract ArtGobblers is
             (
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(numSold))
+                        PRBMathSD59x18.fromInt(int256(numSold) + 1)
                     )
                 ).ln().div(timeScale)
             );
@@ -225,17 +242,6 @@ contract ArtGobblers is
             .pow(exp);
         int256 price = initialPrice.mul(scalingFactor);
         return uint256(price.toInt());
-    }
-
-    ///@notice mint gobbler, and request randomness for its attributes
-    function mintGobbler(address mintAddress) internal {
-        _mint(mintAddress, ++currentId);
-        if (LINK.balanceOf(address(this)) < chainlinkFee) {
-            revert InsufficientLinkBalance();
-        }
-        bytes32 requestId = requestRandomness(chainlinkKeyHash, chainlinkFee);
-        //map request id to last minted token id
-        requestIdToTokenId[requestId] = currentId;
     }
 
     //mint legendary gobbler
@@ -281,18 +287,72 @@ contract ArtGobblers is
         return cost;
     }
 
+    ///@notice get random seed for revealing gobblers
+    function getRandomSeed() public returns (bytes32) {
+        //a random seed can only be requested when all gobblers from previous seed
+        //have been assigned. This prevents a user from requesting additional randomness
+        //in hopes of a more favorable outcome
+        if (gobblersToBeAssigned != 0) {
+            revert Unauthorized();
+        }
+        if (LINK.balanceOf(address(this)) < chainlinkFee) {
+            revert InsufficientLinkBalance();
+        }
+        //fix number of gobblers to be revealed from seed
+        gobblersToBeAssigned = currentId - lastRevealedIndex;
+        return requestRandomness(chainlinkKeyHash, chainlinkFee);
+    }
+
     ///@notice callback from chainlink VRF. sets active attributes and seed
     function fulfillRandomness(bytes32 requestId, uint256 randomness)
         internal
         override
     {
-        uint256 tokenId = requestIdToTokenId[requestId];
-        tokenIdToRandomSeed[tokenId] = randomness;
-        uint256 issuanceRate = randomness % 128;
-        randomness = uint256(keccak256(abi.encodePacked(randomness)));
-        uint256 stakingMultiple = randomness % 4;
-        attributeMap[tokenId] = ActiveAttributes(issuanceRate, stakingMultiple);
-        emit RandomnessFulfilled(tokenId);
+        randomSeed = randomness;
+    }
+
+    ///@notice knuth shuffle to progressively reveal gobblers using entropy from random seed
+    function revealGobblers(uint256 numGobblers) public {
+        //cant reveal more gobblers than were available when seed was generated
+        if (numGobblers > gobblersToBeAssigned) {
+            revert Unauthorized();
+        }
+        //knuth shuffle
+        for (uint256 i = 0; i < numGobblers; i++) {
+            //number of slots that have not been assigned
+            uint256 remainingSlots = MAX_SUPPLY - lastRevealedIndex;
+            //randomly pick distance for swap
+            uint256 distance = randomSeed % remainingSlots;
+            //select swap slot, adding distance to next reveal slot
+            uint256 swapSlot = lastRevealedIndex + 1 + distance;
+            //if index in swap slot is 0, that means slot has never been touched.
+            //thus, it has the default value, which is the slot index
+            uint128 swapIndex = attributeList[swapSlot].idx == 0
+                ? uint128(swapSlot)
+                : attributeList[swapSlot].idx;
+            //current slot is consecutive to last reveal
+            uint256 currentSlot = lastRevealedIndex + 1;
+            //again, we derive index based on value
+            uint128 currentIndex = attributeList[currentSlot].idx == 0
+                ? uint128(currentSlot)
+                : attributeList[currentSlot].idx;
+            //swap indices
+            attributeList[currentSlot].idx = swapIndex;
+            attributeList[swapSlot].idx = currentIndex;
+            //select random attributes for current slot
+            randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
+            attributeList[currentSlot].baseRate = uint64(randomSeed % 4) + 1;
+            randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
+            attributeList[currentSlot].stakingMultiple =
+                uint64(randomSeed % 128) +
+                1;
+            //update seed for next iteration
+            randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
+            //increment last reveal index
+            lastRevealedIndex++;
+        }
+        //update gobblers remainig to be assigned
+        gobblersToBeAssigned -= numGobblers;
     }
 
     ///@notice returns token uri if token has been minted
@@ -303,10 +363,36 @@ contract ArtGobblers is
         override
         returns (string memory)
     {
+        //not minted
         if (tokenId > currentId) {
             return "";
         }
-        return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        //not revealed
+        if (tokenId > lastRevealedIndex) {
+            return UNREVEALED_URI;
+        }
+        //revealed
+        return
+            string(
+                abi.encodePacked(
+                    BASE_URI,
+                    uint256(attributeList[tokenId].idx).toString()
+                )
+            );
+    }
+
+    ///@notice convenience function to get staking multiple
+    function getStakingMultiple(uint256 tokenId)
+        public
+        view
+        returns (uint256 multiple)
+    {
+        multiple = attributeList[tokenId].stakingMultiple;
+    }
+
+    ///@notice convenience function to get base issuance rate
+    function getbaseRate(uint256 tokenId) public view returns (uint256 rate) {
+        rate = attributeList[tokenId].baseRate;
     }
 
     ///@notice feed gobbler a page
@@ -351,8 +437,8 @@ contract ArtGobblers is
         if (ownerOf[gobblerId] != msg.sender) {
             revert Unauthorized();
         }
-        uint256 r = attributeMap[gobblerId].issuanceRate;
-        uint256 m = attributeMap[gobblerId].stakingMultiple;
+        uint256 r = attributeList[gobblerId].baseRate;
+        uint256 m = attributeList[gobblerId].stakingMultiple;
         uint256 s = stakedGoopBalance[gobblerId];
         uint256 t = block.timestamp - stakedGoopTimestamp[gobblerId];
 
