@@ -167,8 +167,6 @@ contract ArtGobblers is
 
     error InsufficientGobblerBalance();
 
-    error InsufficientGoopBalance();
-
     error NoRemainingLegendaryGobblers();
 
     error NoAvailableAuctions();
@@ -426,8 +424,7 @@ contract ArtGobblers is
 
         uint256 t1 = (m * t * t) / 4;
         uint256 t2 = t * (m * s + r * r).sqrt();
-        uint256 total = t1 + t2 + s;
-        return total;
+        return t1 + t2 + s;
     }
 
     ///@notice add goop to gobbler for staking
@@ -450,9 +447,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         uint256 balance = goopBalance(gobblerId);
-        if (goopAmount > balance) {
-            revert InsufficientGoopBalance();
-        }
+        //will revert if removed amount is larger than balance
         stakingInfoMap[gobblerId].lastBalance = balance - goopAmount;
         stakingInfoMap[gobblerId].lastTimestamp = block.timestamp;
         goop.mint(msg.sender, goopAmount);
