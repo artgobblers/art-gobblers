@@ -14,7 +14,7 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
     error Unauthorized();
 
     ///@notice requires sender to be either gobblers or pages contract
-    modifier requiresAuth() {
+    modifier onlyAuth() {
         if (msg.sender != artGobblers && msg.sender != pages) {
             revert Unauthorized();
         }
@@ -27,15 +27,15 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
     }
 
     ///@notice set pages address, calables only by gobblers contract
-    function setPages(address _pages) public requiresAuth {
+    function setPages(address _pages) public onlyAuth {
         pages = _pages;
     }
 
-    function mint(address to, uint256 value) public requiresAuth {
+    function mint(address to, uint256 value) public onlyAuth {
         _mint(to, value);
     }
 
-    function burn(address from, uint256 value) public requiresAuth {
+    function burn(address from, uint256 value) public onlyAuth {
         if (balanceOf[from] < value) {
             revert InsufficientBalance();
         }
