@@ -101,7 +101,7 @@ contract ArtGobblers is
         uint64 stakingMultiple;
     }
 
-    GobblerAttributes[MAX_SUPPLY + 1] attributeList;
+    GobblerAttributes[MAX_SUPPLY + 1] public attributeList;
 
     /// --------------------------
     /// -------- Addresses ------
@@ -215,9 +215,8 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        //TODO: using a constant price for testing
-        //will update once pricing parameters are finalized
-        // goop.burn(msg.sender, gobblerPrice());
+        //TODO: using fixed cost mint for testing purposes. 
+        //need to change back once we have parameters for pricing function
         goop.burn(msg.sender, 100);
         _mint(msg.sender, ++currentId);
         lastPurchaseTime = block.timestamp;
@@ -232,7 +231,7 @@ contract ArtGobblers is
             (
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(numSold))
+                        PRBMathSD59x18.fromInt(int256(numSold) + 1)
                     )
                 ).ln().div(timeScale)
             );
@@ -321,8 +320,8 @@ contract ArtGobblers is
             uint256 remainingSlots = MAX_SUPPLY - lastRevealedIndex;
             //randomly pick distance for swap
             uint256 distance = randomSeed % remainingSlots;
-            //select swap slot
-            uint256 swapSlot = lastRevealedIndex + distance;
+            //select swap slot, adding distance to next reveal slot
+            uint256 swapSlot = lastRevealedIndex + 1 + distance;
             //if index in swap slot is 0, that means slot has never been touched.
             //thus, it has the default value, which is the slot index
             uint128 swapIndex = attributeList[swapSlot].idx == 0
