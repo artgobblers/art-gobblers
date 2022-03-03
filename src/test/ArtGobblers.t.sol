@@ -271,7 +271,7 @@ contract ContractTest is DSTest {
         //balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
-        //user should have removed goop 
+        //user should have removed goop
         assertEq(goop.balanceOf(users[0]), removalAmount);
     }
 
@@ -299,18 +299,6 @@ contract ContractTest is DSTest {
         //balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance + additionAmount, finalBalance);
-    }
-
-    function testSimpleStaking() public {
-        assertTrue(true);
-    }
-
-    function testClaimRewards() public {
-        assertTrue(true);
-    }
-
-    function testUnstakeGoop() public {
-        assertTrue(true);
     }
 
     //convenience function to mint single gobbler from goop
