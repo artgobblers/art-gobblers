@@ -51,21 +51,20 @@ contract Pages is ERC721("Pages", "PAGE") {
     /// ------ Authority ------
     /// -----------------------
 
-    ///@notice authority to set the draw state on pages 
+    ///@notice authority to set the draw state on pages
     address public drawAuth;
 
-    ///@notice authority to mint with 0 cost 
+    ///@notice authority to mint with 0 cost
     address public mintAuth;
 
     error InsufficientBalance();
 
     error Unauthorized();
 
-    constructor(address _goop, address _drawAuth)
-    {
+    constructor(address _goop, address _drawAuth) {
         goop = Goop(_goop);
         drawAuth = _drawAuth;
-        //deployer has mint authority 
+        //deployer has mint authority
         mintAuth = msg.sender;
     }
 
@@ -92,10 +91,9 @@ contract Pages is ERC721("Pages", "PAGE") {
         _mint(msg.sender, ++currentId);
     }
 
-    function mintByAuth(address addr) public requiresAuth(mintAuth) { 
-         _mint(addr, ++currentId);
+    function mintByAuth(address addr) public requiresAuth(mintAuth) {
+        _mint(addr, ++currentId);
     }
-
 
     function mintCost() public view returns (uint256) {
         uint256 threshold = switchThreshold();
