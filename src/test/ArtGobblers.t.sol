@@ -221,31 +221,66 @@ contract ContractTest is DSTest {
         }
     }
 
-    //test whether all ids are assigned after full reveal
-    function testAllIdsFullShuffle() public {
-        bool[10001] memory flags;
-        //reveal all
-        for (uint256 i = 0; i < 10; i++) {
-            mintGobblerToAddress(users[0], 1000);
-            setRandomnessAndReveal(1000, i.toString());
-        }
-        //mark ids
-        for (uint256 i = 1; i < 10001; i++) {
-            (uint256 tokenId, , ) = gobblers.attributeList(i);
-            flags[tokenId] = true;
-        }
-        //check that all ids have been marked (excluding 0)
-        assertTrue(!flags[0]);
-        for (uint256 i = 1; i < 10001; i++) {
-            assertTrue(flags[i]);
-        }
-    }
+    // //test whether all ids are assigned after full reveal
+    // function testAllIdsFullShuffle() public {
+    //     bool[10001] memory flags;
+    //     //reveal all
+    //     for (uint256 i = 0; i < 10; i++) {
+    //         mintGobblerToAddress(users[0], 1000);
+    //         setRandomnessAndReveal(1000, i.toString());
+    //     }
+    //     //mark ids
+    //     for (uint256 i = 1; i < 10001; i++) {
+    //         (uint256 tokenId, , ) = gobblers.attributeList(i);
+    //         flags[tokenId] = true;
+    //     }
+    //     //check that all ids have been marked (excluding 0)
+    //     assertTrue(!flags[0]);
+    //     for (uint256 i = 1; i < 10001; i++) {
+    //         assertTrue(flags[i]);
+    //     }
+    // }
 
     function testFeedArt() public {
         assertTrue(true);
     }
 
-    function testSimpleRewards() public {}
+    function testSimpleRewards() public {
+        mintGobblerToAddress(users[0], 1);
+        //balance should initially be zero
+        assertEq(gobblers.goopBalance(1), 0);
+        vm.warp(block.timestamp + 100000);
+        //balance should be zero while no reveal
+        assertEq(gobblers.goopBalance(1), 0);
+        setRandomnessAndReveal(1, "seed");
+        //balance should grow on same timestamp after reveal
+        assertTrue(gobblers.goopBalance(1) != 0);
+    }
+
+    function testGoopRemoval() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 100000);
+        setRandomnessAndReveal(1, "seed");
+        //balance should grow on same timestamp after reveal
+        uint256 initialBalance = gobblers.goopBalance(1);
+        //10%
+        uint256 removalAmount = initialBalance / 10;
+        vm.prank(users[0]);
+        gobblers.removeGoop(1, removalAmount);
+        uint256 finalBalance = gobblers.goopBalance(1);
+        //balance should change
+        assertTrue(initialBalance != finalBalance);
+        assertEq(initialBalance, finalBalance + removalAmount);
+    }
+
+    function testCantRemoveGoop() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 100000);
+        setRandomnessAndReveal(1, "seed");
+        vm.prank(users[1]);
+        vm.expectRevert(unauthorized);
+        gobblers.removeGoop(1, 1);
+    }
 
     function testSimpleStaking() public {
         assertTrue(true);

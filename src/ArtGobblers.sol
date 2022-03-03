@@ -214,7 +214,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         claimedWhitelist[msg.sender] = true;
-        mintGobbler(msg.sender, ++currentId);
+        mintGobbler(msg.sender);
     }
 
     ///@notice mint from goop, burning the cost
@@ -420,8 +420,8 @@ contract ArtGobblers is
 
     ///@notice calculate the balance of goop that is available to withdraw
     function goopBalance(uint256 gobblerId) public view returns (uint256) {
-        uint256 r = attributeMap[gobblerId].issuanceRate;
-        uint256 m = attributeMap[gobblerId].stakingMultiple;
+        uint256 r = attributeList[gobblerId].baseRate;
+        uint256 m = attributeList[gobblerId].stakingMultiple;
         uint256 s = stakingInfoMap[gobblerId].lastBalance;
         uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
 
