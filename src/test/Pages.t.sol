@@ -42,13 +42,12 @@ contract PagesTest is DSTest {
     }
 
     function testMintByAuthority() public {
-        //mint by authirity for user
+        //mint by authority for user
         pages.mintByAuth(user);
         assertEq(user, pages.ownerOf(1));
     }
 
     function testMintByAuthorityRevert() public {
-        //mint by authirity for user
         vm.prank(user);
         vm.expectRevert(unauthorized);
         pages.mintByAuth(user);
@@ -56,12 +55,6 @@ contract PagesTest is DSTest {
 
     //TODO: fix test once pricing parameters are in
     // function testInsufficientBalance() public {
-    //     address user = users[2];
-    //     vm.warp(block.timestamp + 100000)
-    //     goop.mint(user, pages.mintCost() - 1);
-    //     vm.expectRevert(insufficientBalance);
-    //     vm.prank(user);
-    //     pages.mint();
     // }
 
     function testSetIsDrawn() public {
