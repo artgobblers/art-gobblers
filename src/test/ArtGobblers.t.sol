@@ -271,6 +271,8 @@ contract ContractTest is DSTest {
         //balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
+        //user should have removed goop 
+        assertEq(goop.balanceOf(users[0]), removalAmount);
     }
 
     function testCantRemoveGoop() public {
@@ -280,6 +282,23 @@ contract ContractTest is DSTest {
         vm.prank(users[1]);
         vm.expectRevert(unauthorized);
         gobblers.removeGoop(1, 1);
+    }
+
+    function testGoopAddition() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 100000);
+        setRandomnessAndReveal(1, "seed");
+        //balance should grow on same timestamp after reveal
+        uint256 initialBalance = gobblers.goopBalance(1);
+        vm.prank(address(gobblers));
+        uint256 additionAmount = 1000;
+        goop.mint(users[0], additionAmount);
+        vm.prank(users[0]);
+        gobblers.addGoop(1, additionAmount);
+        uint256 finalBalance = gobblers.goopBalance(1);
+        //balance should change
+        assertTrue(initialBalance != finalBalance);
+        assertEq(initialBalance + additionAmount, finalBalance);
     }
 
     function testSimpleStaking() public {
