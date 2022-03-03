@@ -381,18 +381,18 @@ contract ArtGobblers is
             );
     }
 
+    ///@notice convenience function to get staking multiple
     function getStakingMultiple(uint256 tokenId)
         public
         view
         returns (uint256 multiple)
     {
-        multiple = tokenId > currentId
-            ? 0
-            : attributeList[tokenId].stakingMultiple;
+        multiple = attributeList[tokenId].stakingMultiple;
     }
 
+    ///@notice convenience function to get base issuance rate
     function getbaseRate(uint256 tokenId) public view returns (uint256 rate) {
-        rate = tokenId > currentId ? 0 : attributeList[tokenId].baseRate;
+        rate = attributeList[tokenId].baseRate;
     }
 
     ///@notice feed gobbler a page
