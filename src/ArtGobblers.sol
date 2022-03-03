@@ -94,10 +94,13 @@ contract ArtGobblers is
     /// -------- Attributes ------
     /// --------------------------
 
-    ///@notice struct holding gobbler active attributes
+    ///@notice struct holding gobbler attributes
     struct GobblerAttributes {
+        ///@notice index of token after shuffl e
         uint128 idx;
-        uint64 issuanceRate;
+        ///@notice base issuance rate for goop
+        uint64 baseRate;
+        ///@notice multiple on goop issuance
         uint64 stakingMultiple;
     }
 
@@ -215,7 +218,7 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        //TODO: using fixed cost mint for testing purposes. 
+        //TODO: using fixed cost mint for testing purposes.
         //need to change back once we have parameters for pricing function
         goop.burn(msg.sender, 100);
         _mint(msg.sender, ++currentId);
@@ -338,9 +341,7 @@ contract ArtGobblers is
             attributeList[swapSlot].idx = currentIndex;
             //select random attributes for current slot
             randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
-            attributeList[currentSlot].issuanceRate =
-                uint64(randomSeed % 4) +
-                1;
+            attributeList[currentSlot].baseRate = uint64(randomSeed % 4) + 1;
             randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
             attributeList[currentSlot].stakingMultiple =
                 uint64(randomSeed % 128) +
@@ -390,12 +391,8 @@ contract ArtGobblers is
             : attributeList[tokenId].stakingMultiple;
     }
 
-    function getIssuanceRate(uint256 tokenId)
-        public
-        view
-        returns (uint256 rate)
-    {
-        rate = tokenId > currentId ? 0 : attributeList[tokenId].issuanceRate;
+    function getbaseRate(uint256 tokenId) public view returns (uint256 rate) {
+        rate = tokenId > currentId ? 0 : attributeList[tokenId].baseRate;
     }
 
     ///@notice feed gobbler a page
@@ -440,7 +437,7 @@ contract ArtGobblers is
         if (ownerOf[gobblerId] != msg.sender) {
             revert Unauthorized();
         }
-        uint256 r = attributeList[gobblerId].issuanceRate;
+        uint256 r = attributeList[gobblerId].baseRate;
         uint256 m = attributeList[gobblerId].stakingMultiple;
         uint256 s = stakedGoopBalance[gobblerId];
         uint256 t = block.timestamp - stakedGoopTimestamp[gobblerId];
