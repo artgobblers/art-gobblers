@@ -213,6 +213,8 @@ contract ArtGobblers is
         }
         claimedWhitelist[msg.sender] = true;
         mintGobbler(msg.sender);
+        //whitelisted users also get a free page
+        pages.mintByAuth(msg.sender);
     }
 
     ///@notice mint from goop, burning the cost

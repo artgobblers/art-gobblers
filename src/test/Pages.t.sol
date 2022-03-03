@@ -11,54 +11,67 @@ contract PagesTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;
-    address internal owner;
-    address internal minter;
+    address internal mintAuth;
+    address internal drawAuth;
+    address internal user;
     Goop internal goop;
     Pages internal pages;
 
     //encodings for expectRevert
     bytes insufficientBalance =
         abi.encodeWithSignature("InsufficientBalance()");
+    bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
 
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
-        owner = users[0];
-        minter = users[1];
+        drawAuth = users[0];
         goop = new Goop(address(this));
-        pages = new Pages(address(goop), owner);
+        pages = new Pages(address(goop), drawAuth);
+        //deploying contract is mint authority
+        mintAuth = address(this);
         goop.setPages(address(pages));
+        user = users[1];
     }
 
-    function testPageMint() public {
-        goop.mint(minter, pages.mintCost());
-        vm.prank(minter);
+    function testRegularMint() public {
+        goop.mint(user, pages.mintCost());
+        vm.prank(user);
         pages.mint();
-        assertEq(minter, pages.ownerOf(1));
+        assertEq(user, pages.ownerOf(1));
     }
 
+    function testMintByAuthority() public {
+        //mint by authority for user
+        pages.mintByAuth(user);
+        assertEq(user, pages.ownerOf(1));
+    }
+
+    function testMintByAuthorityRevert() public {
+        vm.prank(user);
+        vm.expectRevert(unauthorized);
+        pages.mintByAuth(user);
+    }
+
+    //TODO: fix test once pricing parameters are in
     // function testInsufficientBalance() public {
-    //     goop.mint(minter, pages.mintCost() - 1);
-    //     vm.expectRevert(insufficientBalance);
-    //     vm.prank(minter);
-    //     pages.mint();
     // }
 
     function testSetIsDrawn() public {
-        goop.mint(minter, pages.mintCost());
-        vm.prank(minter);
+        goop.mint(user, pages.mintCost());
+        vm.prank(user);
         pages.mint();
         assertTrue(!pages.isDrawn(1));
-        vm.prank(owner);
+        vm.prank(drawAuth);
         pages.setIsDrawn(1);
         assertTrue(pages.isDrawn(1));
     }
 
     function testRevertSetIsDrawn() public {
-        goop.mint(minter, pages.mintCost());
-        vm.prank(minter);
+        goop.mint(user, pages.mintCost());
+        vm.prank(user);
         pages.mint();
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(unauthorized);
         pages.setIsDrawn(1);
     }
 }

@@ -74,12 +74,15 @@ contract ContractTest is DSTest {
     }
 
     function testMintFromWhitelist() public {
-        // address left = address(0xBEEF);
-        // address right = address(0xDEAD);
-        // bytes32 root = keccak256(abi.encodePacked(left, right));
-        // gobblers.setMerkleRoot(root);
-        // bytes32[] memory proof;
-        assertTrue(true);
+        address user = users[0];
+        gobblers.setMerkleRoot(keccak256(abi.encodePacked(user)));
+        bytes32[] memory proof;
+        vm.prank(user);
+        gobblers.mintFromWhitelist(proof);
+        //verify gobbler ownership
+        assertEq(gobblers.ownerOf(1), user);
+        //and page ownership as well
+        assertEq(pages.ownerOf(1), user);
     }
 
     function testMintNotInWhitelist() public {
