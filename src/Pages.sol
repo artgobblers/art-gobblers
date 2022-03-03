@@ -2,14 +2,13 @@
 pragma solidity >=0.8.0;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {Goop} from "./Goop.sol";
 
 ///@notice Pages is an ERC721 that can hold art drawn
-contract Pages is ERC721("Pages", "PAGE"), Auth {
+contract Pages is ERC721("Pages", "PAGE") {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -48,18 +47,38 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
 
     uint256 private lastPurchaseTime;
 
-    uint256 private numSold;
+    /// -----------------------
+    /// ------ Authority ------
+    /// -----------------------
+
+    ///@notice authority to set the draw state on pages 
+    address public drawAuth;
+
+    ///@notice authority to mint with 0 cost 
+    address public mintAuth;
 
     error InsufficientBalance();
 
-    constructor(address _goop, address owner)
-        Auth(owner, Authority(address(0)))
+    error Unauthorized();
+
+    constructor(address _goop, address _drawAuth)
     {
         goop = Goop(_goop);
+        drawAuth = _drawAuth;
+        //deployer has mint authority 
+        mintAuth = msg.sender;
+    }
+
+    ///@notice requires sender address to match authority address
+    modifier requiresAuth(address authority) {
+        if (msg.sender != authority) {
+            revert Unauthorized();
+        }
+        _;
     }
 
     ///@notice set whether page is drawn
-    function setIsDrawn(uint256 tokenId) public requiresAuth {
+    function setIsDrawn(uint256 tokenId) public requiresAuth(drawAuth) {
         isDrawn[tokenId] = true;
     }
 
@@ -72,6 +91,11 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
         goop.burn(msg.sender, price);
         _mint(msg.sender, ++currentId);
     }
+
+    function mintByAuth(address addr) public requiresAuth(mintAuth) { 
+         _mint(addr, ++currentId);
+    }
+
 
     function mintCost() public view returns (uint256) {
         uint256 threshold = switchThreshold();
@@ -101,7 +125,7 @@ contract Pages is ERC721("Pages", "PAGE"), Auth {
             (
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(numSold))
+                        PRBMathSD59x18.fromInt(int256(currentId))
                     )
                 ).ln().div(timeScale)
             );
