@@ -230,12 +230,13 @@ contract ContractTest is DSTest {
             setRandomnessAndReveal(1000, i.toString());
         }
         //mark ids
-        for (uint256 i = 1; i <= 10001; i++) {
+        for (uint256 i = 1; i < 10001; i++) {
             (uint256 tokenId, , ) = gobblers.attributeList(i);
             flags[tokenId] = true;
         }
-        //check that all ids have been marked
-        for (uint256 i = 0; i <= 10001; i++) {
+        //check that all ids have been marked (excluding 0)
+        assertTrue(!flags[0]);
+        for (uint256 i = 1; i < 10001; i++) {
             assertTrue(flags[i]);
         }
     }
