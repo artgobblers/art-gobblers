@@ -62,15 +62,17 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 private immutable priceScale = 1;
+    int256 private immutable priceScale = PRBMathSD59x18.fromInt(15982);
 
-    int256 private immutable timeScale = 1;
+    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(
+        PRBMathSD59x18.fromInt(2*60*60*24*30)
+    );
 
-    int256 private immutable timeShift = 1;
+    int256 private immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
-    int256 private immutable initialPrice = 1;
-
-    int256 private immutable periodPriceDecrease = 1;
+    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(33296).div(
+        PRBMathSD59x18.fromInt(10000000000)
+    );
 
     uint256 private lastPurchaseTime;
 
@@ -232,8 +234,7 @@ contract ArtGobblers is
     function gobblerPrice() public view returns (uint256) {
         int256 exp = PRBMathSD59x18.fromInt(
             int256(block.timestamp - lastPurchaseTime)
-        ) -
-            timeShift +
+        ) +
             (
                 (
                     (PRBMathSD59x18.fromInt(-1) + priceScale).div(
