@@ -40,6 +40,8 @@ contract ContractTest is DSTest {
         abi.encodeWithSignature("NoRemainingLegendaryGobblers()");
     bytes noAvailableAuctions =
         abi.encodeWithSignature("NoAvailableAuctions()");
+    bytes insufficientBalance =
+        abi.encodeWithSignature("InsufficientBalance()");
 
     function setUp() public {
         utils = new Utilities();
@@ -94,22 +96,21 @@ contract ContractTest is DSTest {
     }
 
     function testMintFromGoop() public {
-        vm.warp(gobblers.goopMintStart() + 1000000);
+        vm.warp(gobblers.goopMintStart());
         uint256 cost = gobblers.gobblerPrice();
-        console.log("cost", cost);
-        // vm.prank(address(gobblers));
-        // goop.mint(users[0], 1);
-        // vm.prank(users[0]);
-        // gobblers.mintFromGoop();
-        // assertEq(gobblers.ownerOf(1), users[0]);
+        vm.prank(address(gobblers));
+        goop.mint(users[0], cost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoop();
+        assertEq(gobblers.ownerOf(1), users[0]);
     }
 
-    // function testMintInssuficientBalance() public {
-    //     vm.warp(gobblers.goopMintStart());
-    //     vm.prank(users[0]);
-    //     gobblers.mintFromGoop();
-    //     assertEq(gobblers.ownerOf(1), users[0]);
-    // }
+    function testMintInssuficientBalance() public {
+        vm.warp(gobblers.goopMintStart());
+        vm.prank(users[0]);
+        vm.expectRevert(insufficientBalance);
+        gobblers.mintFromGoop();
+    }
 
     function testMintBeforeStart() public {
         vm.prank(address(gobblers));
@@ -117,6 +118,14 @@ contract ContractTest is DSTest {
         vm.expectRevert(unauthorized);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
+    }
+
+    function testInitialGobblerPrice() public {
+        vm.warp(gobblers.goopMintStart());
+        uint256 cost = gobblers.gobblerPrice();
+        //price should be 3/4ths of initial
+        uint256 expectedCost = (69 * 3) / uint256(4);
+        assertEq(cost, expectedCost);
     }
 
     function testLegendaryGobblerMintBeforeStart() public {
@@ -226,25 +235,25 @@ contract ContractTest is DSTest {
         }
     }
 
-    // //test whether all ids are assigned after full reveal
-    // function testAllIdsFullShuffle() public {
-    //     bool[10001] memory flags;
-    //     //reveal all
-    //     for (uint256 i = 0; i < 10; i++) {
-    //         mintGobblerToAddress(users[0], 1000);
-    //         setRandomnessAndReveal(1000, i.toString());
-    //     }
-    //     //mark ids
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, , ) = gobblers.attributeList(i);
-    //         flags[tokenId] = true;
-    //     }
-    //     //check that all ids have been marked (excluding 0)
-    //     assertTrue(!flags[0]);
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         assertTrue(flags[i]);
-    //     }
-    // }
+    //test whether all ids are assigned after full reveal
+    function testAllIdsFullShuffle() public {
+        bool[10001] memory flags;
+        //reveal all
+        for (uint256 i = 0; i < 10; i++) {
+            mintGobblerToAddress(users[0], 1000);
+            setRandomnessAndReveal(1000, i.toString());
+        }
+        //mark ids
+        for (uint256 i = 1; i < 10001; i++) {
+            (uint256 tokenId, , ) = gobblers.attributeList(i);
+            flags[tokenId] = true;
+        }
+        //check that all ids have been marked (excluding 0)
+        assertTrue(!flags[0]);
+        for (uint256 i = 1; i < 10001; i++) {
+            assertTrue(flags[i]);
+        }
+    }
 
     function testFeedArt() public {
         assertTrue(true);
@@ -309,11 +318,12 @@ contract ContractTest is DSTest {
     //convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
         vm.warp(gobblers.goopMintStart());
-        vm.startPrank(address(gobblers));
-        goop.mint(addr, 100 * num);
-        vm.stopPrank();
-        vm.startPrank(addr);
+
         for (uint256 i = 0; i < num; i++) {
+            vm.startPrank(address(gobblers));
+            goop.mint(addr, gobblers.gobblerPrice());
+            vm.stopPrank();
+            vm.prank(addr);
             gobblers.mintFromGoop();
         }
         vm.stopPrank();

@@ -10,6 +10,7 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
+import {console} from "./test/utils/Console.sol";
 
 ///@notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
@@ -64,15 +65,15 @@ contract ArtGobblers is
 
     int256 private immutable priceScale = PRBMathSD59x18.fromInt(15982);
 
-    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(
-        PRBMathSD59x18.fromInt(2*60*60*24*30)
-    );
+    int256 private immutable timeScale =
+        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
 
     int256 private immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
-    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(33296).div(
-        PRBMathSD59x18.fromInt(10000000000)
-    );
+    int256 private immutable periodPriceDecrease =
+        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
+
+    int256 private immutable dayScaling = PRBMathSD59x18.fromInt(24 * 60 * 60);
 
     uint256 private lastPurchaseTime;
 
@@ -190,7 +191,7 @@ contract ArtGobblers is
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
         goopMintStart = block.timestamp + 2 days;
-        lastPurchaseTime = block.timestamp;
+        lastPurchaseTime = goopMintStart;
         BASE_URI = _baseUri;
     }
 
@@ -224,23 +225,22 @@ contract ArtGobblers is
         if (block.timestamp < goopMintStart) {
             revert Unauthorized();
         }
-        //TODO: using fixed cost mint for testing purposes.
-        //need to change back once we have parameters for pricing function
-        goop.burn(msg.sender, 100);
+        goop.burn(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
         lastPurchaseTime = block.timestamp;
     }
 
     function gobblerPrice() public view returns (uint256) {
-        int256 exp = PRBMathSD59x18.fromInt(
-            int256(block.timestamp - lastPurchaseTime)
-        ) +
+        int256 logistic_value = PRBMathSD59x18.fromInt(int256(currentId)) +
+            priceScale.div(PRBMathSD59x18.fromInt(1) + timeScale.exp());
+
+        int256 exp = PRBMathSD59x18
+            .fromInt(int256(block.timestamp - lastPurchaseTime))
+            .div(dayScaling) +
             (
-                (
-                    (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(currentId) + 1)
-                    )
-                ).ln().div(timeScale)
+                ((priceScale).div(logistic_value) - PRBMathSD59x18.fromInt(1))
+                    .ln()
+                    .div(timeScale)
             );
         int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
             .pow(exp);
