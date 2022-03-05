@@ -10,7 +10,6 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {console} from "./test/utils/Console.sol";
 
 ///@notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
