@@ -235,8 +235,8 @@ contract ContractTest is DSTest {
 
     //test whether all ids are assigned after full reveal
     function testAllIdsUnique() public {
-        int[10001] memory counts;
-        //mint all 
+        int256[10001] memory counts;
+        //mint all
         uint256 mintCount = gobblers.MAX_GOOP_MINT();
 
         mintGobblerToAddress(users[0], mintCount);
