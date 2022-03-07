@@ -43,11 +43,12 @@ contract ArtGobblers is
     ///@notice mapping to keep track of which addresses have claimed from whitelist
     mapping(address => bool) public claimedWhitelist;
 
-    ///@notice timestamp for when gobblers can start being minted from goop
-    uint256 public goopMintStart;
-
     ///@notice maximum number of mintable tokens
     uint256 public constant MAX_SUPPLY = 10000;
+
+    ///@notice maximum number of goop mintable tokens
+    /// 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
+    uint256 public constant MAX_GOOP_MINT = 7990;
 
     ///@notice index of last token that has been revealed
     uint256 public lastRevealedIndex;
@@ -74,7 +75,8 @@ contract ArtGobblers is
 
     int256 private immutable dayScaling = PRBMathSD59x18.fromInt(24 * 60 * 60);
 
-    uint256 private lastPurchaseTime;
+    ///@notice timestamp for start of mint
+    uint256 public mintStart;
 
     /// --------------------
     /// -------- VRF -------
@@ -173,6 +175,8 @@ contract ArtGobblers is
 
     error NoAvailableAuctions();
 
+    error NoRemainingGobblers();
+
     constructor(
         address vrfCoordinator,
         address linkToken,
@@ -189,8 +193,6 @@ contract ArtGobblers is
         currentLegendaryGobblerStartPrice = 100;
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
-        goopMintStart = block.timestamp + 2 days;
-        lastPurchaseTime = goopMintStart;
         BASE_URI = _baseUri;
     }
 
@@ -201,6 +203,7 @@ contract ArtGobblers is
         }
         merkleRoot = _merkleRoot;
         merkleRootIsSet = true;
+        mintStart = block.timestamp;
         emit MerkleRootSet(_merkleRoot);
     }
 
@@ -221,20 +224,19 @@ contract ArtGobblers is
 
     ///@notice mint from goop, burning the cost
     function mintFromGoop() public {
-        if (block.timestamp < goopMintStart) {
-            revert Unauthorized();
+        if (currentId >= MAX_GOOP_MINT) {
+            revert NoRemainingGobblers();
         }
         goop.burn(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
-        lastPurchaseTime = block.timestamp;
     }
 
     function gobblerPrice() public view returns (uint256) {
-        int256 logistic_value = PRBMathSD59x18.fromInt(int256(currentId)) +
-            priceScale.div(PRBMathSD59x18.fromInt(1) + timeScale.exp());
+        int256 logistic_value = PRBMathSD59x18.fromInt(int256(currentId + 1)) +
+            priceScale.div(PRBMathSD59x18.fromInt(2));
 
         int256 exp = PRBMathSD59x18
-            .fromInt(int256(block.timestamp - lastPurchaseTime))
+            .fromInt(int256(block.timestamp - mintStart))
             .div(dayScaling) +
             (
                 ((priceScale).div(logistic_value) - PRBMathSD59x18.fromInt(1))
@@ -248,7 +250,11 @@ contract ArtGobblers is
     }
 
     function mintGobbler(address mintAddress) internal {
-        _mint(mintAddress, ++currentId);
+        currentId++;
+        if (currentId > MAX_SUPPLY) {
+            revert NoRemainingGobblers();
+        }
+        _mint(mintAddress, currentId);
         //start generating goop from mint time
         stakingInfoMap[currentId].lastTimestamp = block.timestamp;
     }

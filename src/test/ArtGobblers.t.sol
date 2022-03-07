@@ -42,6 +42,8 @@ contract ContractTest is DSTest {
         abi.encodeWithSignature("NoAvailableAuctions()");
     bytes insufficientBalance =
         abi.encodeWithSignature("InsufficientBalance()");
+    bytes noRemainingGobblers =
+        abi.encodeWithSignature("NoRemainingGobblers()");
 
     function setUp() public {
         utils = new Utilities();
@@ -60,7 +62,7 @@ contract ContractTest is DSTest {
     }
 
     function testSetMerkleRoot() public {
-        bytes32 root = keccak256(abi.encodePacked("root"));
+        bytes32 root = "root";
         assertTrue(root != gobblers.merkleRoot());
         gobblers.setMerkleRoot(root);
         assertEq(root, gobblers.merkleRoot());
@@ -68,11 +70,9 @@ contract ContractTest is DSTest {
     }
 
     function testSetMerkleRootTwice() public {
-        bytes32 root = keccak256(abi.encodePacked("root"));
-        gobblers.setMerkleRoot(root);
-        root = keccak256(abi.encodePacked(root));
+        gobblers.setMerkleRoot("root1");
         vm.expectRevert(unauthorized);
-        gobblers.setMerkleRoot(root);
+        gobblers.setMerkleRoot("root2");
     }
 
     function testMintFromWhitelist() public {
@@ -88,15 +88,13 @@ contract ContractTest is DSTest {
     }
 
     function testMintNotInWhitelist() public {
-        bytes32 root = keccak256(abi.encodePacked("root"));
-        assertTrue(root != gobblers.merkleRoot());
         bytes32[] memory proof;
         vm.expectRevert(unauthorized);
         gobblers.mintFromWhitelist(proof);
     }
 
     function testMintFromGoop() public {
-        vm.warp(gobblers.goopMintStart());
+        gobblers.setMerkleRoot("root");
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
         goop.mint(users[0], cost);
@@ -106,25 +104,25 @@ contract ContractTest is DSTest {
     }
 
     function testMintInssuficientBalance() public {
-        vm.warp(gobblers.goopMintStart());
+        gobblers.setMerkleRoot("root");
         vm.prank(users[0]);
         vm.expectRevert(insufficientBalance);
         gobblers.mintFromGoop();
     }
 
-    function testMintBeforeStart() public {
-        vm.prank(address(gobblers));
-        goop.mint(users[0], 1);
-        vm.expectRevert(unauthorized);
+    function testMintMaxFromGoop() public {
+        //total supply - legendary gobblers - whitelist gobblers
+        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
+        mintGobblerToAddress(users[0], maxMintableWithGoop);
+        vm.expectRevert(noRemainingGobblers);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
     }
 
     function testInitialGobblerPrice() public {
-        vm.warp(gobblers.goopMintStart());
+        gobblers.setMerkleRoot(0);
         uint256 cost = gobblers.gobblerPrice();
-        //price should be 3/4ths of initial
-        uint256 expectedCost = (69 * 3) / uint256(4);
+        uint256 expectedCost = 69;
         assertEq(cost, expectedCost);
     }
 
@@ -181,7 +179,7 @@ contract ContractTest is DSTest {
     }
 
     function testUnrevealedUri() public {
-        vm.warp(gobblers.goopMintStart());
+        gobblers.setMerkleRoot(0);
         uint256 gobblerCost = 100;
         vm.prank(address(gobblers));
         goop.mint(users[0], gobblerCost);
@@ -236,22 +234,21 @@ contract ContractTest is DSTest {
     }
 
     //test whether all ids are assigned after full reveal
-    function testAllIdsFullShuffle() public {
-        bool[10001] memory flags;
-        //reveal all
-        for (uint256 i = 0; i < 10; i++) {
-            mintGobblerToAddress(users[0], 1000);
-            setRandomnessAndReveal(1000, i.toString());
-        }
-        //mark ids
+    function testAllIdsUnique() public {
+        int[10001] memory counts;
+        //mint all 
+        uint256 mintCount = gobblers.MAX_GOOP_MINT();
+
+        mintGobblerToAddress(users[0], mintCount);
+        setRandomnessAndReveal(mintCount, "seed");
+        //count ids
         for (uint256 i = 1; i < 10001; i++) {
             (uint256 tokenId, , ) = gobblers.attributeList(i);
-            flags[tokenId] = true;
+            counts[tokenId]++;
         }
-        //check that all ids have been marked (excluding 0)
-        assertTrue(!flags[0]);
+        //check that all ids are unique
         for (uint256 i = 1; i < 10001; i++) {
-            assertTrue(flags[i]);
+            assertTrue(counts[i] <= 1);
         }
     }
 
@@ -317,9 +314,15 @@ contract ContractTest is DSTest {
 
     //convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        vm.warp(gobblers.goopMintStart());
+        //merkle root must be set before mints are allowed
+        if (!gobblers.merkleRootIsSet()) {
+            gobblers.setMerkleRoot("root");
+        }
+
+        uint256 timeDelta = 10 hours;
 
         for (uint256 i = 0; i < num; i++) {
+            vm.warp(block.timestamp + timeDelta);
             vm.startPrank(address(gobblers));
             goop.mint(addr, gobblers.gobblerPrice());
             vm.stopPrank();
