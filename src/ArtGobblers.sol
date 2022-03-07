@@ -250,8 +250,7 @@ contract ArtGobblers is
     }
 
     function mintGobbler(address mintAddress) internal {
-        currentId++;
-        if (currentId > MAX_SUPPLY) {
+        if (++currentId > MAX_SUPPLY) {
             revert NoRemainingGobblers();
         }
         _mint(mintAddress, currentId);

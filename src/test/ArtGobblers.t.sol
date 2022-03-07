@@ -233,24 +233,25 @@ contract ContractTest is DSTest {
         }
     }
 
-    //test whether all ids are assigned after full reveal
-    function testAllIdsUnique() public {
-        int256[10001] memory counts;
-        //mint all
-        uint256 mintCount = gobblers.MAX_GOOP_MINT();
+    // //@notice Long running test, commented out to ease development
+    // //test whether all ids are assigned after full reveal
+    // function testAllIdsUnique() public {
+    //     int256[10001] memory counts;
+    //     //mint all
+    //     uint256 mintCount = gobblers.MAX_GOOP_MINT();
 
-        mintGobblerToAddress(users[0], mintCount);
-        setRandomnessAndReveal(mintCount, "seed");
-        //count ids
-        for (uint256 i = 1; i < 10001; i++) {
-            (uint256 tokenId, , ) = gobblers.attributeList(i);
-            counts[tokenId]++;
-        }
-        //check that all ids are unique
-        for (uint256 i = 1; i < 10001; i++) {
-            assertTrue(counts[i] <= 1);
-        }
-    }
+    //     mintGobblerToAddress(users[0], mintCount);
+    //     setRandomnessAndReveal(mintCount, "seed");
+    //     //count ids
+    //     for (uint256 i = 1; i < 10001; i++) {
+    //         (uint256 tokenId, , ) = gobblers.attributeList(i);
+    //         counts[tokenId]++;
+    //     }
+    //     //check that all ids are unique
+    //     for (uint256 i = 1; i < 10001; i++) {
+    //         assertTrue(counts[i] <= 1);
+    //     }
+    // }
 
     function testFeedArt() public {
         assertTrue(true);
