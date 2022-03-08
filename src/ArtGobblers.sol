@@ -65,16 +65,25 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(15982);
+    /// Pricing parameters were largely determined empirically from modeling a few different issuance curves
 
+    ///@notice scale needs to be twice the number of max mintable gobblers from goop + 1
+    /// for asymptote to be corrrect
+    int256 private immutable logisticScale =
+        PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
+
+    ///@notice time scale of 1/60 gives us the appropriate time period for sales
     int256 private immutable timeScale =
         PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
 
+    ///@notice initial price does not affect mechanism behaviour at equilibrium, so can be anything
     int256 private immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
+    ///@notice price decrease 25% per period
     int256 private immutable periodPriceDecrease =
         PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
+    ///@notice timeShift is 0 to give us appropriate issuance curve
     int256 private immutable timeShift = 0;
 
     ///@notice timestamp for start of mint
@@ -197,7 +206,6 @@ contract ArtGobblers is
             periodPriceDecrease
         )
     {
-
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
         goop = new Goop(address(this));
