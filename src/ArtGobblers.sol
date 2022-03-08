@@ -231,13 +231,13 @@ contract ArtGobblers is
         mintGobbler(msg.sender);
     }
 
-    ///@notice price a gobbler according to VRGDA 
+    ///@notice price a gobbler according to VRGDA
     function gobblerPrice() public view returns (uint256) {
-        //intermediate result for period computation 
+        //intermediate result for period computation
         int256 logistic_value = PRBMathSD59x18.fromInt(int256(currentId + 1)) +
             priceScale.div(PRBMathSD59x18.fromInt(2));
 
-        //number of periods to apply scaling 
+        //number of periods to apply scaling
         int256 periods = PRBMathSD59x18
             .fromInt(int256(block.timestamp - mintStart))
             .div(dayScaling) +
@@ -246,10 +246,10 @@ contract ArtGobblers is
                     .ln()
                     .div(timeScale)
             );
-        //scaling factor applied to initial gobbler price 
+        //scaling factor applied to initial gobbler price
         int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
             .pow(periods);
-        //scale price according to final factor 
+        //scale price according to final factor
         int256 price = initialPrice.mul(scalingFactor);
         return uint256(price.toInt());
     }
