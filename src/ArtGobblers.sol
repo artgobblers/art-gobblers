@@ -10,12 +10,14 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
+import {VRGDA} from "./VRGDA.sol";
 
 ///@notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
     Auth(msg.sender, Authority(address(0))),
-    VRFConsumerBase
+    VRFConsumerBase,
+    VRGDA
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
@@ -63,7 +65,7 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 private immutable priceScale = PRBMathSD59x18.fromInt(15982);
+    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(15982);
 
     int256 private immutable timeScale =
         PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
@@ -73,10 +75,12 @@ contract ArtGobblers is
     int256 private immutable periodPriceDecrease =
         PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    int256 private immutable dayScaling = PRBMathSD59x18.fromInt(24 * 60 * 60);
+    int256 private immutable timeShift = 0;
 
     ///@notice timestamp for start of mint
     uint256 public mintStart;
+
+    uint256 public numMintedFromGoop;
 
     /// --------------------
     /// -------- VRF -------
@@ -183,7 +187,22 @@ contract ArtGobblers is
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
         string memory _baseUri
-    ) VRFConsumerBase(vrfCoordinator, linkToken) {
+    )
+        VRFConsumerBase(vrfCoordinator, linkToken)
+        VRGDA(
+            logisticScale,
+            timeScale,
+            timeShift,
+            initialPrice,
+            periodPriceDecrease
+        )
+    {
+        //           int256 _logisticScale,
+        // int256 _timeScale,
+        // int256 _timeShift,
+        // int256 _initialPrice,
+        // int256 _periodPriceDecrease
+
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
         goop = new Goop(address(this));
@@ -224,34 +243,18 @@ contract ArtGobblers is
 
     ///@notice mint from goop, burning the cost
     function mintFromGoop() public {
-        if (currentId >= MAX_GOOP_MINT) {
+        if (numMintedFromGoop >= MAX_GOOP_MINT) {
             revert NoRemainingGobblers();
         }
         goop.burn(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
+        numMintedFromGoop++;
     }
 
-    ///@notice price a gobbler according to VRGDA
+    ///@notice gobbler pricing in terms of goop
     function gobblerPrice() public view returns (uint256) {
-        //intermediate result for period computation
-        int256 logistic_value = PRBMathSD59x18.fromInt(int256(currentId + 1)) +
-            priceScale.div(PRBMathSD59x18.fromInt(2));
-
-        //number of periods to apply scaling
-        int256 periods = PRBMathSD59x18
-            .fromInt(int256(block.timestamp - mintStart))
-            .div(dayScaling) +
-            (
-                ((priceScale).div(logistic_value) - PRBMathSD59x18.fromInt(1))
-                    .ln()
-                    .div(timeScale)
-            );
-        //scaling factor applied to initial gobbler price
-        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
-            .pow(periods);
-        //scale price according to final factor
-        int256 price = initialPrice.mul(scalingFactor);
-        return uint256(price.toInt());
+        uint256 timeSinceStart = block.timestamp - mintStart;
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
     function mintGobbler(address mintAddress) internal {
