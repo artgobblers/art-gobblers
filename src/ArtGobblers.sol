@@ -197,11 +197,6 @@ contract ArtGobblers is
             periodPriceDecrease
         )
     {
-        //           int256 _logisticScale,
-        // int256 _timeScale,
-        // int256 _timeShift,
-        // int256 _initialPrice,
-        // int256 _periodPriceDecrease
 
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
