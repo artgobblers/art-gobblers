@@ -10,12 +10,14 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
+import {VRGDA} from "./VRGDA.sol";
 
 ///@notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
     Auth(msg.sender, Authority(address(0))),
-    VRFConsumerBase
+    VRFConsumerBase,
+    VRGDA
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
@@ -43,11 +45,12 @@ contract ArtGobblers is
     ///@notice mapping to keep track of which addresses have claimed from whitelist
     mapping(address => bool) public claimedWhitelist;
 
-    ///@notice timestamp for when gobblers can start being minted from goop
-    uint256 public goopMintStart;
-
     ///@notice maximum number of mintable tokens
     uint256 public constant MAX_SUPPLY = 10000;
+
+    ///@notice maximum number of goop mintable tokens
+    /// 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
+    uint256 public constant MAX_GOOP_MINT = 7990;
 
     ///@notice index of last token that has been revealed
     uint256 public lastRevealedIndex;
@@ -62,17 +65,32 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 private immutable priceScale = 1;
+    /// Pricing parameters were largely determined empirically from modeling a few different issuance curves
 
-    int256 private immutable timeScale = 1;
+    ///@notice scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve,
+    ///which needs to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical
+    ///translation of the curve
+    int256 private immutable logisticScale =
+        PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
 
-    int256 private immutable timeShift = 1;
+    ///@notice time scale of 1/60 gives us the appropriate time period for sales
+    int256 private immutable timeScale =
+        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
 
-    int256 private immutable initialPrice = 1;
+    ///@notice initial price does not affect mechanism behaviour at equilibrium, so can be anything
+    int256 private immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
-    int256 private immutable periodPriceDecrease = 1;
+    ///@notice price decrease 25% per period
+    int256 private immutable periodPriceDecrease =
+        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    uint256 private lastPurchaseTime;
+    ///@notice timeShift is 0 to give us appropriate issuance curve
+    int256 private immutable timeShift = 0;
+
+    ///@notice timestamp for start of mint
+    uint256 public mintStart;
+
+    uint256 public numMintedFromGoop;
 
     /// --------------------
     /// -------- VRF -------
@@ -171,13 +189,24 @@ contract ArtGobblers is
 
     error NoAvailableAuctions();
 
+    error NoRemainingGobblers();
+
     constructor(
         address vrfCoordinator,
         address linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
         string memory _baseUri
-    ) VRFConsumerBase(vrfCoordinator, linkToken) {
+    )
+        VRFConsumerBase(vrfCoordinator, linkToken)
+        VRGDA(
+            logisticScale,
+            timeScale,
+            timeShift,
+            initialPrice,
+            periodPriceDecrease
+        )
+    {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
         goop = new Goop(address(this));
@@ -187,8 +216,6 @@ contract ArtGobblers is
         currentLegendaryGobblerStartPrice = 100;
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
-        goopMintStart = block.timestamp + 2 days;
-        lastPurchaseTime = block.timestamp;
         BASE_URI = _baseUri;
     }
 
@@ -199,6 +226,7 @@ contract ArtGobblers is
         }
         merkleRoot = _merkleRoot;
         merkleRootIsSet = true;
+        mintStart = block.timestamp;
         emit MerkleRootSet(_merkleRoot);
     }
 
@@ -219,36 +247,25 @@ contract ArtGobblers is
 
     ///@notice mint from goop, burning the cost
     function mintFromGoop() public {
-        if (block.timestamp < goopMintStart) {
-            revert Unauthorized();
+        if (numMintedFromGoop >= MAX_GOOP_MINT) {
+            revert NoRemainingGobblers();
         }
-        //TODO: using fixed cost mint for testing purposes.
-        //need to change back once we have parameters for pricing function
-        goop.burn(msg.sender, 100);
+        goop.burn(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
-        lastPurchaseTime = block.timestamp;
+        numMintedFromGoop++;
     }
 
+    ///@notice gobbler pricing in terms of goop
     function gobblerPrice() public view returns (uint256) {
-        int256 exp = PRBMathSD59x18.fromInt(
-            int256(block.timestamp - lastPurchaseTime)
-        ) -
-            timeShift +
-            (
-                (
-                    (PRBMathSD59x18.fromInt(-1) + priceScale).div(
-                        PRBMathSD59x18.fromInt(int256(currentId) + 1)
-                    )
-                ).ln().div(timeScale)
-            );
-        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
-            .pow(exp);
-        int256 price = initialPrice.mul(scalingFactor);
-        return uint256(price.toInt());
+        uint256 timeSinceStart = block.timestamp - mintStart;
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
     function mintGobbler(address mintAddress) internal {
-        _mint(mintAddress, ++currentId);
+        if (++currentId > MAX_SUPPLY) {
+            revert NoRemainingGobblers();
+        }
+        _mint(mintAddress, currentId);
         //start generating goop from mint time
         stakingInfoMap[currentId].lastTimestamp = block.timestamp;
     }
