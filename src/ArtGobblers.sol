@@ -67,8 +67,9 @@ contract ArtGobblers is
 
     /// Pricing parameters were largely determined empirically from modeling a few different issuance curves
 
-    ///@notice scale needs to be twice the number of max mintable gobblers from goop + 1
-    /// for asymptote to be corrrect
+    ///@notice scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve,
+    ///which needs to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical
+    ///translation of the curve
     int256 private immutable logisticScale =
         PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
 
