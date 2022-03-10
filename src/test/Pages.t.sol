@@ -16,13 +16,17 @@ contract PagesTest is DSTest {
     address internal user;
     Goop internal goop;
     Pages internal pages;
+    uint256 mintStart;
 
     //encodings for expectRevert
     bytes insufficientBalance =
         abi.encodeWithSignature("InsufficientBalance()");
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
+    bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
 
     function setUp() public {
+        //avoid starting at timestamp = 0 for ease of testing
+        vm.warp(block.timestamp + 1);
         utils = new Utilities();
         users = utils.createUsers(5);
         drawAuth = users[0];
@@ -34,8 +38,23 @@ contract PagesTest is DSTest {
         user = users[1];
     }
 
+    function testMintBeforeSetMint() public {
+        vm.expectRevert(mintNotStarted);
+        vm.prank(user);
+        pages.mint();
+    }
+
+    function testMintBeforeStart() public {
+        //set mint start in future
+        pages.setMintStart(block.timestamp + 1);
+        vm.expectRevert(mintNotStarted);
+        vm.prank(user);
+        pages.mint();
+    }
+
     function testRegularMint() public {
-        goop.mint(user, pages.mintCost());
+        pages.setMintStart(block.timestamp);
+        goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         assertEq(user, pages.ownerOf(1));
@@ -53,12 +72,23 @@ contract PagesTest is DSTest {
         pages.mintByAuth(user);
     }
 
-    //TODO: fix test once pricing parameters are in
-    // function testInsufficientBalance() public {
-    // }
+    function testInitialPrice() public {
+        pages.setMintStart(block.timestamp);
+        uint256 cost = pages.pagePrice();
+        uint256 expectedCost = 591; // computed offline
+        assertEq(cost, expectedCost);
+    }
+
+    function testInsufficientBalance() public {
+        pages.setMintStart(block.timestamp);
+        vm.prank(user);
+        vm.expectRevert(insufficientBalance);
+        pages.mint();
+    }
 
     function testSetIsDrawn() public {
-        goop.mint(user, pages.mintCost());
+        pages.setMintStart(block.timestamp);
+        goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         assertTrue(!pages.isDrawn(1));
@@ -68,10 +98,17 @@ contract PagesTest is DSTest {
     }
 
     function testRevertSetIsDrawn() public {
-        goop.mint(user, pages.mintCost());
+        pages.setMintStart(block.timestamp);
+        goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         vm.expectRevert(unauthorized);
         pages.setIsDrawn(1);
+    }
+
+    function mintPage(address _user) internal {
+        goop.mint(_user, pages.pagePrice());
+        vm.prank(_user);
+        pages.mint();
     }
 }
