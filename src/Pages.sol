@@ -37,24 +37,20 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     int256 private immutable logisticScale = PRBMathSD59x18.fromInt(10024);
 
-    int256 private immutable timeScale =
-        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(30));
+    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(30));
 
     int256 private immutable timeShift = PRBMathSD59x18.fromInt(180);
 
     int256 private immutable initialPrice = PRBMathSD59x18.fromInt(420);
 
-    int256 private immutable periodPriceDecrease =
-        PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    int256 private immutable perPeriodPostSwitchover =
-        PRBMathSD59x18.fromInt(10).div(PRBMathSD59x18.fromInt(3));
+    int256 private immutable perPeriodPostSwitchover = PRBMathSD59x18.fromInt(10).div(PRBMathSD59x18.fromInt(3));
 
     int256 private immutable switchoverTime = PRBMathSD59x18.fromInt(360);
 
     ///@notice equal to 1 - periodPriceDecrease
-    int256 private immutable priceScaling =
-        PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable priceScaling = PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
 
     ///@notice number of pages sold before we switch pricing function
     uint256 private numPagesSwitch = 9975;
@@ -77,13 +73,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     error MintNotStarted();
 
     constructor(address _goop, address _drawAddress)
-        VRGDA(
-            logisticScale,
-            timeScale,
-            timeShift,
-            initialPrice,
-            periodPriceDecrease
-        )
+        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
     {
         goop = Goop(_goop);
         drawAddress = _drawAddress;
@@ -139,30 +129,16 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     }
 
     ///@notice calculate the mint cost of a page after switch
-    function postSwitchPrice(uint256 timeSinceStart)
-        internal
-        view
-        returns (uint256)
-    {
+    function postSwitchPrice(uint256 timeSinceStart) internal view returns (uint256) {
         int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop + 1)) -
-            PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(
-                perPeriodPostSwitchover
-            ) + switchoverTime;
-        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(
-            dayScaling
-        );
+            PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
+        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling);
         int256 scalingFactor = priceScaling.pow(time - fInv);
         int256 price = initialPrice.mul(scalingFactor);
         return uint256(price.toInt());
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         if (tokenId > currentId) {
             return "";
         }

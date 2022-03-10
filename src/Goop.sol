@@ -33,10 +33,7 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
         _mint(to, value);
     }
 
-    function burnForGobblers(address from, uint256 value)
-        public
-        only(artGobblers)
-    {
+    function burnForGobblers(address from, uint256 value) public only(artGobblers) {
         _burn(from, value);
     }
 
