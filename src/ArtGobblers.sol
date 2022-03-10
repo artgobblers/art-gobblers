@@ -395,19 +395,20 @@ contract ArtGobblers is
         override
         returns (string memory)
     {
-        //0 is not a valid id
-        if (tokenId == 0) {
-            return "";
-        }
         //between 0 and lastRevealedIndex are revealed normal gobblers
         if (tokenId <= lastRevealedIndex) {
-            return
-                string(
-                    abi.encodePacked(
-                        BASE_URI,
-                        uint256(attributeList[tokenId].idx).toString()
-                    )
-                );
+            //0 is not a valid id
+            if (tokenId == 0) {
+                return "";
+            } else {
+                return
+                    string(
+                        abi.encodePacked(
+                            BASE_URI,
+                            uint256(attributeList[tokenId].idx).toString()
+                        )
+                    );
+            }
         }
         //between lastRevealedIndex + 1 and currentId are minted but not revealed
         if (tokenId <= currentId) {
