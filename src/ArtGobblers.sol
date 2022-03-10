@@ -145,9 +145,9 @@ contract ArtGobblers is
     /// @notice Struct holding info required for goop staking reward calculation.
     struct StakingInfo {
         /// @notice Balance at time of last deposit or withdrawal.
-        uint256 lastBalance;
+        uint128 lastBalance;
         /// @notice Timestamp of last deposit or withdrawal.
-        uint256 lastTimestamp;
+        uint128 lastTimestamp;
     }
 
     /// @notice Mapping from tokenId to staking info.
@@ -156,6 +156,8 @@ contract ArtGobblers is
     /// -------------------------------
     /// ----- Legendary Gobblers  -----
     /// -------------------------------
+
+    // TODO: pack these:
 
     /// @notice Start price of current legendary gobbler auction.
     uint256 public currentLegendaryGobblerStartPrice;
@@ -272,7 +274,7 @@ contract ArtGobblers is
         _mint(mintAddress, newId);
 
         // Start generating goop from mint time.
-        stakingInfoMap[currentId].lastTimestamp = block.timestamp;
+        stakingInfoMap[currentId].lastTimestamp = uint128(block.timestamp);
     }
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
@@ -440,8 +442,8 @@ contract ArtGobblers is
         goop.burnForGobblers(msg.sender, goopAmount);
 
         // Update last balance with newly added goop.
-        stakingInfoMap[gobblerId].lastBalance = goopBalance(gobblerId) + goopAmount;
-        stakingInfoMap[gobblerId].lastTimestamp = block.timestamp;
+        stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
+        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
     }
 
     ///@notice remove goop from gobbler
@@ -451,8 +453,8 @@ contract ArtGobblers is
         uint256 balance = goopBalance(gobblerId);
 
         // Will revert if removed amount is larger than balance.
-        stakingInfoMap[gobblerId].lastBalance = balance - goopAmount;
-        stakingInfoMap[gobblerId].lastTimestamp = block.timestamp;
+        stakingInfoMap[gobblerId].lastBalance = uint128(balance - goopAmount);
+        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
 
         goop.mint(msg.sender, goopAmount);
     }
