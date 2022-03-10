@@ -158,6 +158,15 @@ contract ArtGobblers is
     ///@notice number of legendary gobblers that remain to be minted
     uint256 remainingLegendaryGobblers = 10;
 
+    ///@notice last 10 ids are reserved for legendary gobblers
+    uint256 private immutable LEGENDARY_GOBBLER_ID_START = 9990;
+
+    // ///@notice max number of legendary gobblers
+    // uint256 private immutable MAX_LEGENDARY_GOBBLERS = 10;
+
+    ///@notice id of last minted legendary gobbler
+    uint256 public currentLegendaryId;
+
     /// ----------------------------
     /// -------- Feeding Art  ------
     /// ----------------------------
@@ -217,6 +226,8 @@ contract ArtGobblers is
         //first legendary gobbler auction starts 30 days after contract deploy
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
         BASE_URI = _baseUri;
+        //current legendary id starts at beginning of legendary id space
+        currentLegendaryId = LEGENDARY_GOBBLER_ID_START;
     }
 
     ///@notice set merkle root for minting whitelist, can only be done once
@@ -272,7 +283,8 @@ contract ArtGobblers is
 
     //mint legendary gobbler
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
-        if (remainingLegendaryGobblers == 0) {
+        //when current ID surpases max supply, we've minted all 10 legendary gobblers
+        if (currentLegendaryId >= MAX_SUPPLY) {
             revert NoRemainingLegendaryGobblers();
         }
         //auction has not started yet
@@ -280,7 +292,7 @@ contract ArtGobblers is
             revert NoAvailableAuctions();
         }
         uint256 cost = legendaryGobblerPrice();
-        if (gobblerIds.length != cost) {
+        if (gobblerIds.length < cost) {
             revert InsufficientGobblerBalance();
         }
         //burn payment
@@ -291,9 +303,9 @@ contract ArtGobblers is
             _burn(gobblerIds[i]);
         }
         //mint new gobblers
-        _mint(msg.sender, ++currentId);
+        _mint(msg.sender, ++currentLegendaryId);
         //emit event with id of last mint
-        emit LegendaryGobblerMint(currentId);
+        emit LegendaryGobblerMint(currentLegendaryId);
         //start new auction, with double the purchase price, 30 days after start
         currentLegendaryGobblerAuctionStart += 30 days;
         //new start price is max of (100, prev_cost*2)
@@ -346,7 +358,8 @@ contract ArtGobblers is
         //knuth shuffle
         for (uint256 i = 0; i < numGobblers; i++) {
             //number of slots that have not been assigned
-            uint256 remainingSlots = MAX_SUPPLY - lastRevealedIndex;
+            uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START -
+                lastRevealedIndex;
             //randomly pick distance for swap
             uint256 distance = randomSeed % remainingSlots;
             //select swap slot, adding distance to next reveal slot
@@ -389,22 +402,34 @@ contract ArtGobblers is
         override
         returns (string memory)
     {
-        //not minted
-        if (tokenId > currentId) {
+        //0 is not a valid id
+        if (tokenId == 0) {
             return "";
         }
-        //not revealed
-        if (tokenId > lastRevealedIndex) {
+        //between 0 and lastRevealedIndex are revealed normal gobblers
+        if (tokenId <= lastRevealedIndex) {
+            return
+                string(
+                    abi.encodePacked(
+                        BASE_URI,
+                        uint256(attributeList[tokenId].idx).toString()
+                    )
+                );
+        }
+        //between lastRevealedIndex + 1 and currentId are minted but not revealed
+        if (tokenId <= currentId) {
             return UNREVEALED_URI;
         }
-        //revealed
-        return
-            string(
-                abi.encodePacked(
-                    BASE_URI,
-                    uint256(attributeList[tokenId].idx).toString()
-                )
-            );
+        //between currentId and  LEGENDARY_GOBBLER_ID_START are unminted
+        if (tokenId <= LEGENDARY_GOBBLER_ID_START) {
+            return "";
+        }
+        //between LEGENDARY_GOBBLER_ID_START and currentLegendaryId are minted legendaries
+        if (tokenId <= currentLegendaryId) {
+            return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        }
+        //unminted legendaries and invalid token ids
+        return "";
     }
 
     ///@notice convenience function to get staking multiple
