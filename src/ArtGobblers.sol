@@ -63,10 +63,10 @@ contract ArtGobblers is
     uint256 public constant MAX_GOOP_MINT = 7990;
 
     /// @notice Index of last token that has been revealed.
-    uint256 public lastRevealedIndex;
+    uint128 public lastRevealedIndex;
 
     /// @notice Remaining gobblers to be assigned from seed.
-    uint256 public gobblersToBeAssigned;
+    uint128 public gobblersToBeAssigned;
 
     /// @notice Random seed obtained from VRF.
     uint256 public randomSeed;
@@ -328,7 +328,7 @@ contract ArtGobblers is
         if (LINK.balanceOf(address(this)) < chainlinkFee) revert InsufficientLinkBalance();
 
         // Fix number of gobblers to be revealed from seed.
-        gobblersToBeAssigned = currentId - lastRevealedIndex;
+        gobblersToBeAssigned = uint128(currentId - lastRevealedIndex);
 
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
@@ -383,8 +383,8 @@ contract ArtGobblers is
 
         // Update state all at once.
         randomSeed = currentRandomSeed;
-        lastRevealedIndex += numGobblers;
-        gobblersToBeAssigned -= numGobblers;
+        lastRevealedIndex += uint128(numGobblers);
+        gobblersToBeAssigned -= uint128(numGobblers);
     }
 
     /// @notice Returns the token URI if gobbler has been minted.
