@@ -5,6 +5,7 @@ import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {stdError} from "forge-std/stdlib.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
@@ -103,10 +104,10 @@ contract ContractTest is DSTest {
         assertEq(gobblers.ownerOf(1), users[0]);
     }
 
-    function testMintInssuficientBalance() public {
+    function testMintInsufficientBalance() public {
         gobblers.setMerkleRoot("root");
         vm.prank(users[0]);
-        vm.expectRevert(insufficientBalance);
+        vm.expectRevert(stdError.arithmeticError);
         gobblers.mintFromGoop();
     }
 

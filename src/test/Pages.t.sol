@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {stdError} from "forge-std/stdlib.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 
@@ -19,8 +20,6 @@ contract PagesTest is DSTest {
     uint256 mintStart;
 
     //encodings for expectRevert
-    bytes insufficientBalance =
-        abi.encodeWithSignature("InsufficientBalance()");
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
     bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
 
@@ -82,7 +81,7 @@ contract PagesTest is DSTest {
     function testInsufficientBalance() public {
         pages.setMintStart(block.timestamp);
         vm.prank(user);
-        vm.expectRevert(insufficientBalance);
+        vm.expectRevert(stdError.arithmeticError);
         pages.mint();
     }
 

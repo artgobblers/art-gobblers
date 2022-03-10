@@ -9,8 +9,6 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
     address public artGobblers;
     address public pages;
 
-    error InsufficientBalance();
-
     error Unauthorized();
 
     ///@notice requires sender to be either gobblers or pages contract
@@ -26,7 +24,7 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
         artGobblers = _artGobblers;
     }
 
-    ///@notice set pages address, calables only by gobblers contract
+    ///@notice set pages address, callable only by gobblers contract
     function setPages(address _pages) public onlyAuth {
         pages = _pages;
     }
@@ -36,9 +34,6 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
     }
 
     function burn(address from, uint256 value) public onlyAuth {
-        if (balanceOf[from] < value) {
-            revert InsufficientBalance();
-        }
         _burn(from, value);
     }
 }

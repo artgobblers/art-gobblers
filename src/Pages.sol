@@ -72,8 +72,6 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     ///@notice authority to mint with 0 cost
     address public mintAddress;
 
-    error InsufficientBalance();
-
     error Unauthorized();
 
     error MintNotStarted();
