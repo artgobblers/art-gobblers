@@ -54,31 +54,18 @@ contract VRGDA {
     ///@notice calculate the price according to VRGDA algorithm
     ///@param timeSinceStart The time since the initial sale, in seconds
     ///@param numSold cummulative sales number up until this point
-    function getPrice(uint256 timeSinceStart, uint256 numSold)
-        public
-        view
-        returns (uint256)
-    {
+    function getPrice(uint256 timeSinceStart, uint256 numSold) public view returns (uint256) {
         //The following computations are derived from the VRGDA formula
         //using the logistic pricing function.
         //TODO: link to white paper explaining algebraic manipulation
-        int256 initial = logisticScale.div(
-            PRBMathSD59x18.fromInt(1) + timeScale.mul(timeShift).exp()
-        );
-        int256 logistic_value = PRBMathSD59x18.fromInt(int256(numSold + 1)) +
-            initial;
-        int256 numPeriods = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(
-            dayScaling
-        ) -
+        int256 initial = logisticScale.div(PRBMathSD59x18.fromInt(1) + timeScale.mul(timeShift).exp());
+        int256 logistic_value = PRBMathSD59x18.fromInt(int256(numSold + 1)) + initial;
+        int256 numPeriods = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) -
             timeShift +
-            (
-                ((logisticScale).div(logistic_value) -
-                    PRBMathSD59x18.fromInt(1)).ln().div(timeScale)
-            );
+            (((logisticScale).div(logistic_value) - PRBMathSD59x18.fromInt(1)).ln().div(timeScale));
         //The scaling factor is computed by exponentiating the per period scale
         //by the number of periods
-        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease)
-            .pow(numPeriods);
+        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease).pow(numPeriods);
         //Multiply the initial price by the scaling factor, and convert back to int
         int256 price = initialPrice.mul(scalingFactor);
         return uint256(price.toInt());
