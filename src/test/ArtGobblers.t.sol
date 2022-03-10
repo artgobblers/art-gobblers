@@ -111,14 +111,16 @@ contract ContractTest is DSTest {
         gobblers.mintFromGoop();
     }
 
-    function testMintMaxFromGoop() public {
-        //total supply - legendary gobblers - whitelist gobblers
-        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
-        mintGobblerToAddress(users[0], maxMintableWithGoop);
-        vm.expectRevert(noRemainingGobblers);
-        vm.prank(users[0]);
-        gobblers.mintFromGoop();
-    }
+    // //@notice Long running test, commented out to ease development
+    // //test whether all ids are assigned after full reveal
+    // function testMintMaxFromGoop() public {
+    //     //total supply - legendary gobblers - whitelist gobblers
+    //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
+    //     mintGobblerToAddress(users[0], maxMintableWithGoop);
+    //     vm.expectRevert(noRemainingGobblers);
+    //     vm.prank(users[0]);
+    //     gobblers.mintFromGoop();
+    // }
 
     function testInitialGobblerPrice() public {
         gobblers.setMerkleRoot(0);
