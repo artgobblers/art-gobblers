@@ -31,7 +31,6 @@ contract GoopTest is DSTest {
     }
 
     function testMintByNonAuthority() public {
-        uint256 initialSupply = goop.totalSupply();
         uint256 mintAmount = 100000;
         vm.prank(users[0]);
         vm.expectRevert(unauthorized);
@@ -39,20 +38,21 @@ contract GoopTest is DSTest {
     }
 
     function testSetPages() public {
+        goop.mint(address(this), 1000000);
         uint256 initialSupply = goop.totalSupply();
-        uint256 mintAmount = 100000;
+        uint256 burnAmount = 100000;
         goop.setPages(users[0]);
         vm.prank(users[0]);
-        goop.mint(address(this), mintAmount);
+        goop.burnForPages(address(this), burnAmount);
         uint256 finalSupply = goop.totalSupply();
-        assertEq(finalSupply, initialSupply + mintAmount);
+        assertEq(finalSupply, initialSupply - burnAmount);
     }
 
     function testBurnAllowed() public {
         uint256 mintAmount = 100000;
         goop.mint(address(this), mintAmount);
         uint256 burnAmount = 30000;
-        goop.burn(address(this), burnAmount);
+        goop.burnForGobblers(address(this), burnAmount);
         uint256 finalBalance = goop.balanceOf(address(this));
         assertEq(finalBalance, mintAmount - burnAmount);
     }
@@ -62,6 +62,6 @@ contract GoopTest is DSTest {
         goop.mint(address(this), mintAmount);
         uint256 burnAmount = 200000;
         vm.expectRevert(stdError.arithmeticError);
-        goop.burn(address(this), burnAmount);
+        goop.burnForGobblers(address(this), burnAmount);
     }
 }

@@ -250,7 +250,7 @@ contract ArtGobblers is
         if (numMintedFromGoop >= MAX_GOOP_MINT) {
             revert NoRemainingGobblers();
         }
-        goop.burn(msg.sender, gobblerPrice());
+        goop.burnForGobblers(msg.sender, gobblerPrice());
         mintGobbler(msg.sender);
         numMintedFromGoop++;
     }
@@ -330,10 +330,7 @@ contract ArtGobblers is
     }
 
     ///@notice callback from chainlink VRF. sets active attributes and seed
-    function fulfillRandomness(bytes32 requestId, uint256 randomness)
-        internal
-        override
-    {
+    function fulfillRandomness(bytes32, uint256 randomness) internal override {
         randomSeed = randomness;
     }
 
@@ -452,7 +449,7 @@ contract ArtGobblers is
             revert Unauthorized();
         }
         //burn goop being added to gobbler
-        goop.burn(msg.sender, goopAmount);
+        goop.burnForGobblers(msg.sender, goopAmount);
         //calculate current balance and newly added goop
         stakingInfoMap[gobblerId].lastBalance =
             goopBalance(gobblerId) +
