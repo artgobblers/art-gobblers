@@ -127,8 +127,8 @@ contract ArtGobblers is
         uint64 stakingMultiple;
     }
 
-    /// TODO: cheaper as mapping?
-    GobblerAttributes[MAX_SUPPLY + 1] public attributeList;
+    /// @notice Maps gobbler ids to their attributes.
+    mapping(uint256 => GobblerAttributes) public attributeList;
 
     /// --------------------------
     /// -------- Addresses ------
