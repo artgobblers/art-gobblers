@@ -156,7 +156,7 @@ contract ArtGobblers is
     uint256 currentLegendaryGobblerAuctionStart;
 
     ///@notice last 10 ids are reserved for legendary gobblers
-    uint256 private immutable LEGENDARY_GOBBLER_ID_START = 9990;
+    uint256 private immutable LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
 
     ///@notice id of last minted legendary gobbler
     uint256 public currentLegendaryId;
@@ -286,7 +286,7 @@ contract ArtGobblers is
             revert NoAvailableAuctions();
         }
         uint256 cost = legendaryGobblerPrice();
-        if (gobblerIds.length < cost) {
+        if (gobblerIds.length != cost) {
             revert InsufficientGobblerBalance();
         }
         //burn payment
