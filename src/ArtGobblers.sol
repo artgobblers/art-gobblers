@@ -155,9 +155,6 @@ contract ArtGobblers is
     ///@notice start timestamp of current legendary gobbler auction
     uint256 currentLegendaryGobblerAuctionStart;
 
-    ///@notice number of legendary gobblers that remain to be minted
-    uint256 remainingLegendaryGobblers = 10;
-
     ///@notice last 10 ids are reserved for legendary gobblers
     uint256 private immutable LEGENDARY_GOBBLER_ID_START = 9990;
 
@@ -307,7 +304,6 @@ contract ArtGobblers is
         currentLegendaryGobblerAuctionStart += 30 days;
         //new start price is max of (100, prev_cost*2)
         currentLegendaryGobblerStartPrice = cost < 50 ? 100 : cost << 1;
-        remainingLegendaryGobblers--;
     }
 
     ///@notice calculate legendary gobbler price, according to linear decay function
