@@ -111,7 +111,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
             revert MintNotStarted();
         }
         uint256 price = pagePrice();
-        goop.burn(msg.sender, price);
+        goop.burnForPages(msg.sender, price);
         _mint(msg.sender, ++currentId);
         numMintedFromGoop++;
     }
