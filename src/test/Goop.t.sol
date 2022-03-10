@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {stdError} from "forge-std/stdlib.sol";
 import {Goop} from "../Goop.sol";
 
 contract GoopTest is DSTest {
@@ -14,8 +15,6 @@ contract GoopTest is DSTest {
 
     //encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
-    bytes insufficientBalance =
-        abi.encodeWithSignature("InsufficientBalance()");
 
     function setUp() public {
         utils = new Utilities();
@@ -62,7 +61,7 @@ contract GoopTest is DSTest {
         uint256 mintAmount = 100000;
         goop.mint(address(this), mintAmount);
         uint256 burnAmount = 200000;
-        vm.expectRevert(insufficientBalance);
+        vm.expectRevert(stdError.arithmeticError);
         goop.burn(address(this), burnAmount);
     }
 }

@@ -16,7 +16,7 @@ contract VRGDA {
     ///@dev represented as a PRBMathSD59x18 number
     int256 private immutable logisticScale;
 
-    ///@notice time scale constrols the steepness of the logitic curve, which affects
+    ///@notice time scale controls the steepness of the logistic curve, which affects
     ///the time period by which we want to reach the asymptote of the curve
     ///@dev represented as a PRBMathSD59x18 number
     int256 private immutable timeScale;
