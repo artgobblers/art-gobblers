@@ -52,6 +52,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     int256 private immutable switchoverTime = PRBMathSD59x18.fromInt(360);
 
+    ///@notice equal to 1 - periodPriceDecrease
     int256 private immutable priceScaling =
         PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
 
@@ -112,9 +113,6 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
             revert MintNotStarted();
         }
         uint256 price = pagePrice();
-        if (goop.balanceOf(msg.sender) < price) {
-            revert InsufficientBalance();
-        }
         goop.burn(msg.sender, price);
         _mint(msg.sender, ++currentId);
         numMintedFromGoop++;
