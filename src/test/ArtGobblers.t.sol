@@ -174,7 +174,9 @@ contract ArtGobblersTest is DSTest {
     }
 
     function testMintLegendaryGobbler() public {
-        vm.warp(block.timestamp + 30 days);
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+
         uint256 cost = gobblers.legendaryGobblerPrice();
         mintGobblerToAddress(users[0], cost);
         //assert cost is not zero
@@ -184,6 +186,7 @@ contract ArtGobblersTest is DSTest {
             ids.push(i);
             assertEq(gobblers.ownerOf(i), users[0]);
         }
+        vm.warp(startTime);
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
         //legendary is owned by user
