@@ -216,10 +216,13 @@ contract ArtGobblers is
         goop = new Goop(address(this));
         pages = new Pages(address(goop), msg.sender);
         goop.setPages(address(pages));
-        //start price for legendary gobblers is 100 gobblers
+
+        // Start price for legendary gobblers is 100 gobblers.
         currentLegendaryGobblerStartPrice = 100;
-        //first legendary gobbler auction starts 30 days after contract deploy
+
+        // First legendary gobbler auction starts 30 days after contract deploy.
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
+
         BASE_URI = _baseUri;
     }
 
