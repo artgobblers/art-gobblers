@@ -35,7 +35,7 @@ contract VRGDA {
 
     ///@notice scaling constant to change units between days and seconds
     ///@dev represented as a PRBMathSD59x18 number
-    int256 private immutable dayScaling = PRBMathSD59x18.fromInt(1 days);
+    int256 internal immutable dayScaling = PRBMathSD59x18.fromInt(1 days);
 
     constructor(
         int256 _logisticScale,
@@ -61,7 +61,7 @@ contract VRGDA {
     {
         //The following computations are derived from the VRGDA formula
         //using the logistic pricing function.
-        //TODO: link to white paper explaining manipulation
+        //TODO: link to white paper explaining algebraic manipulation
         int256 initial = logisticScale.div(
             PRBMathSD59x18.fromInt(1) + timeScale.mul(timeShift).exp()
         );
@@ -69,7 +69,8 @@ contract VRGDA {
             initial;
         int256 numPeriods = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(
             dayScaling
-        ) +
+        ) -
+            timeShift +
             (
                 ((logisticScale).div(logistic_value) -
                     PRBMathSD59x18.fromInt(1)).ln().div(timeScale)
