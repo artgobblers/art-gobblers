@@ -99,6 +99,8 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
         uint256 cachedMintStart = mintStart;
 
         // Mint start has not been set, or mint has not started.
+        // TODO: we could probably refactor this so we don't need this check by making it default ot uint max and underflowing in page price
+        // TODO: also when would it not be zero and be less than?
         if (cachedMintStart == 0 || block.timestamp < cachedMintStart) revert MintNotStarted();
 
         uint256 price = pagePrice();
