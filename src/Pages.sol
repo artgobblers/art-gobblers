@@ -133,17 +133,17 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     /// @notice Calculate the mint cost of a page after the switch threshold.
     function postSwitchPrice(uint256 timeSinceStart) internal view returns (uint256) {
-        // TODO: remove the +1
-        int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop + 1)) -
+        // TODO: optimize this like we did in VRGDA.sol
+
+        int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop)) -
             PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
 
+        // We convert seconds to days here, as we need to prevent overflow.
         int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling);
 
-        int256 scalingFactor = priceScaling.pow(time - fInv);
+        int256 scalingFactor = priceScaling.pow(time - fInv); // This will always be positive.
 
-        int256 price = initialPrice.mul(scalingFactor);
-
-        return uint256(price);
+        return uint256(initialPrice.mul(scalingFactor));
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
