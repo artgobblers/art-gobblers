@@ -13,7 +13,7 @@ contract GoopTest is DSTest {
     address payable[] internal users;
     Goop internal goop;
 
-    //encodings for expectRevert
+    // encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
 
     function setUp() public {

@@ -31,7 +31,7 @@ contract ContractTest is DSTest {
     uint256 private fee;
     string private baseUri = "base";
 
-    //encodings for expectRevert
+    // encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
     bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
     bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
@@ -70,9 +70,9 @@ contract ContractTest is DSTest {
         bytes32[] memory proof;
         vm.prank(user);
         gobblers.mintFromWhitelist(proof);
-        //verify gobbler ownership
+        // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
-        //and page ownership as well
+        // and page ownership as well
         assertEq(pages.ownerOf(1), user);
     }
 
@@ -100,9 +100,9 @@ contract ContractTest is DSTest {
     }
 
     // //@notice Long running test, commented out to ease development
-    // //test whether all ids are assigned after full reveal
+    // // test whether all ids are assigned after full reveal
     // function testMintMaxFromGoop() public {
-    //     //total supply - legendary gobblers - whitelist gobblers
+    //     // total supply - legendary gobblers - whitelist gobblers
     //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
     //     mintGobblerToAddress(users[0], maxMintableWithGoop);
     //     vm.expectRevert(noRemainingGobblers);
@@ -120,16 +120,16 @@ contract ContractTest is DSTest {
     function testLegendaryGobblerMintBeforeStart() public {
         vm.expectRevert(noAvailableAuctions);
         vm.prank(users[0]);
-        //empty id list
+        // empty id list
         uint256[] memory ids;
         gobblers.mintLegendaryGobbler(ids);
     }
 
     function testLegendaryGobblerInitialPrice() public {
-        //start of initial auction
+        // start of initial auction
         vm.warp(block.timestamp + 30 days);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        //initial auction should start at a cost of 100
+        // initial auction should start at a cost of 100
         assertEq(cost, 100);
     }
 
@@ -137,7 +137,7 @@ contract ContractTest is DSTest {
         //30 days for initial auction start, 40 days after initial auction
         vm.warp(block.timestamp + 70 days);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        //auction price should be 0 after more than 30 days have passed
+        // auction price should be 0 after more than 30 days have passed
         assertEq(cost, 0);
     }
 
@@ -145,7 +145,7 @@ contract ContractTest is DSTest {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 45 days);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        //auction price should be 50 mid way through auction
+        // auction price should be 50 mid way through auction
         assertEq(cost, 50);
     }
 
@@ -153,11 +153,11 @@ contract ContractTest is DSTest {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 60 days);
         vm.prank(users[0]);
-        //empty id list
+        // empty id list
         uint256[] memory ids;
         gobblers.mintLegendaryGobbler(ids);
         uint256 startCost = gobblers.legendaryGobblerPrice();
-        //next gobbler should start at a price of 100
+        // next gobbler should start at a price of 100
         assertEq(startCost, 100);
     }
 
@@ -176,17 +176,17 @@ contract ContractTest is DSTest {
         goop.mint(users[0], gobblerCost);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
-        //assert gobbler not revealed after mint
+        // assert gobbler not revealed after mint
         assertTrue(stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
     }
 
     function testSingleReveal() public {
         mintGobblerToAddress(users[0], 1);
 
-        //unrevealed gobblers have 0 value attributes
+        // unrevealed gobblers have 0 value attributes
         assertEq(gobblers.getStakingMultiple(1), 0);
         setRandomnessAndReveal(1, "seed");
-        //gobbler should now be revealed
+        // gobbler should now be revealed
         assertTrue(!stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
         assertTrue(gobblers.getStakingMultiple(1) != 0);
     }
@@ -194,43 +194,43 @@ contract ContractTest is DSTest {
     function testCantSetRandomSeedWithoutRevealing() public {
         mintGobblerToAddress(users[0], 2);
         setRandomnessAndReveal(1, "seed");
-        //should fail since there is one remaining gobbler to be revealed with seed
+        // should fail since there is one remaining gobbler to be revealed with seed
         vm.expectRevert(unauthorized);
         setRandomnessAndReveal(1, "seed");
     }
 
     function testMultiReveal() public {
         mintGobblerToAddress(users[0], 100);
-        //first 100 gobblers should be unrevealed
+        // first 100 gobblers should be unrevealed
         for (uint256 i = 1; i <= 100; i++) {
             assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
         }
         setRandomnessAndReveal(50, "seed");
-        //first 50 gobblers should now be revealed
+        // first 50 gobblers should now be revealed
         for (uint256 i = 1; i <= 50; i++) {
             assertTrue(!stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
-        //and next 50 should remain unrevealed
+        // and next 50 should remain unrevealed
         for (uint256 i = 51; i <= 100; i++) {
             assertTrue(stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
     }
 
     // //@notice Long running test, commented out to ease development
-    // //test whether all ids are assigned after full reveal
+    // // test whether all ids are assigned after full reveal
     // function testAllIdsUnique() public {
     //     int256[10001] memory counts;
-    //     //mint all
+    //     // mint all
     //     uint256 mintCount = gobblers.MAX_GOOP_MINT();
 
     //     mintGobblerToAddress(users[0], mintCount);
     //     setRandomnessAndReveal(mintCount, "seed");
-    //     //count ids
+    //     // count ids
     //     for (uint256 i = 1; i < 10001; i++) {
     //         (uint256 tokenId, , ) = gobblers.attributeList(i);
     //         counts[tokenId]++;
     //     }
-    //     //check that all ids are unique
+    //     // check that all ids are unique
     //     for (uint256 i = 1; i < 10001; i++) {
     //         assertTrue(counts[i] <= 1);
     //     }
@@ -242,13 +242,13 @@ contract ContractTest is DSTest {
 
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
-        //balance should initially be zero
+        // balance should initially be zero
         assertEq(gobblers.goopBalance(1), 0);
         vm.warp(block.timestamp + 100000);
-        //balance should be zero while no reveal
+        // balance should be zero while no reveal
         assertEq(gobblers.goopBalance(1), 0);
         setRandomnessAndReveal(1, "seed");
-        //balance should grow on same timestamp after reveal
+        // balance should grow on same timestamp after reveal
         assertTrue(gobblers.goopBalance(1) != 0);
     }
 
@@ -256,17 +256,17 @@ contract ContractTest is DSTest {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
-        //balance should grow on same timestamp after reveal
+        // balance should grow on same timestamp after reveal
         uint256 initialBalance = gobblers.goopBalance(1);
         //10%
         uint256 removalAmount = initialBalance / 10;
         vm.prank(users[0]);
         gobblers.removeGoop(1, removalAmount);
         uint256 finalBalance = gobblers.goopBalance(1);
-        //balance should change
+        // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
-        //user should have removed goop
+        // user should have removed goop
         assertEq(goop.balanceOf(users[0]), removalAmount);
     }
 
@@ -283,7 +283,7 @@ contract ContractTest is DSTest {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
-        //balance should grow on same timestamp after reveal
+        // balance should grow on same timestamp after reveal
         uint256 initialBalance = gobblers.goopBalance(1);
         vm.prank(address(gobblers));
         uint256 additionAmount = 1000;
@@ -291,14 +291,14 @@ contract ContractTest is DSTest {
         vm.prank(users[0]);
         gobblers.addGoop(1, additionAmount);
         uint256 finalBalance = gobblers.goopBalance(1);
-        //balance should change
+        // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance + additionAmount, finalBalance);
     }
 
-    //convenience function to mint single gobbler from goop
+    // convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        //merkle root must be set before mints are allowed
+        // merkle root must be set before mints are allowed
         if (gobblers.merkleRoot() == 0) {
             gobblers.setMerkleRoot("root");
         }
@@ -316,16 +316,16 @@ contract ContractTest is DSTest {
         vm.stopPrank();
     }
 
-    //convenience function to call back vrf with randomness and reveal gobblers
+    // convenience function to call back vrf with randomness and reveal gobblers
     function setRandomnessAndReveal(uint256 numReveal, string memory seed) internal {
         bytes32 requestId = gobblers.getRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked(seed)));
-        //call back from coordinator
+        // call back from coordinator
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
         gobblers.revealGobblers(numReveal);
     }
 
-    //string equality based on hash
+    // string equality based on hash
     function stringEquals(string memory s1, string memory s2) internal pure returns (bool) {
         return keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
