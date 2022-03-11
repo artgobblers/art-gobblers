@@ -38,7 +38,7 @@ contract ArtGobblersTest is DSTest {
     bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
     bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
     bytes noRemainingLegendary = abi.encodeWithSignature("NoRemainingLegendaryGobblers()");
-    bytes noAvailableAuctions = abi.encodeWithSignature("NoAvailableAuctions()");
+
     bytes insufficientBalance = abi.encodeWithSignature("InsufficientBalance()");
     bytes noRemainingGobblers = abi.encodeWithSignature("NoRemainingGobblers()");
 
@@ -119,10 +119,8 @@ contract ArtGobblersTest is DSTest {
     }
 
     function testLegendaryGobblerMintBeforeStart() public {
-        vm.expectRevert(noAvailableAuctions);
+        vm.expectRevert(stdError.arithmeticError);
         vm.prank(users[0]);
-        //empty id list
-        uint256[] memory _ids;
         gobblers.mintLegendaryGobbler(ids);
     }
 
