@@ -127,9 +127,9 @@ contract ArtGobblers is
     /// -------- Addresses ------
     /// --------------------------
 
-    Goop public goop;
+    Goop public immutable goop;
 
-    Pages public pages;
+    Pages public immutable pages;
 
     /// --------------------------
     /// -------- Staking  --------
@@ -275,13 +275,15 @@ contract ArtGobblers is
         _mint(mintAddress, newId);
 
         // Start generating goop from mint time.
-        stakingInfoMap[currentNonLegendaryId].lastTimestamp = uint128(block.timestamp);
+        stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
     }
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
+        uint256 currentId = currentLegendaryId;
+
         // When current ID surpasses max supply, we've minted all 10 legendary gobblers:
-        if (currentLegendaryId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
+        if (currentId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
         // The auction has not started yet:
         if (block.timestamp < currentLegendaryGobblerAuctionStart) revert NoAvailableAuctions();
@@ -299,7 +301,7 @@ contract ArtGobblers is
             }
         }
 
-        uint256 newId = ++currentLegendaryId;
+        uint256 newId = (currentLegendaryId = currentId + 1);
 
         // Mint the legendary gobbler.
         _mint(msg.sender, newId);
