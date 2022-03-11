@@ -36,13 +36,7 @@ contract BenchmarksTest is DSTest {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
-            baseUri
-        );
+        gobblers = new ArtGobblers(address(vrfCoordinator), address(linkToken), keyHash, fee, baseUri);
         goop = gobblers.goop();
         pages = gobblers.pages();
 

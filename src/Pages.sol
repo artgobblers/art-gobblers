@@ -86,9 +86,8 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     /// @notice Requires sender address to match user address.
     modifier only(address user) {
-        if (msg.sender != user) {
-            revert Unauthorized();
-        }
+        if (msg.sender != user) revert Unauthorized();
+
         _;
     }
 
@@ -99,8 +98,10 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     /// @notice Mint a page by burning goop.
     function mint() public {
+        uint256 cachedMintStart = mintStart;
+
         // Mint start has not been set, or mint has not started.
-        if (mintStart == 0 || block.timestamp < mintStart) revert MintNotStarted();
+        if (cachedMintStart == 0 || block.timestamp < cachedMintStart) revert MintNotStarted();
 
         uint256 price = pagePrice();
 
