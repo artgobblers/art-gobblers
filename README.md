@@ -1,3 +1,5 @@
+<img align="right" width="150" height="150" top="100" src="./assets/gobblers.png">
+
 # Art Gobblers • [![CI](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml/badge.svg)](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml)
 
 Art Gobblers scan the cosmos in search of art producing life.
