@@ -2,11 +2,13 @@
 pragma solidity >=0.8.0;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
+
 import {Strings} from "openzeppelin/utils/Strings.sol";
+
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
-import {VRGDA} from "./VRGDA.sol";
 
 import {Goop} from "./Goop.sol";
+import {VRGDA} from "./VRGDA.sol";
 
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is ERC721("Pages", "PAGE"), VRGDA {
