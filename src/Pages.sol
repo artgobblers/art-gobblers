@@ -64,27 +64,25 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// ------ Authority ------
     /// -----------------------
 
-    /// @notice Authority to set the draw state on pages.
-    address public drawAddress;
+    /// @notice User allowed to set the draw state on pages.
+    address public immutable artist;
 
     /// @notice Authority to mint with 0 cost.
-    address public mintAddress;
+    address public immutable artGobblers;
 
     error Unauthorized();
 
     error MintNotStarted();
 
-    constructor(address _goop, address _drawAddress)
+    constructor(address _goop, address _artist)
         VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
     {
         goop = Goop(_goop);
-        drawAddress = _drawAddress;
-
-        // Deployer has mint authority.
-        mintAddress = msg.sender;
+        artist = _artist;
+        artGobblers = msg.sender;
     }
 
-    /// @notice Requires sender address to match user address.
+    /// @notice Requires caller address to match user address.
     modifier only(address user) {
         if (msg.sender != user) revert Unauthorized();
 
@@ -92,7 +90,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     }
 
     /// @notice Set whether a page is drawn.
-    function setIsDrawn(uint256 tokenId) public only(drawAddress) {
+    function setIsDrawn(uint256 tokenId) public only(artist) {
         isDrawn[tokenId] = true;
     }
 
@@ -113,12 +111,12 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     }
 
     /// @notice Set mint start timestamp for regular minting.
-    function setMintStart(uint256 _mintStart) public only(mintAddress) {
+    function setMintStart(uint256 _mintStart) public only(artGobblers) {
         mintStart = _mintStart;
     }
 
     /// @notice Mint by authority without paying mint cost.
-    function mintByAuth(address addr) public only(mintAddress) {
+    function mintByAuth(address addr) public only(artGobblers) {
         _mint(addr, ++currentId);
     }
 

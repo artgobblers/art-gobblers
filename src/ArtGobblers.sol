@@ -211,6 +211,7 @@ contract ArtGobblers is
         chainlinkFee = _chainlinkFee;
         goop = new Goop(address(this));
         pages = new Pages(address(goop), msg.sender);
+
         goop.setPages(address(pages));
 
         // Start price for legendary gobblers is 100 gobblers.
@@ -232,6 +233,8 @@ contract ArtGobblers is
         merkleRoot = _merkleRoot;
 
         mintStart = block.timestamp;
+
+        pages.setMintStart(block.timestamp);
 
         emit MerkleRootSet(_merkleRoot);
     }

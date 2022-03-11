@@ -40,11 +40,8 @@ contract BenchmarksTest is DSTest {
         goop = gobblers.goop();
         pages = gobblers.pages();
 
-        // TODO: shouldn't need to prank here
-        vm.startPrank(address(gobblers));
-        pages.setMintStart(block.timestamp);
+        vm.prank(address(gobblers));
         goop.mint(address(this), 100000000e18);
-        vm.stopPrank();
 
         gobblers.setMerkleRoot("root");
         gobblers.mintFromGoop();
