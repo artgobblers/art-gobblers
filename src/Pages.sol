@@ -8,7 +8,7 @@ import {VRGDA} from "./VRGDA.sol";
 
 import {Goop} from "./Goop.sol";
 
-///@notice Pages is an ERC721 that can hold art drawn
+/// @notice Pages is an ERC721 that can hold art drawn
 contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
@@ -17,16 +17,16 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// --------- State ------------
     /// ----------------------------
 
-    ///@notice id of last mint
+    /// @notice Id of last mint.
     uint256 internal currentId;
 
-    ///@notice
+    /// @notice The number of pages minted from goop.
     uint256 internal numMintedFromGoop;
 
-    ///@notice base token URI
+    /// @notice Base token URI.
     string internal constant BASE_URI = "";
 
-    ///@notice mapping from tokenId to isDrawn bool
+    /// @notice Mapping from tokenId to isDrawn bool.
     mapping(uint256 => bool) public isDrawn;
 
     Goop internal goop;
@@ -49,23 +49,23 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     int256 private immutable switchoverTime = PRBMathSD59x18.fromInt(360);
 
-    ///@notice equal to 1 - periodPriceDecrease
+    /// @notice Equal to 1 - periodPriceDecrease.
     int256 private immutable priceScaling = PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
 
-    ///@notice number of pages sold before we switch pricing function
+    /// @notice Number of pages sold before we switch pricing functions.
     uint256 private numPagesSwitch = 9975;
 
-    ///@notice start of public mint
+    /// @notice Start of public mint.
     uint256 private mintStart;
 
     /// -----------------------
     /// ------ Authority ------
     /// -----------------------
 
-    ///@notice authority to set the draw state on pages
+    /// @notice Authority to set the draw state on pages.
     address public drawAddress;
 
-    ///@notice authority to mint with 0 cost
+    /// @notice Authority to mint with 0 cost.
     address public mintAddress;
 
     error Unauthorized();
@@ -77,11 +77,12 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     {
         goop = Goop(_goop);
         drawAddress = _drawAddress;
-        //deployer has mint authority
+
+        // Deployer has mint authority.
         mintAddress = msg.sender;
     }
 
-    ///@notice requires sender address to match user address
+    /// @notice Requires sender address to match user address.
     modifier only(address user) {
         if (msg.sender != user) {
             revert Unauthorized();
@@ -89,36 +90,38 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
         _;
     }
 
-    ///@notice set whether page is drawn
+    /// @notice Set whether a page is drawn.
     function setIsDrawn(uint256 tokenId) public only(drawAddress) {
         isDrawn[tokenId] = true;
     }
 
-    ///@notice mint a page by burning goop
+    /// @notice Mint a page by burning goop.
     function mint() public {
-        //mint start has not been set, or mint has not started
-        if (mintStart == 0 || block.timestamp < mintStart) {
-            revert MintNotStarted();
-        }
+        // Mint start has not been set, or mint has not started.
+        if (mintStart == 0 || block.timestamp < mintStart) revert MintNotStarted();
+
         uint256 price = pagePrice();
+
         goop.burnForPages(msg.sender, price);
+
         _mint(msg.sender, ++currentId);
+
         numMintedFromGoop++;
     }
 
-    ///@notice set mint start timestamp for regular minting
+    /// @notice Set mint start timestamp for regular minting.
     function setMintStart(uint256 _mintStart) public only(mintAddress) {
         mintStart = _mintStart;
     }
 
-    ///@notice mint by authority without paying mint cost
+    /// @notice Mint by authority without paying mint cost.
     function mintByAuth(address addr) public only(mintAddress) {
         _mint(addr, ++currentId);
     }
 
-    ///@notice calculate the mint cost of a page. If number of sales
-    ///is below a pre-defined threshold, we use VRGDA pricing algorithm
-    ///otherwise, we use the post-switch pricing formula
+    /// @notice Calculate the mint cost of a page.
+    /// @dev If the number of sales is below a pre-defined threshold, we use the
+    /// VRGDA pricing algorithm, otherwise we use the post-switch pricing formula.
     function pagePrice() public view returns (uint256) {
         uint256 timeSinceStart = block.timestamp - mintStart;
 
@@ -128,20 +131,24 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
                 : postSwitchPrice(timeSinceStart);
     }
 
-    ///@notice calculate the mint cost of a page after switch
+    /// @notice Calculate the mint cost of a page after the switch threshold.
     function postSwitchPrice(uint256 timeSinceStart) internal view returns (uint256) {
+        // TODO: remove the +1
         int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop + 1)) -
             PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
+
         int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling);
+
         int256 scalingFactor = priceScaling.pow(time - fInv);
+
         int256 price = initialPrice.mul(scalingFactor);
-        return uint256(price.toInt());
+
+        return uint256(price);
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (tokenId > currentId) {
-            return "";
-        }
+        if (tokenId > currentId) return "";
+
         return string(abi.encodePacked(BASE_URI, tokenId.toString()));
     }
 }

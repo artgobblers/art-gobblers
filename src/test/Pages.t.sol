@@ -19,19 +19,19 @@ contract PagesTest is DSTest {
     Pages internal pages;
     uint256 mintStart;
 
-    //encodings for expectRevert
+    // encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
     bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
 
     function setUp() public {
-        //avoid starting at timestamp = 0 for ease of testing
+        // avoid starting at timestamp = 0 for ease of testing
         vm.warp(block.timestamp + 1);
         utils = new Utilities();
         users = utils.createUsers(5);
         drawAuth = users[0];
         goop = new Goop(address(this));
         pages = new Pages(address(goop), drawAuth);
-        //deploying contract is mint authority
+        // Deploying contract is mint authority
         mintAuth = address(this);
         goop.setPages(address(pages));
         user = users[1];
@@ -44,7 +44,7 @@ contract PagesTest is DSTest {
     }
 
     function testMintBeforeStart() public {
-        //set mint start in future
+        // set mint start in future
         pages.setMintStart(block.timestamp + 1);
         vm.expectRevert(mintNotStarted);
         vm.prank(user);
@@ -60,7 +60,7 @@ contract PagesTest is DSTest {
     }
 
     function testMintByAuthority() public {
-        //mint by authority for user
+        // mint by authority for user
         pages.mintByAuth(user);
         assertEq(user, pages.ownerOf(1));
     }

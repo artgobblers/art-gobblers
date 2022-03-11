@@ -17,13 +17,6 @@ import {Pages} from "./Pages.sol";
 import {VRGDA} from "./VRGDA.sol";
 
 // TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
-// TODO: UNCHECKED
 
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
@@ -110,7 +103,7 @@ contract ArtGobblers is
     /// @notice Map Chainlink request id to token ids.
     mapping(bytes32 => uint256) public requestIdToTokenId;
 
-    ///@notice Map token id to random seed produced by VRF
+    /// @notice Map token id to random seed produced by VRF
     mapping(uint256 => uint256) public tokenIdToRandomSeed;
 
     /// --------------------------
@@ -384,7 +377,7 @@ contract ArtGobblers is
             attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
         }
 
-        // @audit is gobblersToBeAssigned needed when we have lastReveleadIndex?
+        // @audit is gobblersToBeAssigned needed when we have lastRevealedIndex?
 
         // Update state all at once.
         randomSeed = currentRandomSeed;
@@ -449,7 +442,7 @@ contract ArtGobblers is
         stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
     }
 
-    ///@notice remove goop from gobbler
+    /// @notice Remove goop from a gobbler.
     function removeGoop(uint256 gobblerId, uint256 goopAmount) public {
         if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
