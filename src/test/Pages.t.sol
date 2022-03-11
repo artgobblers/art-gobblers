@@ -74,7 +74,7 @@ contract PagesTest is DSTest {
     function testInitialPrice() public {
         pages.setMintStart(block.timestamp);
         uint256 cost = pages.pagePrice();
-        uint256 expectedCost = 420000000000000032340; // computed offline
+        uint256 expectedCost = 419999999999999967660; // computed offline
         assertEq(cost, expectedCost);
     }
 
