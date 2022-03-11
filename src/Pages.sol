@@ -8,7 +8,7 @@ import {VRGDA} from "./VRGDA.sol";
 
 import {Goop} from "./Goop.sol";
 
-/// @notice Pages is an ERC721 that can hold art drawn
+/// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
