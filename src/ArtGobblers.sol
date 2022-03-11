@@ -212,14 +212,15 @@ contract ArtGobblers is
 
         goop.setPages(address(pages));
 
+        BASE_URI = _baseUri;
+
         // Start price for legendary gobblers is 100 gobblers.
         currentLegendaryGobblerStartPrice = 100;
 
         // First legendary gobbler auction starts 30 days after contract deploy.
         currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
 
-        BASE_URI = _baseUri;
-        //current legendary id starts at beginning of legendary id space
+        // Current legendary id starts at beginning of legendary id space.
         currentLegendaryId = LEGENDARY_GOBBLER_ID_START;
     }
 
@@ -420,7 +421,7 @@ contract ArtGobblers is
     }
 
     /// @notice Convenience function to get the base issuance rate for a gobbler.
-    function getbaseRate(uint256 tokenId) public view returns (uint256 rate) {
+    function getBaseRate(uint256 tokenId) public view returns (uint256 rate) {
         rate = attributeList[tokenId].baseRate;
     }
 
