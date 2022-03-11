@@ -34,7 +34,7 @@ contract ArtGobblers is
     /// ----------------------------
 
     /// @notice Id of last minted token.
-    uint256 internal currentId;
+    uint256 internal currentNonLegendaryId;
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
@@ -268,14 +268,14 @@ contract ArtGobblers is
     }
 
     function mintGobbler(address mintAddress) internal {
-        uint256 newId = ++currentId;
+        uint256 newId = ++currentNonLegendaryId;
 
         if (newId > MAX_SUPPLY) revert NoRemainingGobblers();
 
         _mint(mintAddress, newId);
 
         // Start generating goop from mint time.
-        stakingInfoMap[currentId].lastTimestamp = uint128(block.timestamp);
+        stakingInfoMap[currentNonLegendaryId].lastTimestamp = uint128(block.timestamp);
     }
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
@@ -332,7 +332,7 @@ contract ArtGobblers is
         if (LINK.balanceOf(address(this)) < chainlinkFee) revert InsufficientLinkBalance();
 
         // Fix number of gobblers to be revealed from seed.
-        gobblersToBeAssigned = uint128(currentId - lastRevealedIndex);
+        gobblersToBeAssigned = uint128(currentNonLegendaryId - lastRevealedIndex);
 
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
@@ -400,10 +400,10 @@ contract ArtGobblers is
 
             return string(abi.encodePacked(BASE_URI, uint256(attributeList[tokenId].idx).toString()));
         }
-        // Between lastRevealedIndex + 1 and currentId are minted but not revealed.
-        if (tokenId <= currentId) return UNREVEALED_URI;
+        // Between lastRevealedIndex + 1 and currentNonLegendaryId are minted but not revealed.
+        if (tokenId <= currentNonLegendaryId) return UNREVEALED_URI;
 
-        // Between currentId and  LEGENDARY_GOBBLER_ID_START are unminted.
+        // Between currentNonLegendaryId and  LEGENDARY_GOBBLER_ID_START are unminted.
         if (tokenId <= LEGENDARY_GOBBLER_ID_START) return "";
 
         // Between LEGENDARY_GOBBLER_ID_START and currentLegendaryId are minted legendaries.
