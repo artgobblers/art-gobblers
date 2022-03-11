@@ -68,6 +68,7 @@ contract VRGDA {
         int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease).pow(numPeriods);
         //Multiply the initial price by the scaling factor, and convert back to int
         int256 price = initialPrice.mul(scalingFactor);
-        return uint256(price.toInt());
+
+        return uint256(price);
     }
 }
