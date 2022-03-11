@@ -46,7 +46,6 @@ contract BenchmarksTest is DSTest {
         gobblers.setMerkleRoot("root");
         gobblers.mintFromGoop();
 
-        // TODO: legendary price reverts if we don't have this, probably shouldn't be like that.
         vm.warp(block.timestamp + 30 days);
     }
 
@@ -54,12 +53,16 @@ contract BenchmarksTest is DSTest {
         pages.pagePrice();
     }
 
-    function testMintFromGoop() public {
-        gobblers.mintFromGoop();
+    function testGobblersPrice() public view {
+        gobblers.gobblerPrice();
     }
 
     function testLegendaryGobblersPrice() public view {
         gobblers.legendaryGobblerPrice();
+    }
+
+    function testMintFromGoop() public {
+        gobblers.mintFromGoop();
     }
 
     function testAddAndRemoveGoop() public {

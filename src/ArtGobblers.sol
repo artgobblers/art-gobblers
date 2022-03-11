@@ -193,8 +193,6 @@ contract ArtGobblers is
 
     error NoRemainingLegendaryGobblers();
 
-    error NoAvailableAuctions();
-
     error NoRemainingGobblers();
 
     constructor(
@@ -288,9 +286,7 @@ contract ArtGobblers is
         // When current ID surpasses max supply, we've minted all 10 legendary gobblers:
         if (currentId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
-        // The auction has not started yet:
-        if (block.timestamp < currentLegendaryGobblerAuctionStart) revert NoAvailableAuctions();
-
+        // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
 
         if (gobblerIds.length != cost) revert InsufficientGobblerBalance();
@@ -321,6 +317,7 @@ contract ArtGobblers is
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
+    /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
     function legendaryGobblerPrice() public view returns (uint256) {
         uint256 daysSinceStart = (block.timestamp - currentLegendaryGobblerAuctionStart) / 1 days;
 
