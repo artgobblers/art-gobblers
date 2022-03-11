@@ -171,7 +171,7 @@ contract ContractTest is DSTest {
 
     function testUnrevealedUri() public {
         gobblers.setMerkleRoot(0);
-        uint256 gobblerCost = 100e18;
+        uint256 gobblerCost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
         goop.mint(users[0], gobblerCost);
         vm.prank(users[0]);
