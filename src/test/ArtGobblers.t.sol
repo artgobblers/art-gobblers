@@ -113,7 +113,7 @@ contract ContractTest is DSTest {
     function testInitialGobblerPrice() public {
         gobblers.setMerkleRoot(0);
         uint256 cost = gobblers.gobblerPrice();
-        uint256 expectedCost = 69;
+        uint256 expectedCost = 69298731101819954628;
         assertEq(cost, expectedCost);
     }
 
@@ -171,7 +171,7 @@ contract ContractTest is DSTest {
 
     function testUnrevealedUri() public {
         gobblers.setMerkleRoot(0);
-        uint256 gobblerCost = 100;
+        uint256 gobblerCost = 100e18;
         vm.prank(address(gobblers));
         goop.mint(users[0], gobblerCost);
         vm.prank(users[0]);
