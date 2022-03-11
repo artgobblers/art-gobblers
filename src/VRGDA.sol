@@ -40,6 +40,9 @@ contract VRGDA {
     /// @notice The initial value the VRDGA logistic pricing formula would output.
     int256 internal immutable initialValue;
 
+    /// @notice Precomputed constant that allows us to rewrite a .pow() as a .exp().
+    int256 internal immutable decayConstant;
+
     constructor(
         int256 _logisticScale,
         int256 _timeScale,
@@ -54,6 +57,8 @@ contract VRGDA {
         periodPriceDecrease = _periodPriceDecrease;
 
         initialValue = logisticScale.div(PRBMathSD59x18.fromInt(1) + timeScale.mul(timeShift).exp());
+
+        decayConstant = -((PRBMathSD59x18.fromInt(1) - periodPriceDecrease).ln());
     }
 
     ///@notice calculate the price according to VRGDA algorithm
@@ -66,13 +71,15 @@ contract VRGDA {
 
         int256 logisticValue = PRBMathSD59x18.fromInt(int256(numSold)) + initialValue;
 
-        int256 numPeriods = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) -
-            timeShift +
-            ((logisticScale.div(logisticValue) - PRBMathSD59x18.fromInt(1)).ln().div(timeScale));
+        int256 exponent = decayConstant.mul(
+            PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) -
+                timeShift +
+                ((logisticScale.div(logisticValue) - int256(1).fromInt()).ln().div(timeScale))
+        );
 
         //The scaling factor is computed by exponentiating the per period scale
         //by the number of periods
-        int256 scalingFactor = (PRBMathSD59x18.fromInt(1) - periodPriceDecrease).pow(numPeriods);
+        int256 scalingFactor = exponent.exp();
 
         //Multiply the initial price by the scaling factor, and convert back to int
         int256 price = initialPrice.mul(scalingFactor);
