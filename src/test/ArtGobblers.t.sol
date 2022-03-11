@@ -13,7 +13,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-contract ContractTest is DSTest {
+contract ArtGobblersTest is DSTest {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -31,7 +31,9 @@ contract ContractTest is DSTest {
     uint256 private fee;
     string private baseUri = "base";
 
-    // encodings for expectRevert
+    uint256[] ids;
+
+    //encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
     bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
     bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
@@ -100,9 +102,8 @@ contract ContractTest is DSTest {
     }
 
     // //@notice Long running test, commented out to ease development
-    // // test whether all ids are assigned after full reveal
     // function testMintMaxFromGoop() public {
-    //     // total supply - legendary gobblers - whitelist gobblers
+    //     //total supply - legendary gobblers - whitelist gobblers
     //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
     //     mintGobblerToAddress(users[0], maxMintableWithGoop);
     //     vm.expectRevert(noRemainingGobblers);
@@ -120,8 +121,8 @@ contract ContractTest is DSTest {
     function testLegendaryGobblerMintBeforeStart() public {
         vm.expectRevert(noAvailableAuctions);
         vm.prank(users[0]);
-        // empty id list
-        uint256[] memory ids;
+        //empty id list
+        uint256[] memory _ids;
         gobblers.mintLegendaryGobbler(ids);
     }
 
@@ -153,16 +154,37 @@ contract ContractTest is DSTest {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 60 days);
         vm.prank(users[0]);
-        // empty id list
-        uint256[] memory ids;
-        gobblers.mintLegendaryGobbler(ids);
+        //empty id list
+        uint256[] memory _ids;
+        gobblers.mintLegendaryGobbler(_ids);
         uint256 startCost = gobblers.legendaryGobblerPrice();
         // next gobbler should start at a price of 100
         assertEq(startCost, 100);
     }
 
-    function testLegendaryGobblerPriceIncrease() public {
-        assertTrue(true);
+    function testMintLegendaryGobbler() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        mintGobblerToAddress(users[0], cost);
+        //assert cost is not zero
+        assertTrue(cost != 0);
+        for (uint256 i = 1; i <= cost; i++) {
+            //all gobblers owned by user
+            ids.push(i);
+            assertEq(gobblers.ownerOf(i), users[0]);
+        }
+        vm.warp(startTime);
+        vm.prank(users[0]);
+        gobblers.mintLegendaryGobbler(ids);
+        //legendary is owned by user
+        assertEq(gobblers.ownerOf(gobblers.currentLegendaryId()), users[0]);
+        for (uint256 i = 1; i <= cost; i++) {
+            //all gobblers burned
+            ids.push(i);
+            assertEq(gobblers.ownerOf(i), address(0x0));
+        }
     }
 
     function testUnmintedUri() public {
@@ -180,15 +202,32 @@ contract ContractTest is DSTest {
         assertTrue(stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
     }
 
-    function testSingleReveal() public {
+    function testRevealedUri() public {
         mintGobblerToAddress(users[0], 1);
 
         // unrevealed gobblers have 0 value attributes
         assertEq(gobblers.getStakingMultiple(1), 0);
         setRandomnessAndReveal(1, "seed");
-        // gobbler should now be revealed
-        assertTrue(!stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
-        assertTrue(gobblers.getStakingMultiple(1) != 0);
+        (uint256 expectedIndex, , ) = gobblers.attributeList(1);
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
+        assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
+    }
+
+    function testMintedLegendaryURI() public {
+        //mint legendary
+        vm.warp(block.timestamp + 70 days);
+        uint256[] memory _ids;
+        gobblers.mintLegendaryGobbler(_ids);
+        uint256 legendaryId = gobblers.currentLegendaryId();
+        //expected URI should not be shuffled
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), legendaryId.toString()));
+        string memory actualURI = gobblers.tokenURI(legendaryId);
+        assertTrue(stringEquals(actualURI, expectedURI));
+    }
+
+    function testUnmintedLegendaryUri() public {
+        uint256 legendaryId = gobblers.currentLegendaryId() + 1;
+        assertEq(gobblers.tokenURI(legendaryId), "");
     }
 
     function testCantSetRandomSeedWithoutRevealing() public {

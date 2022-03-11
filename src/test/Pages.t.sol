@@ -24,7 +24,7 @@ contract PagesTest is DSTest {
     bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
 
     function setUp() public {
-        // avoid starting at timestamp = 0 for ease of testing
+        //avoid starting at timestamp = 0 for ease of testing
         vm.warp(block.timestamp + 1);
         utils = new Utilities();
         users = utils.createUsers(5);
@@ -44,7 +44,7 @@ contract PagesTest is DSTest {
     }
 
     function testMintBeforeStart() public {
-        // set mint start in future
+        //set mint start in future
         pages.setMintStart(block.timestamp + 1);
         vm.expectRevert(mintNotStarted);
         vm.prank(user);

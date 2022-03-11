@@ -68,7 +68,7 @@ contract VRGDA {
 
     /// @notice Calculate the price of an according to VRGDA algorithm.
     /// @param timeSinceStart The time since the initial sale, in seconds.
-    /// @param id The token ID to get the price of.
+    /// @param id The token id to get the price of at the current time.
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         int256 logisticValue = int256(id).fromInt() + initialValue;
 
