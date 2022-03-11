@@ -10,5 +10,5 @@ def gobbler_price(t, sold, p_0, per_period_price_decrease, scale, time_scale, ti
 enc = encode_single('uint256', 4000)
 # print(enc.hex())
 bb = b'\x01\x02\x03'
-print(bb.hex())
+print(enc.hex())
 # print(decode_single('uint8', enc))

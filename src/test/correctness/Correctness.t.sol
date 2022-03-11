@@ -9,6 +9,7 @@ contract CorrectnessTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     function testBasic() public {
+        console.log("test");
         string[] memory inputs = new string[](2);
         inputs[0] = "python3";
         inputs[1] = "src/test/correctness/compute.py";
@@ -20,7 +21,8 @@ contract CorrectnessTest is DSTest {
         console.log("solbytes");
         console.logBytes(enc);
 
-        // console.log(num);
+        uint256 num = abi.decode(res, (uint256));
+        console.log("SACRED NUMBER", num);
         // console.logBytes(res);
         // Data memory data = abi.decode(res, (Data));
         // assertEq(data.name, name);
