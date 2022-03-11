@@ -1,4 +1,4 @@
-<img align="right" width="150" height="150" top="100" src="./assets/gobblers.png">
+<img align="right" width="120" height="120" top="100" src="./assets/gobblers.png">
 
 # Art Gobblers • [![CI](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml/badge.svg)](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml)
 
