@@ -64,7 +64,7 @@ contract VRGDA {
         //using the logistic pricing function.
         //TODO: link to white paper explaining algebraic manipulation
 
-        int256 logisticValue = PRBMathSD59x18.fromInt(int256(numSold + 1)) + initialValue;
+        int256 logisticValue = PRBMathSD59x18.fromInt(int256(numSold)) + initialValue;
 
         int256 numPeriods = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) -
             timeShift +
