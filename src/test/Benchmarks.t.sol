@@ -32,6 +32,8 @@ contract BenchmarksTest is DSTest {
     string private baseUri = "base";
 
     function setUp() public {
+        vm.warp(1); // Otherwise mintStart will be set to 0 and brick Pages.mint()
+
         utils = new Utilities();
         users = utils.createUsers(5);
         linkToken = new LinkToken();
@@ -41,19 +43,19 @@ contract BenchmarksTest is DSTest {
         pages = gobblers.pages();
 
         vm.prank(address(gobblers));
-        goop.mint(address(this), 100000000e18);
+        goop.mint(address(this), type(uint128).max);
 
         gobblers.setMerkleRoot("root");
         gobblers.mintFromGoop();
 
-        vm.warp(block.timestamp + 30 days);
+        vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.
     }
 
     function testPagePrice() public view {
         pages.pagePrice();
     }
 
-    function testGobblersPrice() public view {
+    function testGobblerPrice() public view {
         gobblers.gobblerPrice();
     }
 
@@ -61,8 +63,22 @@ contract BenchmarksTest is DSTest {
         gobblers.legendaryGobblerPrice();
     }
 
-    function testMintFromGoop() public {
+    function testGoopBalance() public view {
+        gobblers.goopBalance(1);
+    }
+
+    function testMintPage() public {
+        pages.mint();
+    }
+
+    function testMintGobbler() public {
         gobblers.mintFromGoop();
+    }
+
+    function testMintLegendaryGobbler() public {
+        uint256[] memory ids;
+
+        gobblers.mintLegendaryGobbler(ids);
     }
 
     function testAddAndRemoveGoop() public {
