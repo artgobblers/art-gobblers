@@ -13,9 +13,8 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
     /// @notice Requires caller address to match user address.
     modifier only(address user) {
-        if (msg.sender != user) {
-            revert Unauthorized();
-        }
+        if (msg.sender != user) revert Unauthorized();
+
         _;
     }
 
