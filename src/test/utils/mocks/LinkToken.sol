@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-//adapter from dapptools-starter-kit
+// adapter from dapptools-starter-kit
 pragma solidity ^0.8.0;
 
 import "openzeppelin/token/ERC20/ERC20.sol";
@@ -20,12 +20,7 @@ contract LinkToken is ERC20 {
         _mint(msg.sender, initialSupply);
     }
 
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 value,
-        bytes data
-    );
+    event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
 
     /**
      * @dev transfer token to a contract address with additional data if the recipient is a contact.
