@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {stdError} from "forge-std/stdlib.sol";
 import {Goop} from "../Goop.sol";
 
 contract GoopTest is DSTest {
@@ -12,10 +13,8 @@ contract GoopTest is DSTest {
     address payable[] internal users;
     Goop internal goop;
 
-    //encodings for expectRevert
+    // encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
-    bytes insufficientBalance =
-        abi.encodeWithSignature("InsufficientBalance()");
 
     function setUp() public {
         utils = new Utilities();
@@ -32,7 +31,6 @@ contract GoopTest is DSTest {
     }
 
     function testMintByNonAuthority() public {
-        uint256 initialSupply = goop.totalSupply();
         uint256 mintAmount = 100000;
         vm.prank(users[0]);
         vm.expectRevert(unauthorized);
@@ -40,20 +38,21 @@ contract GoopTest is DSTest {
     }
 
     function testSetPages() public {
+        goop.mint(address(this), 1000000);
         uint256 initialSupply = goop.totalSupply();
-        uint256 mintAmount = 100000;
+        uint256 burnAmount = 100000;
         goop.setPages(users[0]);
         vm.prank(users[0]);
-        goop.mint(address(this), mintAmount);
+        goop.burnForPages(address(this), burnAmount);
         uint256 finalSupply = goop.totalSupply();
-        assertEq(finalSupply, initialSupply + mintAmount);
+        assertEq(finalSupply, initialSupply - burnAmount);
     }
 
     function testBurnAllowed() public {
         uint256 mintAmount = 100000;
         goop.mint(address(this), mintAmount);
         uint256 burnAmount = 30000;
-        goop.burn(address(this), burnAmount);
+        goop.burnForGobblers(address(this), burnAmount);
         uint256 finalBalance = goop.balanceOf(address(this));
         assertEq(finalBalance, mintAmount - burnAmount);
     }
@@ -62,7 +61,7 @@ contract GoopTest is DSTest {
         uint256 mintAmount = 100000;
         goop.mint(address(this), mintAmount);
         uint256 burnAmount = 200000;
-        vm.expectRevert(insufficientBalance);
-        goop.burn(address(this), burnAmount);
+        vm.expectRevert(stdError.arithmeticError);
+        goop.burnForGobblers(address(this), burnAmount);
     }
 }

@@ -38,21 +38,10 @@ contract BenchmarksTest is DSTest {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
-            baseUri
-        );
+        gobblers = new ArtGobblers(address(vrfCoordinator), address(linkToken), keyHash, fee, baseUri);
         goop = gobblers.goop();
         pages = gobblers.pages();
 
-        // TODO: shouldn't need to prank here
-        vm.startPrank(address(gobblers));
-        pages.setMintStart(block.timestamp);
-        goop.mint(address(this), 100000000e18);
-        vm.stopPrank();
         vm.prank(address(gobblers));
         goop.mint(address(this), type(uint128).max);
 
