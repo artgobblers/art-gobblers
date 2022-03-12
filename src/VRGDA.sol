@@ -12,32 +12,29 @@ import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 contract VRGDA {
     using PRBMathSD59x18 for int256;
 
-    /// @notice Precompute 1 expressed scaled as a PRBMathSD59x18 number.
-    int256 internal immutable one59x18 = int256(1).fromInt();
+    /// @notice Initial price of NFTs, to be scaled according to sales rate.
+    /// @dev Represented as a PRBMathSD59x18 number.
+    int256 private immutable initialPrice;
 
-    /// @notice Parameter controls the logistic curve's maximum
+    /// @notice This parameter controls the logistic curve's maximum
     /// value, which controls the maximum number of NFTs to be issued.
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 private immutable logisticScale;
 
-    /// @notice time scale controls the steepness of the logistic curve, which
-    /// affects the time period by which we want to reach the asymptote of the curve
+    /// @notice Time scale controls the steepness of the logistic curve, which
+    /// effects the time period by which we want to reach the asymptote of the curve.
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 private immutable timeScale;
 
-    /// @notice controls the time in which we reach the sigmoid's midpoint
+    /// @notice Controls the time in which we reach the sigmoid's midpoint.
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 private immutable timeShift;
 
-    /// @notice Initial price of NFTs, to be scaled according to sales rate
-    /// @dev Represented as a PRBMathSD59x18 number.
-    int256 private immutable initialPrice;
-
-    /// @notice controls how quickly price reacts to deviations from issuance schedule
+    /// @notice controls how quickly price reacts to deviations from issuance schedule.
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 private immutable periodPriceDecrease;
 
-    /// @notice scaling constant to change units between days and seconds
+    /// @notice scaling constant to change units between days and seconds.
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 internal immutable dayScaling = PRBMathSD59x18.fromInt(1 days);
 
@@ -48,6 +45,9 @@ contract VRGDA {
     /// @notice Precomputed constant that allows us to rewrite a .pow() as a .exp().
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 internal immutable decayConstant;
+
+    /// @notice Precompute 1 expressed scaled as a PRBMathSD59x18 number.
+    int256 internal immutable one59x18 = int256(1).fromInt();
 
     constructor(
         int256 _logisticScale,
