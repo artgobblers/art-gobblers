@@ -37,13 +37,13 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
+    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(420);
+
     int256 private immutable logisticScale = PRBMathSD59x18.fromInt(10024);
 
     int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(30));
 
     int256 private immutable timeShift = PRBMathSD59x18.fromInt(180);
-
-    int256 private immutable initialPrice = PRBMathSD59x18.fromInt(420);
 
     int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
@@ -58,7 +58,8 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     uint256 private numPagesSwitch = 9975;
 
     /// @notice Start of public mint.
-    uint256 private mintStart;
+    /// @dev Begins as type(uint256).max to pagePrice() underflow before minting starts.
+    uint256 private mintStart = type(uint256).max;
 
     /// -----------------------
     /// ------ Authority ------
@@ -71,8 +72,6 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     address public immutable artGobblers;
 
     error Unauthorized();
-
-    error MintNotStarted();
 
     constructor(address _goop, address _artist)
         VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
@@ -96,14 +95,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     /// @notice Mint a page by burning goop.
     function mint() public {
-        uint256 cachedMintStart = mintStart;
-
-        // Mint start has not been set, or mint has not started.
-        // TODO: we could probably refactor this so we don't need this check by making it default ot uint max and underflowing in page price
-        // TODO: also when would it not be zero and be less than?
-        if (cachedMintStart == 0 || block.timestamp < cachedMintStart) revert MintNotStarted();
-
-        uint256 price = pagePrice();
+        uint256 price = pagePrice(); // This will revert if minting has not started yet.
 
         goop.burnForPages(msg.sender, price);
 
@@ -125,6 +117,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// @notice Calculate the mint cost of a page.
     /// @dev If the number of sales is below a pre-defined threshold, we use the
     /// VRGDA pricing algorithm, otherwise we use the post-switch pricing formula.
+    /// @dev Reverts due to underflow if minting hasn't started yet. Done to save gas.
     function pagePrice() public view returns (uint256) {
         uint256 timeSinceStart = block.timestamp - mintStart;
 

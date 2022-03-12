@@ -68,7 +68,8 @@ contract ArtGobblers is
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    /// Pricing parameters were largely determined empirically from modeling a few different issuance curves:
+    /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
+    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
     /// @notice Scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve, which needs
     /// to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
@@ -76,9 +77,6 @@ contract ArtGobblers is
 
     /// @notice Time scale of 1/60 gives us the appropriate time period for sales.
     int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
-
-    /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
-    int256 private immutable initialPrice = PRBMathSD59x18.fromInt(69);
 
     /// @notice Price decrease 25% per period.
     int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
@@ -186,8 +184,6 @@ contract ArtGobblers is
     /// ----------------------
 
     error Unauthorized();
-
-    error InsufficientLinkBalance();
 
     error InsufficientGobblerBalance();
 
@@ -310,7 +306,6 @@ contract ArtGobblers is
         emit LegendaryGobblerMint(newId);
 
         // Start a new auction, 30 days after the previous start.
-        // @audit Couldn't this result in another auction being started instantly? Should we do from the perspective of now?
         currentLegendaryGobblerAuctionStart += 30 days;
 
         // New start price is max of (100, prev_cost*2).
@@ -332,11 +327,10 @@ contract ArtGobblers is
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (gobblersToBeAssigned != 0) revert Unauthorized();
 
-        if (LINK.balanceOf(address(this)) < chainlinkFee) revert InsufficientLinkBalance();
-
         // Fix number of gobblers to be revealed from seed.
         gobblersToBeAssigned = uint128(currentNonLegendaryId - lastRevealedIndex);
 
+        // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
@@ -382,11 +376,9 @@ contract ArtGobblers is
 
             // Select random attributes for current slot:
             currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-            attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1; // @audit Wait isn't this supposed to be a constant for every gobbler?
+            attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
             attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
         }
-
-        // @audit is gobblersToBeAssigned needed when we have lastRevealedIndex?
 
         // Update state all at once.
         randomSeed = currentRandomSeed;

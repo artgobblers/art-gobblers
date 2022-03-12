@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {DSTest} from "ds-test/test.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/stdlib.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 
-contract PagesTest is DSTest {
+contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;
@@ -38,7 +38,7 @@ contract PagesTest is DSTest {
     }
 
     function testMintBeforeSetMint() public {
-        vm.expectRevert(mintNotStarted);
+        vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
         pages.mint();
     }
@@ -46,7 +46,7 @@ contract PagesTest is DSTest {
     function testMintBeforeStart() public {
         //set mint start in future
         pages.setMintStart(block.timestamp + 1);
-        vm.expectRevert(mintNotStarted);
+        vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
         pages.mint();
     }
@@ -73,9 +73,11 @@ contract PagesTest is DSTest {
 
     function testInitialPrice() public {
         pages.setMintStart(block.timestamp);
+
         uint256 cost = pages.pagePrice();
-        uint256 expectedCost = 419999999999999967660; // computed offline
-        assertEq(cost, expectedCost);
+        uint256 maxDelta = 32340;
+
+        assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
 
     function testInsufficientBalance() public {

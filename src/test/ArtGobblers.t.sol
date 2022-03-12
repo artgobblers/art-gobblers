@@ -114,7 +114,7 @@ contract ArtGobblersTest is DSTest {
     function testInitialGobblerPrice() public {
         gobblers.setMerkleRoot(0);
         uint256 cost = gobblers.gobblerPrice();
-        uint256 expectedCost = 69e18;
+        uint256 expectedCost = uint256(gobblers.initialPrice());
         assertEq(cost, expectedCost);
     }
 
