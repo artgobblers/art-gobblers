@@ -106,8 +106,6 @@ contract VRGDA {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // TODO: are these more expensive if they're in a lib?
-
     function wadMul(int256 x, int256 y) internal pure returns (int256 z) {
         assembly {
             // TODO: do we need overflow checks here?
@@ -116,7 +114,6 @@ contract VRGDA {
     }
 
     /// @dev Note: Will return 0 instead of reverting if y is zero.
-    /// TODO: do we need to use SDIV?
     function wadDiv(int256 x, int256 y) internal pure returns (int256 z) {
         assembly {
             // TODO: do we need overflow checks here?
@@ -124,6 +121,8 @@ contract VRGDA {
         }
     }
 
+    /// @dev Note: Takes an int256 but assumes it's positive.
+    /// @dev Only returns positive numbers, uses int256 for convenience.
     function wadSqrt(int256 x) internal pure returns (int256 z) {
         assembly {
             // Scale x by 1e18 to keep the result accurate.
