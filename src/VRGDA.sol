@@ -64,7 +64,7 @@ contract VRGDA {
         periodPriceDecrease = _periodPriceDecrease;
 
         unchecked {
-            initialValue = // See: https://www.wolframcloud.com/env/t11s/Published/gobbler-pricing
+            initialValue =
                 logisticScale.mul(
                     1e18 -
                         (timeScale.mul(timeShift)).div(
