@@ -216,7 +216,7 @@ contract VRGDA {
 
             x *= 100; // Scale x to 20 decimals for extra precision.
 
-            uint256 precomputed = 1e20; // Will store the product of precomputed powers of 2 (which almost add up to x) exp'd.
+            int256 precomputed = 1e20; // Will store the product of precomputed powers of 2 (which almost add up to x) exp'd.
 
             assembly {
                 if iszero(lt(x, 3200000000000000000000)) {
@@ -278,8 +278,8 @@ contract VRGDA {
 
             // We'll be using the Taylor series for e^x which looks like: 1 + x + (x^2 / 2!) + ... + (x^n / n!)
             // to approximate the exp of the remaining value x not covered by the precomputed product above.
-            uint256 term = uint256(x); // Will track each term in the Taylor series, beginning with x.
-            uint256 series = 1e20 + term; // The Taylor series begins with 1 plus the first term, x.
+            int256 term = x; // Will track each term in the Taylor series, beginning with x.
+            int256 series = 1e20 + term; // The Taylor series begins with 1 plus the first term, x.
 
             assembly {
                 term := div(mul(term, x), 200000000000000000000) // Equal to dividing x^2 by 2e20 as the first term was just x.
@@ -317,7 +317,7 @@ contract VRGDA {
             }
 
             // Since e^x * e^y equals e^(x+y) we multiply our Taylor series and precomputed exp'd powers of 2 to get the final result scaled by 1e20.
-            return ((int256((series * precomputed) / 1e20)) * z) / 100; // We divide the final result by 100 to scale it back down to 18 decimals of precision.
+            return (((series * precomputed) / 1e20) * z) / 100; // We divide the final result by 100 to scale it back down to 18 decimals of precision.
         }
     }
 }
