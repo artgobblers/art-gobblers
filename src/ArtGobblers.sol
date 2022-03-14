@@ -81,7 +81,7 @@ contract ArtGobblers is
     /// @notice Price decrease 25% per period.
     int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    /// @notice TimeShift is 0 to give us appropriate issuance curve
+    /// @notice Time shift is 0 to give us appropriate issuance curve.
     int256 private immutable timeShift = 0;
 
     /// @notice Timestamp for start of mint.
