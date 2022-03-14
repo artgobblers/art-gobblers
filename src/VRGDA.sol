@@ -12,6 +12,7 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 /// are ahead of schedule, prices should go down.
 contract VRGDA {
     using PRBMathSD59x18 for int256;
+    using FixedPointMathLib for uint256;
 
     /// @notice Initial price of NFTs, to be scaled according to sales rate.
     /// @dev Represented as a PRBMathSD59x18 number.
@@ -64,6 +65,7 @@ contract VRGDA {
         periodPriceDecrease = _periodPriceDecrease;
 
         // TODO: use the new formula logistic to compute dis
+        //
         initialValue =
             logisticScale.mul(
                 one59x18 -
@@ -84,26 +86,105 @@ contract VRGDA {
     /// @param timeSinceStart The time since the initial sale, in seconds.
     /// @param id The token id to get the price of at the current time.
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
-        int256 logisticValue = int256(id).fromInt() + initialValue;
+        unchecked {
+            int256 idWad = int256(id * 1e18);
+            int256 timeSinceStartWad = int256(timeSinceStart * 1e18);
 
-        // See: https://www.wolframcloud.com/env/t11s/Published/simplify-gobbler-pricing
-        int256 exponent = decayConstant.mul(
-            // We convert seconds to days here to prevent overflow.
-            PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) +
-                (logisticScale - (2 * logisticValue)).div(
-                    timeScale.mul(
-                        int256(
-                            FixedPointMathLib.sqrt(
-                                1e18 * uint256((logisticScale - initialValue - int256(id).fromInt()).mul(logisticValue))
-                            )
-                        )
-                    )
-                ) -
-                timeShift
-        );
+            int256 logisticValue = idWad + initialValue;
 
-        int256 scalingFactor = exponent.exp(); // This will always be positive.
+            // See: https://www.wolframcloud.com/env/t11s/Published/gobbler-pricing
+            int256 exponent = decayConstant.mul(
+                // We convert seconds to days here to prevent overflow.
+                wadDiv(timeSinceStartWad, dayScaling) +
+                    wadDiv(
+                        logisticScale - (logisticValue << 1),
+                        wadMul(timeScale, wadSqrt(wadMul(logisticScale - initialValue - idWad, logisticValue)))
+                    ) -
+                    timeShift
+            );
 
-        return uint256(initialPrice.mul(scalingFactor));
+            return uint256(wadMul(initialPrice, exponent.exp()));
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // TODO: are these more expensive if they're in a lib?
+
+    function wadSqrt(int256 x) internal pure returns (int256 z) {
+        assembly {
+            // Scale x by 1e18 to keep the result accurate.
+            // TODO: do we need overflow checks here?
+            x := mul(x, 1000000000000000000)
+
+            // Start off with z at 1.
+            z := 1
+
+            // Used below to help find a nearby power of 2.
+            let y := x
+
+            // Find the lowest power of 2 that is at least sqrt(x).
+            if iszero(lt(y, 0x100000000000000000000000000000000)) {
+                y := shr(128, y) // Like dividing by 2 ** 128.
+                z := shl(64, z) // Like multiplying by 2 ** 64.
+            }
+            if iszero(lt(y, 0x10000000000000000)) {
+                y := shr(64, y) // Like dividing by 2 ** 64.
+                z := shl(32, z) // Like multiplying by 2 ** 32.
+            }
+            if iszero(lt(y, 0x100000000)) {
+                y := shr(32, y) // Like dividing by 2 ** 32.
+                z := shl(16, z) // Like multiplying by 2 ** 16.
+            }
+            if iszero(lt(y, 0x10000)) {
+                y := shr(16, y) // Like dividing by 2 ** 16.
+                z := shl(8, z) // Like multiplying by 2 ** 8.
+            }
+            if iszero(lt(y, 0x100)) {
+                y := shr(8, y) // Like dividing by 2 ** 8.
+                z := shl(4, z) // Like multiplying by 2 ** 4.
+            }
+            if iszero(lt(y, 0x10)) {
+                y := shr(4, y) // Like dividing by 2 ** 4.
+                z := shl(2, z) // Like multiplying by 2 ** 2.
+            }
+            if iszero(lt(y, 0x8)) {
+                // Equivalent to 2 ** z.
+                z := shl(1, z)
+            }
+
+            // Shifting right by 1 is like dividing by 2.
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+
+            // Compute a rounded down version of z.
+            let zRoundDown := div(x, z)
+
+            // If zRoundDown is smaller, use it.
+            if lt(zRoundDown, z) {
+                z := zRoundDown
+            }
+        }
+    }
+
+    function wadMul(int256 x, int256 y) internal pure returns (int256 z) {
+        assembly {
+            // TODO: do we need overflow checks here?
+            z := sdiv(mul(x, y), 1000000000000000000)
+        }
+    }
+
+    /// @dev Note: Will return 0 instead of reverting if y is zero.
+    /// TODO: do we need to use SDIV?
+    function wadDiv(int256 x, int256 y) internal pure returns (int256 z) {
+        assembly {
+            // TODO: do we need overflow checks here?
+
+            z := sdiv(mul(x, 1000000000000000000), y)
+        }
     }
 }
