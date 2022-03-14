@@ -48,6 +48,8 @@ contract BenchmarksTest is DSTest {
         gobblers.setMerkleRoot("root");
         gobblers.mintFromGoop();
 
+        pages.mint(); // Initialize the page storage slots.
+
         vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.
     }
 
