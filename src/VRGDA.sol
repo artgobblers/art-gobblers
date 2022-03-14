@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
+import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 /// @title Variable Rate Gradual Dutch Auction
 /// @notice The goal of this mechanism is to sell NFTs roughly according to an issuance schedule.
@@ -62,7 +63,19 @@ contract VRGDA {
         initialPrice = _initialPrice;
         periodPriceDecrease = _periodPriceDecrease;
 
-        initialValue = logisticScale.div(one59x18 + timeScale.mul(timeShift).exp());
+        // TODO: use the new formula logistic to compute dis
+        initialValue =
+            logisticScale.mul(
+                one59x18 -
+                    (timeScale.mul(timeShift)).div(
+                        PRBMathSD59x18.sqrt(
+                            4e18 +
+                                //
+                                (timeScale.mul(timeScale)).mul(timeShift.mul(timeShift))
+                        )
+                    )
+            ) /
+            2;
 
         decayConstant = -(one59x18 - periodPriceDecrease).ln();
     }
@@ -73,11 +86,16 @@ contract VRGDA {
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         int256 logisticValue = int256(id).fromInt() + initialValue;
 
+        // See: https://www.wolframcloud.com/env/t11s/Published/simplify-gobbler-pricing
         int256 exponent = decayConstant.mul(
             // We convert seconds to days here to prevent overflow.
-            PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) -
-                timeShift +
-                (logisticScale.div(logisticValue) - one59x18).ln().div(timeScale)
+            PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) +
+                (logisticScale - (2 * logisticValue)).div(
+                    timeScale.mul(
+                        PRBMathSD59x18.sqrt((logisticScale - initialValue - int256(id).fromInt()).mul(logisticValue))
+                    )
+                ) -
+                timeShift
         );
 
         int256 scalingFactor = exponent.exp(); // This will always be positive.
