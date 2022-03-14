@@ -10,44 +10,42 @@ import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 /// and prices new NFTs accordingly. If we are behind schedule, price should go down. If we
 /// are ahead of schedule, prices should go down.
 contract VRGDA {
-    using PRBMathSD59x18 for int256;
+    /// @notice Scaling constant to change units between days and seconds.
+    /// @dev Represented as an 18 decimal fixed point number.
+    int256 internal immutable dayScaling = 1 days * 1e18;
 
     /// @notice Initial price of NFTs, to be scaled according to sales rate.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable initialPrice;
 
     /// @notice This parameter controls the logistic curve's maximum
     /// value, which controls the maximum number of NFTs to be issued.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable logisticScale;
 
     /// @notice Time scale controls the steepness of the logistic curve, which
     /// effects the time period by which we want to reach the asymptote of the curve.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable timeScale;
 
     /// @notice Controls the time in which we reach the sigmoid's midpoint.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable timeShift;
 
     /// @notice controls how quickly price reacts to deviations from issuance schedule.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable periodPriceDecrease;
 
-    /// @notice scaling constant to change units between days and seconds.
-    /// @dev Represented as a PRBMathSD59x18 number.
-    int256 internal immutable dayScaling = 1 days * 1e18;
-
     /// @notice The initial value the VRGDA logistic pricing formula would output.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable initialValue;
 
     /// @notice Precomputed constant that allows us to rewrite a .pow() as a .exp().
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
     /// @dev Difference between logisticScale and initialValue.
-    /// @dev Represented as a PRBMathSD59x18 number.
+    /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable initialScaleDelta;
 
     constructor(
@@ -65,15 +63,17 @@ contract VRGDA {
 
         unchecked {
             initialValue =
-                logisticScale.mul(
+                wadMul(
+                    logisticScale,
                     1e18 -
-                        (timeScale.mul(timeShift)).div(
-                            PRBMathSD59x18.sqrt(4e18 + (timeScale.mul(timeScale)).mul(timeShift.mul(timeShift)))
+                        wadDiv(
+                            wadMul(timeScale, timeShift),
+                            wadSqrt(4e18 + wadMul(wadMul(timeScale, timeScale), wadMul(timeShift, timeShift)))
                         )
                 ) >>
                 1;
 
-            decayConstant = -(1e18 - periodPriceDecrease).ln();
+            decayConstant = -PRBMathSD59x18.ln(1e18 - periodPriceDecrease);
 
             initialScaleDelta = logisticScale - initialValue;
         }
@@ -104,7 +104,7 @@ contract VRGDA {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     function wadMul(int256 x, int256 y) internal pure returns (int256 z) {
         assembly {
