@@ -92,7 +92,11 @@ contract VRGDA {
             PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling) +
                 (logisticScale - (2 * logisticValue)).div(
                     timeScale.mul(
-                        PRBMathSD59x18.sqrt((logisticScale - initialValue - int256(id).fromInt()).mul(logisticValue))
+                        int256(
+                            FixedPointMathLib.sqrt(
+                                1e18 * uint256((logisticScale - initialValue - int256(id).fromInt()).mul(logisticValue))
+                            )
+                        )
                     )
                 ) -
                 timeShift
