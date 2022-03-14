@@ -48,8 +48,9 @@ contract VRGDA {
     /// @dev Represented as a PRBMathSD59x18 number.
     int256 internal immutable decayConstant;
 
-    /// @notice Precompute 1 expressed scaled as a PRBMathSD59x18 number.
-    int256 internal immutable one59x18 = int256(1).fromInt();
+    /// @dev Difference between logisticScale and initialValue.
+    /// @dev Represented as a PRBMathSD59x18 number.
+    int256 internal immutable initialScaleDelta;
 
     constructor(
         int256 _logisticScale,
@@ -64,22 +65,20 @@ contract VRGDA {
         initialPrice = _initialPrice;
         periodPriceDecrease = _periodPriceDecrease;
 
-        // TODO: use the new formula logistic to compute dis
-        //
-        initialValue =
-            logisticScale.mul(
-                one59x18 -
-                    (timeScale.mul(timeShift)).div(
-                        PRBMathSD59x18.sqrt(
-                            4e18 +
-                                //
-                                (timeScale.mul(timeScale)).mul(timeShift.mul(timeShift))
+        unchecked {
+            initialValue = // See: https://www.wolframcloud.com/env/t11s/Published/gobbler-pricing
+                logisticScale.mul(
+                    1e18 -
+                        (timeScale.mul(timeShift)).div(
+                            PRBMathSD59x18.sqrt(4e18 + (timeScale.mul(timeScale)).mul(timeShift.mul(timeShift)))
                         )
-                    )
-            ) /
-            2;
+                ) >>
+                1;
 
-        decayConstant = -(one59x18 - periodPriceDecrease).ln();
+            decayConstant = -(1e18 - periodPriceDecrease).ln();
+
+            initialScaleDelta = logisticScale - initialValue;
+        }
     }
 
     /// @notice Calculate the price of an according to VRGDA algorithm.
@@ -88,19 +87,19 @@ contract VRGDA {
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         unchecked {
             int256 idWad = int256(id * 1e18);
-            int256 timeSinceStartWad = int256(timeSinceStart * 1e18);
+            int256 daysSinceStartWad = wadDiv(int256(timeSinceStart * 1e18), dayScaling);
 
             int256 logisticValue = idWad + initialValue;
 
             // See: https://www.wolframcloud.com/env/t11s/Published/gobbler-pricing
-            int256 exponent = decayConstant.mul(
-                // We convert seconds to days here to prevent overflow.
-                wadDiv(timeSinceStartWad, dayScaling) +
+            int256 exponent = wadMul(
+                daysSinceStartWad +
                     wadDiv(
-                        logisticScale - (logisticValue << 1),
-                        wadMul(timeScale, wadSqrt(wadMul(logisticScale - initialValue - idWad, logisticValue)))
+                        logisticScale - (logisticValue << 1), // Left shift is like multiplying by 2.
+                        wadMul(timeScale, wadSqrt(wadMul(initialScaleDelta - idWad, logisticValue)))
                     ) -
-                    timeShift
+                    timeShift,
+                decayConstant
             );
 
             return uint256(wadMul(initialPrice, exponent.exp()));
