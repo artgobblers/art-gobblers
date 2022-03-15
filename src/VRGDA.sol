@@ -103,7 +103,7 @@ contract VRGDA {
     /**
      * @dev Natural logarithm (ln(a)) with signed 18 decimal fixed point argument.
      */
-    function wadLn(int256 a) internal pure returns (int256) {
+    function wadLn(int256 a) internal pure returns (int256 ret) {
         unchecked {
             // The real natural logarithm is not defined for negative numbers or zero.
             // TODO: did i do this conversion to <= from < properly? should i have added or subtracted one lol
@@ -319,7 +319,9 @@ contract VRGDA {
                 // with 20 decimals). All that remains is to sum these two, and then drop two digits to return a 18 decimal
                 // value.
 
-                return (sum + seriesSum) / 100;
+                assembly {
+                    ret := div(add(sum, seriesSum), 100)
+                }
             }
         }
     }
