@@ -108,13 +108,13 @@ contract VRGDA {
             // The real natural logarithm is not defined for negative numbers or zero.
             // TODO: did i do this conversion to <= from < properly? should i have added or subtracted one lol
 
-            // bool ln36;
+            bool ln36;
 
-            // assembly {
-            //     ln36 := and(gt(a,90000000000000000 ), lt(a,1100000000000000000))
-            // }
+            assembly {
+                ln36 := and(gt(a, 90000000000000000), lt(a, 1100000000000000000))
+            }
 
-            if (a >= 900000000000000001 && 1099999999999999999 >= a) {
+            if (ln36) {
                 // Since ln(1) = 0, a value of x close to one will yield a very small result, which makes using 36 digits
                 // worthwhile.
 
@@ -156,6 +156,29 @@ contract VRGDA {
 
                 num = (num * z_squared) / 1e36;
                 seriesSum += num / 15;
+
+                //                 assembly {
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 3))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 5))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 7))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 9))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 11))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 13))
+
+                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
+                //     seriesSum := add(seriesSum, div(num, 15))
+                // }
 
                 // 8 Taylor terms are sufficient for 36 decimal precision.
 
