@@ -136,49 +136,28 @@ contract VRGDA {
                 int256 seriesSum = num;
 
                 // In each step, the numerator is multiplied by z^2
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 3;
+                assembly {
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 3))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 5;
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 5))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 7;
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 7))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 9;
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 9))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 11;
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 11))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 13;
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 13))
 
-                num = (num * z_squared) / 1e36;
-                seriesSum += num / 15;
-
-                //                 assembly {
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 3))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 5))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 7))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 9))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 11))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 13))
-
-                //     num := div(mul(num, z_squared), 1000000000000000000000000000000000000)
-                //     seriesSum := add(seriesSum, div(num, 15))
-                // }
+                    num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
+                    seriesSum := add(seriesSum, sdiv(num, 15))
+                }
 
                 // 8 Taylor terms are sufficient for 36 decimal precision.
 
