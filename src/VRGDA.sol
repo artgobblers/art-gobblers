@@ -126,8 +126,19 @@ contract VRGDA {
 
                 // Recall that 36 digit fixed point division requires multiplying by ONE_36, and multiplication requires
                 // division by ONE_36.
-                int256 z = ((a - 1e36) * 1e36) / (a + 1e36);
-                int256 z_squared = (z * z) / 1e36;
+
+                int256 z;
+                assembly {
+                    z := sdiv(
+                        mul(sub(a, 1000000000000000000000000000000000000), 1000000000000000000000000000000000000),
+                        add(a, 1000000000000000000000000000000000000)
+                    )
+                }
+
+                int256 z_squared;
+                assembly {
+                    z_squared := sdiv(mul(z, z), 1000000000000000000000000000000000000)
+                }
 
                 // num is the numerator of the series: the z^(2 * n + 1) term
                 int256 num = z;
