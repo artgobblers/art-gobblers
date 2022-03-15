@@ -161,8 +161,7 @@ contract VRGDA {
 
                 // 8 Taylor terms are sufficient for 36 decimal precision.
 
-                // All that remains is multiplying by 2 (non fixed point).
-                return (seriesSum * 2) / 1e18; // TODO: can prob combine the mul and div into one op
+                return (seriesSum) / 0.5e18; // Like multiplying by 2 and then dividing by 1e18.
             } else {
                 // TODO: did i transform this from < to <= right?
                 if (a <= 999999999999999999) {
