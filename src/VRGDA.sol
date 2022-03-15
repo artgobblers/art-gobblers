@@ -171,8 +171,9 @@ contract VRGDA {
                 }
 
                 // 8 Taylor terms are sufficient for 36 decimal precision.
-
-                return (seriesSum) / 0.5e18; // Like multiplying by 2 and then dividing by 1e18.
+                assembly {
+                    ret := sdiv(seriesSum, 500000000000000000)
+                }
             } else {
                 // TODO: did i transform this from < to <= right?
                 if (a <= 999999999999999999) {
