@@ -58,7 +58,7 @@ contract VRGDA {
         periodPriceDecrease = _periodPriceDecrease;
 
         unchecked {
-            decayConstant = -wadLn(1e18 - periodPriceDecrease);
+            decayConstant = wadLn(1e18 - periodPriceDecrease);
 
             initialValue = wadDiv(logisticScale, 1e18 + wadExp(wadMul(timeScale, timeShift)));
         }
