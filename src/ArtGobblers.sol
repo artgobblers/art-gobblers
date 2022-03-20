@@ -8,10 +8,9 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
-import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
-
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
+import {wadDiv} from "./utils/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
@@ -30,7 +29,6 @@ contract ArtGobblers is
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
-    using PRBMathSD59x18 for int256;
 
     /// ----------------------------
     /// ---- Minting Parameters ----
@@ -72,22 +70,22 @@ contract ArtGobblers is
     /// ----------------------------
 
     /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
-    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(69);
+    int256 public immutable initialPrice = 69e18;
 
     /// @notice Scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve, which needs
-    /// to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
-    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
+    /// to be exactly 1 above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
+    int256 private immutable logisticScale = int256(MAX_GOOP_MINT + 1) * 2e18;
 
     /// @notice Time scale of 1/60 gives us the appropriate time period for sales.
-    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
+    int256 private immutable timeScale = wadDiv(1e18, 60e18);
 
     /// @notice Price decrease 25% per period.
-    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable periodPriceDecrease = 0.25e18;
 
-    /// @notice Time shift is 0 to give us appropriate issuance curve.
+    /// @notice Time shift is 0 to give us an appropriate issuance curve.
     int256 private immutable timeShift = 0;
 
-    /// @notice Timestamp for start of mint.
+    /// @notice Timestamp for the start of the mint.
     uint256 public mintStart;
 
     /// @notice Number of gobblers minted from goop.

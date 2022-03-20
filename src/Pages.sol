@@ -7,6 +7,7 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
+import {wadDiv} from "./utils/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
@@ -39,28 +40,28 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(420);
+    int256 public immutable initialPrice = 420e18;
 
-    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(10024);
+    int256 private immutable logisticScale = 10024e18;
 
-    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(30));
+    int256 private immutable timeScale = wadDiv(1e18, 30e18);
 
-    int256 private immutable timeShift = PRBMathSD59x18.fromInt(180);
+    int256 private immutable timeShift = 180e18;
 
-    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable periodPriceDecrease = 0.25e18;
 
-    int256 private immutable perPeriodPostSwitchover = PRBMathSD59x18.fromInt(10).div(PRBMathSD59x18.fromInt(3));
+    int256 private immutable perPeriodPostSwitchover = wadDiv(10e18, 3e18);
 
-    int256 private immutable switchoverTime = PRBMathSD59x18.fromInt(360);
+    int256 private immutable switchoverTime = 360e18;
 
     /// @notice Equal to 1 - periodPriceDecrease.
-    int256 private immutable priceScaling = PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable priceScaling = 0.75e18;
 
     /// @notice Number of pages sold before we switch pricing functions.
     uint256 private numPagesSwitch = 9975;
 
-    /// @notice Start of public mint.
-    /// @dev Begins as type(uint256).max to pagePrice() underflow before minting starts.
+    /// @notice The start timestamp of the public mint.
+    /// @dev Begins as type(uint256).max to force pagePrice() to underflow before minting starts.
     uint256 private mintStart = type(uint256).max;
 
     /// -----------------------
@@ -101,9 +102,11 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
 
         goop.burnForPages(msg.sender, price);
 
-        _mint(msg.sender, ++currentId);
+        unchecked {
+            _mint(msg.sender, ++currentId);
 
-        numMintedFromGoop++;
+            numMintedFromGoop++;
+        }
     }
 
     /// @notice Set mint start timestamp for regular minting.
@@ -113,7 +116,9 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
 
     /// @notice Mint by authority without paying mint cost.
     function mintByAuth(address addr) public only(artGobblers) {
-        _mint(addr, ++currentId);
+        unchecked {
+            _mint(addr, ++currentId);
+        }
     }
 
     /// @notice Calculate the mint cost of a page.
@@ -121,6 +126,8 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// VRGDA pricing algorithm, otherwise we use the post-switch pricing formula.
     /// @dev Reverts due to underflow if minting hasn't started yet. Done to save gas.
     function pagePrice() public view returns (uint256) {
+        // We need checked math here to cause overflow
+        // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
         return
@@ -145,8 +152,6 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (tokenId > currentId) return "";
-
-        return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        return tokenId > currentId ? "" : string(abi.encodePacked(BASE_URI, tokenId.toString()));
     }
 }
