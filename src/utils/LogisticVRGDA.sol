@@ -74,21 +74,10 @@ contract LogisticVRGDA {
                         wadExp(
                             wadMul(
                                 decayConstant,
-                                wadDiv(
-                                    //
-                                    int256(timeSinceStart * 1e18),
-                                    DAYS_WAD
-                                ) -
+                                wadDiv(int256(timeSinceStart * 1e18), DAYS_WAD) -
                                     timeShift +
                                     wadDiv(
-                                        wadLn(
-                                            //
-                                            wadDiv(
-                                                logisticScale,
-                                                //
-                                                int256(id * 1e18) + initialValue
-                                            ) - 1e18
-                                        ),
+                                        wadLn(wadDiv(logisticScale, int256(id * 1e18) + initialValue) - 1e18),
                                         timeScale
                                     )
                             )
@@ -98,9 +87,223 @@ contract LogisticVRGDA {
         }
     }
 
-    /**
-     * @dev Natural logarithm (ln(a)) with signed 18 decimal fixed point argument.
-     */
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function wadMul(int256 x, int256 y) internal pure returns (int256 z) {
+        assembly {
+            // TODO: do we need overflow checks here?
+            z := sdiv(mul(x, y), 1000000000000000000)
+        }
+    }
+
+    /// @dev Note: Will return 0 instead of reverting if y is zero.
+    function wadDiv(int256 x, int256 y) internal pure returns (int256 z) {
+        assembly {
+            // TODO: do we need overflow checks here?
+            z := sdiv(mul(x, 1000000000000000000), y)
+        }
+    }
+
+    /// @dev Note: Takes an int256 but assumes it's positive.
+    /// @dev Only returns positive numbers, uses int256 for convenience.
+    function wadSqrt(int256 x) internal pure returns (int256 z) {
+        assembly {
+            // Scale x by 1e18 to keep the result accurate.
+            // TODO: do we need overflow checks here?
+            x := mul(x, 1000000000000000000)
+
+            // Start off with z at 1.
+            z := 1
+
+            // Used below to help find a nearby power of 2.
+            let y := x
+
+            // Find the lowest power of 2 that is at least sqrt(x).
+            if iszero(lt(y, 0x100000000000000000000000000000000)) {
+                y := shr(128, y) // Like dividing by 2 ** 128.
+                z := shl(64, z) // Like multiplying by 2 ** 64.
+            }
+            if iszero(lt(y, 0x10000000000000000)) {
+                y := shr(64, y) // Like dividing by 2 ** 64.
+                z := shl(32, z) // Like multiplying by 2 ** 32.
+            }
+            if iszero(lt(y, 0x100000000)) {
+                y := shr(32, y) // Like dividing by 2 ** 32.
+                z := shl(16, z) // Like multiplying by 2 ** 16.
+            }
+            if iszero(lt(y, 0x10000)) {
+                y := shr(16, y) // Like dividing by 2 ** 16.
+                z := shl(8, z) // Like multiplying by 2 ** 8.
+            }
+            if iszero(lt(y, 0x100)) {
+                y := shr(8, y) // Like dividing by 2 ** 8.
+                z := shl(4, z) // Like multiplying by 2 ** 4.
+            }
+            if iszero(lt(y, 0x10)) {
+                y := shr(4, y) // Like dividing by 2 ** 4.
+                z := shl(2, z) // Like multiplying by 2 ** 2.
+            }
+            if iszero(lt(y, 0x8)) {
+                // Equivalent to 2 ** z.
+                z := shl(1, z)
+            }
+
+            // Shifting right by 1 is like dividing by 2.
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+
+            // Compute a rounded down version of z.
+            let zRoundDown := div(x, z)
+
+            // If zRoundDown is smaller, use it.
+            if lt(zRoundDown, z) {
+                z := zRoundDown
+            }
+        }
+    }
+
+    function wadExp(int256 x) internal pure returns (int256 z) {
+        unchecked {
+            // TODO: do we need to check x is less than the max of 130e18 ish
+            // TODO: do we need to check x is greater than the min of int min
+
+            if (x < 0) {
+                z = wadExp(-x); // Compute exp for x as a positive.
+
+                assembly {
+                    // Divide it by 1e36, to get the inverse of the result.
+                    z := div(1000000000000000000000000000000000000, z)
+                }
+
+                return z; // Beyond this if statement we know x is positive.
+            }
+
+            z = 1; // Will multiply the result by this at the end. Default to 1 as a no-op, may be increased below.
+
+            if (x >= 128000000000000000000) {
+                x -= 128000000000000000000; // 2ˆ7 scaled by 1e18.
+
+                // Because eˆ12800000000000000000 exp'd is too large to fit in 20 decimals, we'll store it unscaled.
+                z = 38877084059945950922200000000000000000000000000000000000; // We'll multiply by this at the end.
+            } else if (x >= 64000000000000000000) {
+                x -= 64000000000000000000; // 2^6 scaled by 1e18.
+
+                // Because eˆ64000000000000000000 exp'd is too large to fit in 20 decimals, we'll store it unscaled.
+                z = 6235149080811616882910000000; // We'll multiply by this at the end, assuming x is large enough.
+            }
+
+            x *= 100; // Scale x to 20 decimals for extra precision.
+
+            int256 precomputed = 1e20; // Will store the product of precomputed powers of 2 (which almost add up to x) exp'd.
+
+            assembly {
+                if iszero(lt(x, 3200000000000000000000)) {
+                    x := sub(x, 3200000000000000000000) // 2ˆ5 scaled by 1e18.
+
+                    // Multiplied by eˆ3200000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 7896296018268069516100000000000000), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 1600000000000000000000)) {
+                    x := sub(x, 1600000000000000000000) // 2ˆ4 scaled by 1e18.
+
+                    // Multiplied by eˆ16000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 888611052050787263676000000), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 800000000000000000000)) {
+                    x := sub(x, 800000000000000000000) // 2ˆ3 scaled by 1e18.
+
+                    // Multiplied by eˆ8000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 2980957987041728274740004), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 400000000000000000000)) {
+                    x := sub(x, 400000000000000000000) // 2ˆ2 scaled by 1e18.
+
+                    // Multiplied by eˆ4000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 5459815003314423907810), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 200000000000000000000)) {
+                    x := sub(x, 200000000000000000000) // 2ˆ1 scaled by 1e18.
+
+                    // Multiplied by eˆ2000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 738905609893065022723), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 100000000000000000000)) {
+                    x := sub(x, 100000000000000000000) // 2ˆ0 scaled by 1e18.
+
+                    // Multiplied by eˆ1000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 271828182845904523536), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 50000000000000000000)) {
+                    x := sub(x, 50000000000000000000) // 2ˆ-1 scaled by 1e18.
+
+                    // Multiplied by eˆ5000000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 164872127070012814685), 100000000000000000000)
+                }
+
+                if iszero(lt(x, 25000000000000000000)) {
+                    x := sub(x, 25000000000000000000) // 2ˆ-2 scaled by 1e18.
+
+                    // Multiplied by eˆ250000000000000000 scaled by 1e20 and divided by 1e20.
+                    precomputed := div(mul(precomputed, 128402541668774148407), 100000000000000000000)
+                }
+            }
+
+            // We'll be using the Taylor series for e^x which looks like: 1 + x + (x^2 / 2!) + ... + (x^n / n!)
+            // to approximate the exp of the remaining value x not covered by the precomputed product above.
+            int256 term = x; // Will track each term in the Taylor series, beginning with x.
+            int256 series = 1e20 + term; // The Taylor series begins with 1 plus the first term, x.
+
+            assembly {
+                term := div(mul(term, x), 200000000000000000000) // Equal to dividing x^2 by 2e20 as the first term was just x.
+                series := add(series, term)
+
+                term := div(mul(term, x), 300000000000000000000) // Equal to dividing x^3 by 6e20 (3!) as the last term was x divided by 2e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 400000000000000000000) // Equal to dividing x^4 by 24e20 (4!) as the last term was x divided by 6e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 500000000000000000000) // Equal to dividing x^5 by 120e20 (5!) as the last term was x divided by 24e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 600000000000000000000) // Equal to dividing x^6 by 720e20 (6!) as the last term was x divided by 120e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 700000000000000000000) // Equal to dividing x^7 by 5040e20 (7!) as the last term was x divided by 720e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 800000000000000000000) // Equal to dividing x^8 by 40320e20 (8!) as the last term was x divided by 5040e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 900000000000000000000) // Equal to dividing x^9 by 362880e20 (9!) as the last term was x divided by 40320e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 1000000000000000000000) // Equal to dividing x^10 by 3628800e20 (10!) as the last term was x divided by 362880e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 1100000000000000000000) // Equal to dividing x^11 by 39916800e20 (11!) as the last term was x divided by 3628800e20.
+                series := add(series, term)
+
+                term := div(mul(term, x), 1200000000000000000000) // Equal to dividing x^12 by 479001600e20 (12!) as the last term was x divided by 39916800e20.
+                series := add(series, term)
+            }
+
+            // Since e^x * e^y equals e^(x+y) we multiply our Taylor series and precomputed exp'd powers of 2 to get the final result scaled by 1e20.
+            return (((series * precomputed) / 1e20) * z) / 100; // We divide the final result by 100 to scale it back down to 18 decimals of precision.
+        }
+    }
+
     function wadLn(int256 a) internal pure returns (int256 ret) {
         unchecked {
             // The real natural logarithm is not defined for negative numbers or zero.
@@ -322,223 +525,6 @@ contract LogisticVRGDA {
                     ret := div(add(sum, seriesSum), 100)
                 }
             }
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    function wadMul(int256 x, int256 y) internal pure returns (int256 z) {
-        assembly {
-            // TODO: do we need overflow checks here?
-            z := sdiv(mul(x, y), 1000000000000000000)
-        }
-    }
-
-    /// @dev Note: Will return 0 instead of reverting if y is zero.
-    function wadDiv(int256 x, int256 y) internal pure returns (int256 z) {
-        assembly {
-            // TODO: do we need overflow checks here?
-            z := sdiv(mul(x, 1000000000000000000), y)
-        }
-    }
-
-    /// @dev Note: Takes an int256 but assumes it's positive.
-    /// @dev Only returns positive numbers, uses int256 for convenience.
-    function wadSqrt(int256 x) internal pure returns (int256 z) {
-        assembly {
-            // Scale x by 1e18 to keep the result accurate.
-            // TODO: do we need overflow checks here?
-            x := mul(x, 1000000000000000000)
-
-            // Start off with z at 1.
-            z := 1
-
-            // Used below to help find a nearby power of 2.
-            let y := x
-
-            // Find the lowest power of 2 that is at least sqrt(x).
-            if iszero(lt(y, 0x100000000000000000000000000000000)) {
-                y := shr(128, y) // Like dividing by 2 ** 128.
-                z := shl(64, z) // Like multiplying by 2 ** 64.
-            }
-            if iszero(lt(y, 0x10000000000000000)) {
-                y := shr(64, y) // Like dividing by 2 ** 64.
-                z := shl(32, z) // Like multiplying by 2 ** 32.
-            }
-            if iszero(lt(y, 0x100000000)) {
-                y := shr(32, y) // Like dividing by 2 ** 32.
-                z := shl(16, z) // Like multiplying by 2 ** 16.
-            }
-            if iszero(lt(y, 0x10000)) {
-                y := shr(16, y) // Like dividing by 2 ** 16.
-                z := shl(8, z) // Like multiplying by 2 ** 8.
-            }
-            if iszero(lt(y, 0x100)) {
-                y := shr(8, y) // Like dividing by 2 ** 8.
-                z := shl(4, z) // Like multiplying by 2 ** 4.
-            }
-            if iszero(lt(y, 0x10)) {
-                y := shr(4, y) // Like dividing by 2 ** 4.
-                z := shl(2, z) // Like multiplying by 2 ** 2.
-            }
-            if iszero(lt(y, 0x8)) {
-                // Equivalent to 2 ** z.
-                z := shl(1, z)
-            }
-
-            // Shifting right by 1 is like dividing by 2.
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-
-            // Compute a rounded down version of z.
-            let zRoundDown := div(x, z)
-
-            // If zRoundDown is smaller, use it.
-            if lt(zRoundDown, z) {
-                z := zRoundDown
-            }
-        }
-    }
-
-    function wadExp(int256 x) internal pure returns (int256 z) {
-        unchecked {
-            // TODO: do we need to check x is less than the max of 130e18 ish
-            // TODO: do we need to check x is greater than the min of int min
-
-            if (x < 0) {
-                z = wadExp(-x); // Compute exp for x as a positive.
-
-                assembly {
-                    // Divide it by 1e36, to get the inverse of the result.
-                    z := div(1000000000000000000000000000000000000, z)
-                }
-
-                return z; // Beyond this if statement we know x is positive.
-            }
-
-            z = 1; // Will multiply the result by this at the end. Default to 1 as a no-op, may be increased below.
-
-            if (x >= 128000000000000000000) {
-                x -= 128000000000000000000; // 2ˆ7 scaled by 1e18.
-
-                // Because eˆ12800000000000000000 exp'd is too large to fit in 20 decimals, we'll store it unscaled.
-                z = 38877084059945950922200000000000000000000000000000000000; // We'll multiply by this at the end.
-            } else if (x >= 64000000000000000000) {
-                x -= 64000000000000000000; // 2^6 scaled by 1e18.
-
-                // Because eˆ64000000000000000000 exp'd is too large to fit in 20 decimals, we'll store it unscaled.
-                z = 6235149080811616882910000000; // We'll multiply by this at the end, assuming x is large enough.
-            }
-
-            x *= 100; // Scale x to 20 decimals for extra precision.
-
-            int256 precomputed = 1e20; // Will store the product of precomputed powers of 2 (which almost add up to x) exp'd.
-
-            assembly {
-                if iszero(lt(x, 3200000000000000000000)) {
-                    x := sub(x, 3200000000000000000000) // 2ˆ5 scaled by 1e18.
-
-                    // Multiplied by eˆ3200000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 7896296018268069516100000000000000), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 1600000000000000000000)) {
-                    x := sub(x, 1600000000000000000000) // 2ˆ4 scaled by 1e18.
-
-                    // Multiplied by eˆ16000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 888611052050787263676000000), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 800000000000000000000)) {
-                    x := sub(x, 800000000000000000000) // 2ˆ3 scaled by 1e18.
-
-                    // Multiplied by eˆ8000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 2980957987041728274740004), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 400000000000000000000)) {
-                    x := sub(x, 400000000000000000000) // 2ˆ2 scaled by 1e18.
-
-                    // Multiplied by eˆ4000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 5459815003314423907810), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 200000000000000000000)) {
-                    x := sub(x, 200000000000000000000) // 2ˆ1 scaled by 1e18.
-
-                    // Multiplied by eˆ2000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 738905609893065022723), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 100000000000000000000)) {
-                    x := sub(x, 100000000000000000000) // 2ˆ0 scaled by 1e18.
-
-                    // Multiplied by eˆ1000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 271828182845904523536), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 50000000000000000000)) {
-                    x := sub(x, 50000000000000000000) // 2ˆ-1 scaled by 1e18.
-
-                    // Multiplied by eˆ5000000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 164872127070012814685), 100000000000000000000)
-                }
-
-                if iszero(lt(x, 25000000000000000000)) {
-                    x := sub(x, 25000000000000000000) // 2ˆ-2 scaled by 1e18.
-
-                    // Multiplied by eˆ250000000000000000 scaled by 1e20 and divided by 1e20.
-                    precomputed := div(mul(precomputed, 128402541668774148407), 100000000000000000000)
-                }
-            }
-
-            // We'll be using the Taylor series for e^x which looks like: 1 + x + (x^2 / 2!) + ... + (x^n / n!)
-            // to approximate the exp of the remaining value x not covered by the precomputed product above.
-            int256 term = x; // Will track each term in the Taylor series, beginning with x.
-            int256 series = 1e20 + term; // The Taylor series begins with 1 plus the first term, x.
-
-            assembly {
-                term := div(mul(term, x), 200000000000000000000) // Equal to dividing x^2 by 2e20 as the first term was just x.
-                series := add(series, term)
-
-                term := div(mul(term, x), 300000000000000000000) // Equal to dividing x^3 by 6e20 (3!) as the last term was x divided by 2e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 400000000000000000000) // Equal to dividing x^4 by 24e20 (4!) as the last term was x divided by 6e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 500000000000000000000) // Equal to dividing x^5 by 120e20 (5!) as the last term was x divided by 24e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 600000000000000000000) // Equal to dividing x^6 by 720e20 (6!) as the last term was x divided by 120e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 700000000000000000000) // Equal to dividing x^7 by 5040e20 (7!) as the last term was x divided by 720e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 800000000000000000000) // Equal to dividing x^8 by 40320e20 (8!) as the last term was x divided by 5040e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 900000000000000000000) // Equal to dividing x^9 by 362880e20 (9!) as the last term was x divided by 40320e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 1000000000000000000000) // Equal to dividing x^10 by 3628800e20 (10!) as the last term was x divided by 362880e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 1100000000000000000000) // Equal to dividing x^11 by 39916800e20 (11!) as the last term was x divided by 3628800e20.
-                series := add(series, term)
-
-                term := div(mul(term, x), 1200000000000000000000) // Equal to dividing x^12 by 479001600e20 (12!) as the last term was x divided by 39916800e20.
-                series := add(series, term)
-            }
-
-            // Since e^x * e^y equals e^(x+y) we multiply our Taylor series and precomputed exp'd powers of 2 to get the final result scaled by 1e20.
-            return (((series * precomputed) / 1e20) * z) / 100; // We divide the final result by 100 to scale it back down to 18 decimals of precision.
         }
     }
 }

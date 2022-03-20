@@ -7,9 +7,11 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
-import {Goop} from "./Goop.sol";
-import {LogisticVRGDA} from "./LogisticVRGDA.sol";
+import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 
+import {Goop} from "./Goop.sol";
+
+/// @title Pages NFT (PAGE)
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     using Strings for uint256;

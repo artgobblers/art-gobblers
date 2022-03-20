@@ -12,12 +12,14 @@ import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
+import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {LogisticVRGDA} from "./LogisticVRGDA.sol";
 
 // TODO: UNCHECKED
 
+/// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
