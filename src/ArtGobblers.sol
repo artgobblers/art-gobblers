@@ -18,6 +18,7 @@ import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
+// TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.

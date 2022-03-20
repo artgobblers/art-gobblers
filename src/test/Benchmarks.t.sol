@@ -32,8 +32,6 @@ contract BenchmarksTest is DSTest {
     string private baseUri = "base";
 
     function setUp() public {
-        vm.warp(1); // Otherwise mintStart will be set to 0 and brick Pages.mint()
-
         utils = new Utilities();
         users = utils.createUsers(5);
         linkToken = new LinkToken();
