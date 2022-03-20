@@ -6,6 +6,7 @@ pragma solidity >=0.8.0;
 /// schedule is a logistic curve. The pricing function compares the total number of NFTs sold
 /// to the ideal number of sales based on the issuance schedule, and prices new NFTs accordingly.
 /// Prices go up when NFTs are being sold ahead of schedule, and go down when we are behind schedule.
+/// @dev More details available in the paper and/or notebook: https://github.com/transmissions11/VRGDAs
 contract LogisticVRGDA {
     /// @notice Scaling constant to change units between days and seconds.
     /// @dev Represented as an 18 decimal fixed point number.
