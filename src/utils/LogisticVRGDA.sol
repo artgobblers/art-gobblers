@@ -65,12 +65,11 @@ contract LogisticVRGDA {
     /// @notice Calculate the price of an according to VRGDA algorithm.
     /// @param timeSinceStart The time since the initial sale, in seconds.
     /// @param id The token id to get the price of at the current time.
-    // TODO: differentially fuzz against a version with overflow checks
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         unchecked {
             return
                 uint256(
-                    unsafeWadMul(
+                    wadMul(
                         initialPrice,
                         wadExp(
                             unsafeWadMul(

@@ -27,7 +27,7 @@ function wadDiv(int256 x, int256 y) pure returns (int256 z) {
         }
 
         // Divide z by y.
-        z := div(z, y)
+        z := sdiv(z, y)
     }
 }
 
