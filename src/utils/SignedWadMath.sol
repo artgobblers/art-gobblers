@@ -30,9 +30,8 @@ function wadDiv(int256 x, int256 y) pure returns (int256 z) {
         // Store x * y in z for now.
         z := mul(x, 1000000000000000000)
 
-        // Equivalent to require(y != 0 && (x == 0 || (x * 1e18) / x == 1e18))
-        // TODO: is it cheaper to div by 1e18 or x
-        if iszero(and(iszero(iszero(y)), or(iszero(x), eq(sdiv(z, x), 1000000000000000000)))) {
+        // Equivalent to require(y != 0 && (x == 0 || (x * 1e18) / 1e18 == x))
+        if iszero(and(iszero(iszero(y)), or(iszero(x), eq(sdiv(z, 1000000000000000000), x)))) {
             revert(0, 0)
         }
 
