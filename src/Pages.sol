@@ -8,10 +8,10 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {Goop} from "./Goop.sol";
-import {VRGDA} from "./VRGDA.sol";
+import {LogisticVRGDA} from "./LogisticVRGDA.sol";
 
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is ERC721("Pages", "PAGE"), VRGDA {
+contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -74,7 +74,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     error Unauthorized();
 
     constructor(address _goop, address _artist)
-        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        LogisticVRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
     {
         goop = Goop(_goop);
         artist = _artist;
@@ -135,7 +135,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
             PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
 
         // We convert seconds to days here, as we need to prevent overflow.
-        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling);
+        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(DAYS_WAD);
 
         int256 scalingFactor = priceScaling.pow(time - fInv); // This will always be positive.
 

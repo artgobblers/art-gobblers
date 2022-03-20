@@ -14,7 +14,7 @@ import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {VRGDA} from "./VRGDA.sol";
+import {LogisticVRGDA} from "./LogisticVRGDA.sol";
 
 // TODO: UNCHECKED
 
@@ -23,7 +23,7 @@ contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
     Auth(msg.sender, Authority(address(0))),
     VRFConsumerBase,
-    VRGDA
+    LogisticVRGDA
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
@@ -199,7 +199,7 @@ contract ArtGobblers is
         string memory _baseUri
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
-        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        LogisticVRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;

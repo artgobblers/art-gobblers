@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
-
-/// @title Variable Rate Gradual Dutch Auction
-/// @notice The goal of this mechanism is to sell NFTs roughly according to an issuance schedule.
-/// @dev In this case, the issuance schedule is a logistic curve. The pricing function compares
-/// the total number of NFTs sold vs the ideal number of sales based on the issuance schedule,
-/// and prices new NFTs accordingly. If we are behind schedule, price should go down. If we
-/// are ahead of schedule, prices should go down.
-contract VRGDA {
+/// @title Logistically Paced Variable Rate Gradual Dutch Auction
+/// @notice Sell NFTs roughly according to an issuance schedule. In this case, the issuance
+/// schedule is a logistic curve. The pricing function compares the total number of NFTs sold
+/// to the ideal number of sales based on the issuance schedule, and prices new NFTs accordingly.
+/// Prices go up when NFTs are being sold ahead of schedule, and go down when we are behind schedule.
+contract LogisticVRGDA {
     /// @notice Scaling constant to change units between days and seconds.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal immutable dayScaling = 1 days * 1e18;
+    int256 internal constant DAYS_WAD = 1 days * 1e18;
 
     /// @notice Initial price of NFTs, to be scaled according to sales rate.
     /// @dev Represented as an 18 decimal fixed point number.
@@ -79,7 +76,7 @@ contract VRGDA {
                                 wadDiv(
                                     //
                                     int256(timeSinceStart * 1e18),
-                                    dayScaling
+                                    DAYS_WAD
                                 ) -
                                     timeShift +
                                     wadDiv(
