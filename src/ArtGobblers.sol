@@ -12,18 +12,20 @@ import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
+import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {VRGDA} from "./VRGDA.sol";
 
 // TODO: UNCHECKED
 
+/// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
     Auth(msg.sender, Authority(address(0))),
     VRFConsumerBase,
-    VRGDA
+    LogisticVRGDA
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
@@ -81,7 +83,7 @@ contract ArtGobblers is
     /// @notice Price decrease 25% per period.
     int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    /// @notice TimeShift is 0 to give us appropriate issuance curve
+    /// @notice Time shift is 0 to give us appropriate issuance curve.
     int256 private immutable timeShift = 0;
 
     /// @notice Timestamp for start of mint.
@@ -199,7 +201,7 @@ contract ArtGobblers is
         string memory _baseUri
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
-        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        LogisticVRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;

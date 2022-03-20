@@ -75,7 +75,7 @@ contract PagesTest is DSTestPlus {
         pages.setMintStart(block.timestamp);
 
         uint256 cost = pages.pagePrice();
-        uint256 maxDelta = 32340;
+        uint256 maxDelta = 7_645_260; // 0.00000000000764526
 
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
