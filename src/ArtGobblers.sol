@@ -149,19 +149,21 @@ contract ArtGobblers is
     /// ----- Legendary Gobblers  -----
     /// -------------------------------
 
-    // TODO: pack these:
-
-    /// @notice Start price of current legendary gobbler auction.
-    uint256 public currentLegendaryGobblerStartPrice;
-
-    /// @notice Start timestamp of current legendary gobbler auction.
-    uint256 public currentLegendaryGobblerAuctionStart;
-
     /// @notice Last 10 ids are reserved for legendary gobblers.
     uint256 private immutable LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
 
-    /// @notice Id of last minted legendary gobbler.
-    uint256 public currentLegendaryId;
+    /// @notice Struct holding info required for legendary gobbler auctions.
+    struct LegendaryGobblerAuctionData {
+        /// @notice Start price of current legendary gobbler auction.
+        uint96 currentLegendaryGobblerStartPrice;
+        /// @notice Start timestamp of current legendary gobbler auction.
+        uint96 currentLegendaryGobblerAuctionStart;
+        /// @notice Id of last minted legendary gobbler.
+        uint64 currentLegendaryId;
+    }
+
+    /// @notice Data about the current legendary gobbler auction.
+    LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
 
     /// ----------------------------
     /// -------- Feeding Art  ------
@@ -212,13 +214,13 @@ contract ArtGobblers is
         BASE_URI = _baseUri;
 
         // Start price for legendary gobblers is 100 gobblers.
-        currentLegendaryGobblerStartPrice = 100;
+        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
 
         // First legendary gobbler auction starts 30 days after contract deploy.
-        currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint96(block.timestamp + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
-        currentLegendaryId = LEGENDARY_GOBBLER_ID_START;
+        legendaryGobblerAuctionData.currentLegendaryId = uint64(LEGENDARY_GOBBLER_ID_START);
     }
 
     /// @notice Set merkle root for minting whitelist, can only be done once.
@@ -252,6 +254,7 @@ contract ArtGobblers is
 
     /// @notice Mint from goop, burning the cost.
     function mintFromGoop() public {
+        // TODO: lets see if mintGobbler can cover this check for us
         if (numMintedFromGoop >= MAX_GOOP_MINT) revert NoRemainingGobblers();
 
         goop.burnForGobblers(msg.sender, gobblerPrice());
@@ -279,7 +282,7 @@ contract ArtGobblers is
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
-        uint256 currentId = currentLegendaryId;
+        uint256 currentId = legendaryGobblerAuctionData.currentLegendaryId;
 
         // When current ID surpasses max supply, we've minted all 10 legendary gobblers:
         if (currentId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
@@ -298,7 +301,7 @@ contract ArtGobblers is
             }
         }
 
-        uint256 newId = (currentLegendaryId = currentId + 1);
+        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint64(currentId + 1));
 
         // Mint the legendary gobbler.
         _mint(msg.sender, newId);
@@ -307,19 +310,23 @@ contract ArtGobblers is
         emit LegendaryGobblerMint(newId);
 
         // Start a new auction, 30 days after the previous start.
-        currentLegendaryGobblerAuctionStart += 30 days;
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
 
         // New start price is max of (100, prev_cost*2).
-        currentLegendaryGobblerStartPrice = cost < 50 ? 100 : cost << 1; // Shift left by 1 is like multiplication by 2.
+        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint96(cost < 50 ? 100 : cost << 1); // Shift left by 1 is like multiplication by 2.
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
     /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
     function legendaryGobblerPrice() public view returns (uint256) {
-        uint256 daysSinceStart = (block.timestamp - currentLegendaryGobblerAuctionStart) / 1 days;
+        uint256 daysSinceStart = (block.timestamp - legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart) /
+            1 days;
 
         // If more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days.
-        return daysSinceStart >= 30 ? 0 : (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
+        return
+            daysSinceStart >= 30
+                ? 0
+                : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
     /// @notice Get the random seed for revealing gobblers.
@@ -403,7 +410,8 @@ contract ArtGobblers is
         if (tokenId <= LEGENDARY_GOBBLER_ID_START) return "";
 
         // Between LEGENDARY_GOBBLER_ID_START and currentLegendaryId are minted legendaries.
-        if (tokenId <= currentLegendaryId) return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        if (tokenId <= legendaryGobblerAuctionData.currentLegendaryId)
+            return string(abi.encodePacked(BASE_URI, tokenId.toString()));
 
         return ""; // Unminted legendaries and invalid token ids.
     }

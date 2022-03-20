@@ -176,8 +176,11 @@ contract ArtGobblersTest is DSTest {
         vm.warp(startTime);
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
+
+        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
         //legendary is owned by user
-        assertEq(gobblers.ownerOf(gobblers.currentLegendaryId()), users[0]);
+        assertEq(gobblers.ownerOf(currentLegendaryId), users[0]);
         for (uint256 i = 1; i <= cost; i++) {
             //all gobblers burned
             ids.push(i);
@@ -216,15 +219,21 @@ contract ArtGobblersTest is DSTest {
         vm.warp(block.timestamp + 70 days);
         uint256[] memory _ids;
         gobblers.mintLegendaryGobbler(_ids);
-        uint256 legendaryId = gobblers.currentLegendaryId();
+
+        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
         //expected URI should not be shuffled
-        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), legendaryId.toString()));
-        string memory actualURI = gobblers.tokenURI(legendaryId);
+        string memory expectedURI = string(
+            abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
+        );
+        string memory actualURI = gobblers.tokenURI(currentLegendaryId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
     function testUnmintedLegendaryUri() public {
-        uint256 legendaryId = gobblers.currentLegendaryId() + 1;
+        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
+        uint256 legendaryId = currentLegendaryId + 1;
         assertEq(gobblers.tokenURI(legendaryId), "");
     }
 
