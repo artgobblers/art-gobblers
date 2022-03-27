@@ -17,6 +17,7 @@ import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
+// TODO: I believe gas went up in commit T cuz forge was underestimating earlier? need to double check
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 
 /// @title Art Gobblers NFT (GBLR)
@@ -464,7 +465,7 @@ contract ArtGobblers is
         uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
 
         // TODO: idt this accounts for wads
-
+        // TODO: unchecked
         return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
     }
 
