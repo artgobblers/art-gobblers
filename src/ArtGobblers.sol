@@ -21,6 +21,7 @@ import {Pages} from "./Pages.sol";
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 // TODO: check everything is being packed properly with forge inspect
 // TODO: ensure it was safe that we removed the max supply checks
+// TODO: can we make mint start constant by setting merkle root at deploy uwu would save sload
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -89,13 +90,11 @@ contract ArtGobblers is
     /// ---- VRGDA Input State ----
     /// ---------------------------
 
-    // TODO: pack
-
     /// @notice Timestamp for the start of the mint.
-    uint256 public mintStart;
+    uint128 public mintStart;
 
     /// @notice Number of gobblers minted from goop.
-    uint256 public numMintedFromGoop;
+    uint128 public numMintedFromGoop;
 
     /// -------------------------
     /// ---- Attribute State ----
@@ -247,7 +246,7 @@ contract ArtGobblers is
 
         merkleRoot = _merkleRoot;
 
-        mintStart = block.timestamp;
+        mintStart = uint128(block.timestamp);
 
         pages.setMintStart(block.timestamp);
 
