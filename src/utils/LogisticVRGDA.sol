@@ -16,7 +16,7 @@ contract LogisticVRGDA {
 
     /// @notice Initial price of NFTs, to be scaled according to sales rate.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable initialPrice;
+    int256 public immutable initialPrice;
 
     /// @notice This parameter controls the logistic curve's maximum
     /// value, which controls the maximum number of NFTs to be issued.
@@ -65,6 +65,9 @@ contract LogisticVRGDA {
     /// @notice Calculate the price of an according to VRGDA algorithm.
     /// @param timeSinceStart The time since the initial sale, in seconds.
     /// @param id The token id to get the price of at the current time.
+    // TODO: ensure this reverts if id is beyond max mint
+    // TODO: check with frankie overflow points are ok
+    // TODO: if we use remco exp does it still revert once time goes beyond t = 275/1033 and such?
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         unchecked {
             return

@@ -40,16 +40,6 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 public immutable initialPrice = 420e18;
-
-    int256 private immutable logisticScale = 10024e18;
-
-    int256 private immutable timeScale = wadDiv(1e18, 30e18);
-
-    int256 private immutable timeShift = 180e18;
-
-    int256 private immutable periodPriceDecrease = 0.25e18;
-
     int256 private immutable perPeriodPostSwitchover = wadDiv(10e18, 3e18);
 
     int256 private immutable switchoverTime = 360e18;
@@ -77,7 +67,16 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     error Unauthorized();
 
     constructor(address _goop, address _artist)
-        LogisticVRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        LogisticVRGDA(
+            // Logistic scale. We multiply by 2x (as a wad)
+            // to account for the subtracted initial value:
+            10024e18, // TODO: did we ensure to make this 2x?
+            // Time scale:
+            wadDiv(1e18, 30e18),
+            180e18, // Time shift.
+            420e18, // Initial price.
+            0.25e18 // Per period price decrease.
+        )
     {
         goop = Goop(_goop);
         artist = _artist;

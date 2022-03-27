@@ -177,7 +177,7 @@ contract ArtGobblersTest is DSTest {
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
 
-        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
         //legendary is owned by user
         assertEq(gobblers.ownerOf(currentLegendaryId), users[0]);
@@ -220,7 +220,7 @@ contract ArtGobblersTest is DSTest {
         uint256[] memory _ids;
         gobblers.mintLegendaryGobbler(_ids);
 
-        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
         //expected URI should not be shuffled
         string memory expectedURI = string(
@@ -231,7 +231,7 @@ contract ArtGobblersTest is DSTest {
     }
 
     function testUnmintedLegendaryUri() public {
-        (, , uint64 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
         uint256 legendaryId = currentLegendaryId + 1;
         assertEq(gobblers.tokenURI(legendaryId), "");

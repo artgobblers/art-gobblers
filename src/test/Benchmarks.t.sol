@@ -72,6 +72,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function testMintGobbler() public {
+        // TODO: why is minting a gobbler more expensive than a page?
         gobblers.mintFromGoop();
     }
 

@@ -30,12 +30,9 @@ contract ArtGobblers is
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
-    /// ----------------------------
-    /// ---- Minting Parameters ----
-    /// ----------------------------
-
-    /// @notice Id of last minted token.
-    uint256 internal currentNonLegendaryId;
+    /// ---------------------------
+    /// ---- URI Configuration ----
+    /// ---------------------------
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
@@ -43,18 +40,38 @@ contract ArtGobblers is
     /// @notice URI for gobblers that have yet to be revealed.
     string public UNREVEALED_URI;
 
+    /// --------------------------
+    /// ---- Supply Constants ----
+    /// --------------------------
+
+    /// @notice Maximum number of mintable tokens.
+    uint256 private constant MAX_SUPPLY = 10000;
+
+    /// @notice Maximum number of goop mintable tokens.
+    /// @dev 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
+    uint256 private constant MAX_GOOP_MINT = 7990;
+
+    /// @notice Last 10 ids are reserved for legendary gobblers.
+    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
+
+    /// -------------------------
+    /// ---- Whitelist State ----
+    /// -------------------------
+
     /// @notice Merkle root of mint whitelist.
     bytes32 public merkleRoot;
 
     /// @notice Mapping to keep track of which addresses have claimed from whitelist.
     mapping(address => bool) public claimedWhitelist;
 
-    /// @notice Maximum number of mintable tokens.
-    uint256 public constant MAX_SUPPLY = 10000;
+    /// ----------------------
+    /// ---- Reveal State ----
+    /// ----------------------
 
-    /// @notice Maximum number of goop mintable tokens.
-    /// @dev 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
-    uint256 public constant MAX_GOOP_MINT = 7990;
+    // TODO: investigate pack
+
+    /// @notice Random seed obtained from VRF.
+    uint256 public randomSeed;
 
     /// @notice Index of last token that has been revealed.
     uint128 public lastRevealedIndex;
@@ -62,28 +79,11 @@ contract ArtGobblers is
     /// @notice Remaining gobblers to be assigned from seed.
     uint128 public gobblersToBeAssigned;
 
-    /// @notice Random seed obtained from VRF.
-    uint256 public randomSeed;
+    /// ---------------------------
+    /// ---- VRGDA Input State ----
+    /// ---------------------------
 
-    /// ----------------------------
-    /// ---- Pricing Parameters ----
-    /// ----------------------------
-
-    /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
-    int256 public immutable initialPrice = 69e18;
-
-    /// @notice Scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve, which needs
-    /// to be exactly 1 above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
-    int256 private immutable logisticScale = int256(MAX_GOOP_MINT + 1) * 2e18;
-
-    /// @notice Time scale of 1/60 gives us the appropriate time period for sales.
-    int256 private immutable timeScale = wadDiv(1e18, 60e18);
-
-    /// @notice Price decrease 25% per period.
-    int256 private immutable periodPriceDecrease = 0.25e18;
-
-    /// @notice Time shift is 0 to give us an appropriate issuance curve.
-    int256 private immutable timeShift = 0;
+    // TODO: pack
 
     /// @notice Timestamp for the start of the mint.
     uint256 public mintStart;
@@ -91,9 +91,12 @@ contract ArtGobblers is
     /// @notice Number of gobblers minted from goop.
     uint256 public numMintedFromGoop;
 
-    /// --------------------
-    /// -------- VRF -------
-    /// --------------------
+    /// ------------------------
+    /// ---- LINK VRF State ----
+    /// ------------------------
+
+    // TODO: pack?
+    // TODO: immutable?
 
     bytes32 internal chainlinkKeyHash;
 
@@ -105,9 +108,9 @@ contract ArtGobblers is
     /// @notice Map token id to random seed produced by VRF
     mapping(uint256 => uint256) public tokenIdToRandomSeed;
 
-    /// --------------------------
-    /// -------- Attributes ------
-    /// --------------------------
+    /// -------------------------
+    /// ---- Attribute State ----
+    /// -------------------------
 
     /// @notice Struct holding gobbler attributes.
     struct GobblerAttributes {
@@ -122,9 +125,9 @@ contract ArtGobblers is
     /// @notice Maps gobbler ids to their attributes.
     mapping(uint256 => GobblerAttributes) public attributeList;
 
-    /// --------------------------
-    /// -------- Addresses ------
-    /// --------------------------
+    /// -------------------------
+    /// ------- Addresses -------
+    /// -------------------------
 
     Goop public immutable goop;
 
@@ -149,21 +152,27 @@ contract ArtGobblers is
     /// ----- Legendary Gobblers  -----
     /// -------------------------------
 
-    /// @notice Last 10 ids are reserved for legendary gobblers.
-    uint256 private immutable LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
-
     /// @notice Struct holding info required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
         /// @notice Start price of current legendary gobbler auction.
-        uint96 currentLegendaryGobblerStartPrice;
+        uint120 currentLegendaryGobblerStartPrice;
         /// @notice Start timestamp of current legendary gobbler auction.
-        uint96 currentLegendaryGobblerAuctionStart;
+        uint120 currentLegendaryGobblerAuctionStart;
         /// @notice Id of last minted legendary gobbler.
-        uint64 currentLegendaryId;
+        /// @dev 16 bits has a max value of ~60,000,
+        /// which is safely within our limits here.
+        uint16 currentLegendaryId;
     }
 
     /// @notice Data about the current legendary gobbler auction.
     LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
+
+    /// ------------------------------
+    /// ----- Standard Gobblers  -----
+    /// ------------------------------
+
+    /// @notice Id of last minted non legendary token.
+    uint256 internal currentNonLegendaryId;
 
     /// ----------------------------
     /// -------- Feeding Art  ------
@@ -202,7 +211,16 @@ contract ArtGobblers is
         string memory _baseUri
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
-        LogisticVRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        LogisticVRGDA(
+            // Logistic scale. We multiply by 2x (as a wad)
+            // to account for the subtracted initial value:
+            int256(MAX_GOOP_MINT + 1) * 2e18,
+            // Time scale:
+            wadDiv(1e18, 60e18),
+            0, // Time shift.
+            69e18, // Initial price.
+            0.25e18 // Per period price decrease.
+        )
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
@@ -217,10 +235,10 @@ contract ArtGobblers is
         legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
 
         // First legendary gobbler auction starts 30 days after contract deploy.
-        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint96(block.timestamp + 30 days);
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(block.timestamp + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
-        legendaryGobblerAuctionData.currentLegendaryId = uint64(LEGENDARY_GOBBLER_ID_START);
+        legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
     }
 
     /// @notice Set merkle root for minting whitelist, can only be done once.
@@ -301,7 +319,7 @@ contract ArtGobblers is
             }
         }
 
-        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint64(currentId + 1));
+        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(currentId + 1));
 
         // Mint the legendary gobbler.
         _mint(msg.sender, newId);
@@ -313,7 +331,7 @@ contract ArtGobblers is
         legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
 
         // New start price is max of (100, prev_cost*2).
-        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint96(cost < 50 ? 100 : cost << 1); // Shift left by 1 is like multiplication by 2.
+        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1); // Shift left by 1 is like multiplication by 2.
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
@@ -445,7 +463,8 @@ contract ArtGobblers is
         uint256 s = stakingInfoMap[gobblerId].lastBalance;
         uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
 
-        // TODO: unchecked?
+        // TODO: idt this accounts for wads
+
         return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
     }
 
