@@ -20,6 +20,7 @@ import {Pages} from "./Pages.sol";
 // TODO: I believe gas went up in commit T cuz forge was underestimating earlier? need to double check
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 // TODO: check everything is being packed properly with forge inspect
+// TODO: ensure it was safe that we removed the max supply checks
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -47,12 +48,14 @@ contract ArtGobblers is
     /// @notice Maximum number of mintable tokens.
     uint256 private constant MAX_SUPPLY = 10000;
 
-    /// @notice Maximum number of goop mintable tokens.
-    /// @dev 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
-    uint256 private constant MAX_GOOP_MINT = 7990;
+    /// @notice Maximum amount of gobblers mintable via whitelist.
+    uint256 private constant WHITELIST_SUPPLY = 2000;
 
-    /// @notice Last 10 ids are reserved for legendary gobblers.
-    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
+    /// @notice Maximum amount of mintable legendary gobblers.
+    uint256 private constant LEGENDARY_SUPPLY = 10;
+
+    /// @notice Maximum number of tokens publicly mintable via goop.
+    uint256 private MAX_MINTABLE_WITH_GOOP = MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY;
 
     /// ---------------------------
     /// ---- URI Configuration ----
@@ -145,6 +148,9 @@ contract ArtGobblers is
     /// ----- Legendary Gobblers  -----
     /// -------------------------------
 
+    /// @notice Last 10 ids are reserved for legendary gobblers.
+    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
+
     /// @notice Struct holding info required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
         /// @notice Start price of current legendary gobbler auction.
@@ -207,7 +213,7 @@ contract ArtGobblers is
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value:
-            int256(MAX_GOOP_MINT + 1) * 2e18,
+            int256(MAX_MINTABLE_WITH_GOOP + 1) * 2e18,
             // Time scale:
             wadDiv(1e18, 60e18),
             0, // Time shift.
@@ -265,9 +271,8 @@ contract ArtGobblers is
 
     /// @notice Mint from goop, burning the cost.
     function mintFromGoop() public {
-        // TODO: lets see if mintGobbler can cover this check for us
-        if (numMintedFromGoop >= MAX_GOOP_MINT) revert NoRemainingGobblers();
-
+        // No need to check supply cap, gobblerPrice()
+        // will revert due to overflow if we reach it.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         mintGobbler(msg.sender);
@@ -276,14 +281,14 @@ contract ArtGobblers is
     }
 
     /// @notice Gobbler pricing in terms of goop.
+    /// @dev Can revert due to overflow if buying far
+    /// too early/late or beyond the chosen supply cap.
     function gobblerPrice() public view returns (uint256) {
         return getPrice(block.timestamp - mintStart, numMintedFromGoop);
     }
 
     function mintGobbler(address mintAddress) internal {
         uint256 newId = ++currentNonLegendaryId;
-
-        if (newId > MAX_SUPPLY) revert NoRemainingGobblers();
 
         _mint(mintAddress, newId);
 
@@ -293,10 +298,10 @@ contract ArtGobblers is
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
-        uint256 currentId = legendaryGobblerAuctionData.currentLegendaryId;
+        uint256 legendaryId = legendaryGobblerAuctionData.currentLegendaryId;
 
-        // When current ID surpasses max supply, we've minted all 10 legendary gobblers:
-        if (currentId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
+        // When legendary id surpasses max supply, we've minted all 10 legendary gobblers:
+        if (legendaryId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
@@ -312,7 +317,7 @@ contract ArtGobblers is
             }
         }
 
-        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(currentId + 1));
+        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(legendaryId + 1));
 
         // Mint the legendary gobbler.
         _mint(msg.sender, newId);

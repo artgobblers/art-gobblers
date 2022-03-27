@@ -236,4 +236,10 @@ contract FuzzTest is DSTestPlus {
     // function testFailOverflowTooLateForAllGobblers(uint256 timeSinceStart, uint256 id) public {
     //     gobblers.getPrice(bound(timeSinceStart, 1033 days, ONE_THOUSAND_YEARS), bound(id, 0, 7990));
     // }
+
+    // /////////////////////////////////////////////////////////////////////////
+
+    // function testFailOverflowBeyondLastGobbler(uint256 timeSinceStart) public {
+    //     gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), 7991);
+    // }
 }
