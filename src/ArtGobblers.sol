@@ -374,36 +374,39 @@ contract ArtGobblers is
 
         // @audit TODO return to this. Particularly check randomness is updated each time, what is idx doing, etc.
 
-        // Implements a Knuth shuffle:
-        for (uint256 i = 0; i < numGobblers; i++) {
-            // Number of slots that have not been assigned.
-            uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
+        // Implements a Knuth shuffle. If something in
+        // here can overflow we've got bigger problems.
+        unchecked {
+            for (uint256 i = 0; i < numGobblers; i++) {
+                // Number of slots that have not been assigned.
+                uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
 
-            // Randomly pick distance for swap.
-            uint256 distance = randomSeed % remainingSlots;
+                // Randomly pick distance for swap.
+                uint256 distance = randomSeed % remainingSlots;
 
-            // Select swap slot, adding distance to next reveal slot.
-            uint256 swapSlot = lastRevealedIndex + 1 + distance;
+                // Select swap slot, adding distance to next reveal slot.
+                uint256 swapSlot = lastRevealedIndex + 1 + distance;
 
-            // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-            uint128 swapIndex = attributeList[swapSlot].idx == 0 ? uint128(swapSlot) : attributeList[swapSlot].idx;
+                // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
+                uint128 swapIndex = attributeList[swapSlot].idx == 0 ? uint128(swapSlot) : attributeList[swapSlot].idx;
 
-            // Current slot is consecutive to last reveal.
-            uint256 currentSlot = lastRevealedIndex + 1;
+                // Current slot is consecutive to last reveal.
+                uint256 currentSlot = lastRevealedIndex + 1;
 
-            // Again, we derive index based on value:
-            uint128 currentIndex = attributeList[currentSlot].idx == 0
-                ? uint128(currentSlot)
-                : attributeList[currentSlot].idx;
+                // Again, we derive index based on value:
+                uint128 currentIndex = attributeList[currentSlot].idx == 0
+                    ? uint128(currentSlot)
+                    : attributeList[currentSlot].idx;
 
-            // Swap indices.
-            attributeList[currentSlot].idx = swapIndex;
-            attributeList[swapSlot].idx = currentIndex;
+                // Swap indices.
+                attributeList[currentSlot].idx = swapIndex;
+                attributeList[swapSlot].idx = currentIndex;
 
-            // Select random attributes for current slot:
-            currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-            attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
-            attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
+                // Select random attributes for current slot:
+                currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
+                attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
+                attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
+            }
         }
 
         // Update state all at once.
