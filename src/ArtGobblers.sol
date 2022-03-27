@@ -457,8 +457,12 @@ contract ArtGobblers is
         uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
 
         // TODO: idt this accounts for wads
-        // TODO: unchecked
-        return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
+
+        unchecked {
+            // If a user's goop balance is greater than
+            // 2**256 - 1 we've got much bigger problems.
+            return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
+        }
     }
 
     /// @notice Add goop to gobbler for staking.
