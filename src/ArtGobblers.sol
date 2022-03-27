@@ -494,10 +494,8 @@ contract ArtGobblers is
     function removeGoop(uint256 gobblerId, uint256 goopAmount) public {
         if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
-        uint256 balance = goopBalance(gobblerId);
-
         // Will revert if removed amount is larger than balance.
-        stakingInfoMap[gobblerId].lastBalance = uint128(balance - goopAmount);
+        stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) - goopAmount);
         stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
 
         goop.mint(msg.sender, goopAmount);
