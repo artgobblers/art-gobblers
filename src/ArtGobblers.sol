@@ -199,8 +199,6 @@ contract ArtGobblers is
 
     error NoRemainingLegendaryGobblers();
 
-    error NoRemainingGobblers();
-
     constructor(
         address vrfCoordinator,
         address linkToken,
@@ -276,7 +274,9 @@ contract ArtGobblers is
 
         mintGobbler(msg.sender);
 
-        numMintedFromGoop++;
+        unchecked {
+            numMintedFromGoop++;
+        }
     }
 
     /// @notice Gobbler pricing in terms of goop.
@@ -287,12 +287,15 @@ contract ArtGobblers is
     }
 
     function mintGobbler(address mintAddress) internal {
-        uint256 newId = ++currentNonLegendaryId;
+        // Only arithmetic done is the counter increment.
+        unchecked {
+            uint256 newId = ++currentNonLegendaryId;
 
-        _mint(mintAddress, newId);
+            _mint(mintAddress, newId);
 
-        // Start generating goop from mint time.
-        stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
+            // Start generating goop from mint time.
+            stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
+        }
     }
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
