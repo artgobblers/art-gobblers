@@ -65,8 +65,6 @@ contract LogisticVRGDA {
     /// @notice Calculate the price of an according to VRGDA algorithm.
     /// @param timeSinceStart The time since the initial sale, in seconds.
     /// @param id The token id to get the price of at the current time.
-    // TODO: ensure this reverts if id is beyond max mint
-    // TODO: check with frankie overflow points are ok
     // TODO: if we use remco exp does it still revert once time goes beyond t = 275/1033 and such?
     // TODO: maybe we cast back to uint asap to get mroe overflow headroom. at least can do after exp
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
