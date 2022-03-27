@@ -283,6 +283,8 @@ contract ArtGobblers is
     /// @dev Can revert due to overflow if buying far
     /// too early/late or beyond the chosen supply cap.
     function gobblerPrice() public view returns (uint256) {
+        // TODO: uh this starts at 0? is that ok? do we want it to underflow before mint?
+        // TODO: can we uncheck it? what about pages.sol btw could anyone buy them before anyway
         return getPrice(block.timestamp - mintStart, numMintedFromGoop);
     }
 
@@ -310,28 +312,30 @@ contract ArtGobblers is
 
         if (gobblerIds.length != cost) revert InsufficientGobblerBalance();
 
-        // Burn the gobblers provided as tribute.
         unchecked {
+            // Burn the gobblers provided as tribute.
             for (uint256 i = 0; i < gobblerIds.length; i++) {
                 if (ownerOf[gobblerIds[i]] != msg.sender) revert Unauthorized();
 
                 _burn(gobblerIds[i]); // TODO: can inline this and skip ownership check
             }
+
+            // Supply caps are properly checked above, so overflow should be impossible here.
+            uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(legendaryId + 1));
+
+            // Mint the legendary gobbler.
+            _mint(msg.sender, newId);
+
+            // It gets a special event.
+            emit LegendaryGobblerMint(newId);
+
+            // Start a new auction, 30 days after the previous start.
+            legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
+
+            // TODO: is it ok there are no overflow checks on the left shift
+            // New start price is max of 100 and prev_cost * 2. Shift left by 1 is like multiplication by 2.
+            legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
         }
-
-        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(legendaryId + 1));
-
-        // Mint the legendary gobbler.
-        _mint(msg.sender, newId);
-
-        // It gets a special event.
-        emit LegendaryGobblerMint(newId);
-
-        // Start a new auction, 30 days after the previous start.
-        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
-
-        // New start price is max of (100, prev_cost*2).
-        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1); // Shift left by 1 is like multiplication by 2.
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
@@ -341,6 +345,7 @@ contract ArtGobblers is
             1 days;
 
         // If more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days.
+        // TODO: can we uncheck?
         return
             daysSinceStart >= 30
                 ? 0
@@ -411,6 +416,8 @@ contract ArtGobblers is
 
         // Update state all at once.
         randomSeed = currentRandomSeed;
+
+        // TODO: can we uncheck these safely?
         lastRevealedIndex += uint128(numGobblers);
         gobblersToBeAssigned -= uint128(numGobblers);
     }
