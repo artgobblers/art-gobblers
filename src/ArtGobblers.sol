@@ -482,9 +482,12 @@ contract ArtGobblers is
         // Burn goop being added to gobbler.
         goop.burnForGobblers(msg.sender, goopAmount);
 
-        // Update last balance with newly added goop.
-        stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
-        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+        unchecked {
+            // If a user has enough goop to overflow their balance we've got big problems.
+            // TODO: do we maybe want to use a safecast tho? idk maybe this is not safe.
+            stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
+            stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+        }
     }
 
     /// @notice Remove goop from a gobbler.
