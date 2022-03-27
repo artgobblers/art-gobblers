@@ -19,6 +19,7 @@ import {Pages} from "./Pages.sol";
 // TODO: UNCHECKED
 // TODO: I believe gas went up in commit T cuz forge was underestimating earlier? need to double check
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
+// TODO: check everything is being packed properly with forge inspect
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -31,15 +32,13 @@ contract ArtGobblers is
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
-    /// ---------------------------
-    /// ---- URI Configuration ----
-    /// ---------------------------
+    /// -------------------------
+    /// ------- Addresses -------
+    /// -------------------------
 
-    /// @notice Base URI for minted gobblers.
-    string public BASE_URI;
+    Goop public immutable goop;
 
-    /// @notice URI for gobblers that have yet to be revealed.
-    string public UNREVEALED_URI;
+    Pages public immutable pages;
 
     /// --------------------------
     /// ---- Supply Constants ----
@@ -55,6 +54,24 @@ contract ArtGobblers is
     /// @notice Last 10 ids are reserved for legendary gobblers.
     uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
 
+    /// ---------------------------
+    /// ---- URI Configuration ----
+    /// ---------------------------
+
+    /// @notice Base URI for minted gobblers.
+    string public BASE_URI;
+
+    /// @notice URI for gobblers that have yet to be revealed.
+    string public UNREVEALED_URI;
+
+    /// ---------------------------
+    /// ---- VRF Configuration ----
+    /// ---------------------------
+
+    bytes32 internal immutable chainlinkKeyHash;
+
+    uint256 internal immutable chainlinkFee;
+
     /// -------------------------
     /// ---- Whitelist State ----
     /// -------------------------
@@ -64,21 +81,6 @@ contract ArtGobblers is
 
     /// @notice Mapping to keep track of which addresses have claimed from whitelist.
     mapping(address => bool) public claimedWhitelist;
-
-    /// ----------------------
-    /// ---- Reveal State ----
-    /// ----------------------
-
-    // TODO: investigate pack
-
-    /// @notice Random seed obtained from VRF.
-    uint256 public randomSeed;
-
-    /// @notice Index of last token that has been revealed.
-    uint128 public lastRevealedIndex;
-
-    /// @notice Remaining gobblers to be assigned from seed.
-    uint128 public gobblersToBeAssigned;
 
     /// ---------------------------
     /// ---- VRGDA Input State ----
@@ -91,23 +93,6 @@ contract ArtGobblers is
 
     /// @notice Number of gobblers minted from goop.
     uint256 public numMintedFromGoop;
-
-    /// ------------------------
-    /// ---- LINK VRF State ----
-    /// ------------------------
-
-    // TODO: pack?
-    // TODO: immutable?
-
-    bytes32 internal chainlinkKeyHash;
-
-    uint256 internal chainlinkFee;
-
-    /// @notice Map Chainlink request id to token ids.
-    mapping(bytes32 => uint256) public requestIdToTokenId;
-
-    /// @notice Map token id to random seed produced by VRF
-    mapping(uint256 => uint256) public tokenIdToRandomSeed;
 
     /// -------------------------
     /// ---- Attribute State ----
@@ -126,16 +111,23 @@ contract ArtGobblers is
     /// @notice Maps gobbler ids to their attributes.
     mapping(uint256 => GobblerAttributes) public attributeList;
 
-    /// -------------------------
-    /// ------- Addresses -------
-    /// -------------------------
+    /// ----------------------
+    /// ---- Reveal State ----
+    /// ----------------------
 
-    Goop public immutable goop;
+    // TODO: investigate pack
 
-    Pages public immutable pages;
+    /// @notice Random seed obtained from VRF.
+    uint256 public randomSeed;
+
+    /// @notice Index of last token that has been revealed.
+    uint128 public lastRevealedIndex;
+
+    /// @notice Remaining gobblers to be assigned from seed.
+    uint128 public gobblersToBeAssigned;
 
     /// --------------------------
-    /// -------- Staking  --------
+    /// ----- Staking State  -----
     /// --------------------------
 
     /// @notice Struct holding info required for goop staking reward calculation.
@@ -176,7 +168,7 @@ contract ArtGobblers is
     uint256 internal currentNonLegendaryId;
 
     /// ----------------------------
-    /// -------- Feeding Art  ------
+    /// -------- Art Feeding  ------
     /// ----------------------------
 
     /// @notice Mapping from page ids to gobbler ids they were fed to.
@@ -192,9 +184,9 @@ contract ArtGobblers is
     /// @notice Legendary gobbler was minted.
     event LegendaryGobblerMint(uint256 tokenId);
 
-    /// ----------------------
-    /// -------- Errors ------
-    /// ----------------------
+    /// ---------------------
+    /// ------- Errors ------
+    /// ---------------------
 
     error Unauthorized();
 
