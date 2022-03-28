@@ -13,6 +13,11 @@ import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import "../utils/SignedWadMath.sol";
 
+// TODO: appears like remco exp removes the possiblity of too late overflow
+// TODO: make sure to update the comment in gobblerPrice() that says it can if too late!!
+
+// TODO: dont make all these tests commented, should be apart of CI just need to ingore in snapshot
+
 contract FuzzTest is DSTestPlus {
     using Strings for uint256;
 
@@ -152,22 +157,22 @@ contract FuzzTest is DSTestPlus {
     // // function testFindTooLateOverflowForLastGobbler() public {
     // //     uint256 timeSinceStart = 500 days;
     // //     while (true) {
-    // //        timeSinceStart += 1 days;
+    // //         timeSinceStart += 1 days;
     // //         emit log_uint(timeSinceStart / 1 days);
     // //         gobblers.getPrice(timeSinceStart, 7990);
     // //     }
     // // }
 
     // function testFailOverflowTooEarlyForLastGobbler(uint256 timeSinceStart) public {
-    //     gobblers.getPrice(bound(timeSinceStart, 0 days, 274 days), 7990);
+    //     gobblers.getPrice(bound(timeSinceStart, 0 days, 269 days), 7990);
     // }
 
     // function testFailOverflowTooLateForLastGobbler(uint256 timeSinceStart) public {
-    //     gobblers.getPrice(bound(timeSinceStart, 1033 days, ONE_THOUSAND_YEARS), 7990);
+    //     gobblers.getPrice(bound(timeSinceStart, 23374 days, ONE_THOUSAND_YEARS), 7990);
     // }
 
     // function testSweetSpotForLastGobbler(uint256 timeSinceStart) public {
-    //     gobblers.getPrice(bound(timeSinceStart, 275 days, 1032 days), 7990);
+    //     gobblers.getPrice(bound(timeSinceStart, 270 days, 1032 days), 7990);
     // }
 
     // /////////////////////////////////////////////////////////////////////////
