@@ -22,6 +22,7 @@ import {Pages} from "./Pages.sol";
 // TODO: check everything is being packed properly with forge inspect
 // TODO: ensure it was safe that we removed the max supply checks
 // TODO: can we make mint start constant by setting merkle root at deploy uwu would save sload
+// TODO: can we save gas by using SSTORE2 for attributes?
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
