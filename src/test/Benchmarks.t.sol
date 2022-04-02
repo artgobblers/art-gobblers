@@ -85,4 +85,8 @@ contract BenchmarksTest is DSTest {
         gobblers.addGoop(1, 1e18);
         gobblers.removeGoop(1, 1e18);
     }
+
+    function testGetRandomSeed() public { 
+        gobblers.getRandomSeed();
+    }
 }
