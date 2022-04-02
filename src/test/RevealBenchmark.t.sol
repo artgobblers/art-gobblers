@@ -57,7 +57,7 @@ contract RevealBenchmarkTest is DSTest {
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
     }
 
-    function testRevealedUri() public {
+    function testBatchRevealCost() public {
         gobblers.revealGobblers(20);
     }
 
