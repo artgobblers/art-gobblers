@@ -18,9 +18,22 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
-    /// ----------------------------
-    /// --------- State ------------
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
+
+    Goop internal goop;
+
+    /*//////////////////////////////////////////////////////////////
+                              URI CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Base token URI.
+    string internal constant BASE_URI = "";
+
+    /*//////////////////////////////////////////////////////////////
+                              MINTING STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Id of last mint.
     uint256 internal currentId;
@@ -28,17 +41,20 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// @notice The number of pages minted from goop.
     uint256 internal numMintedFromGoop;
 
-    /// @notice Base token URI.
-    string internal constant BASE_URI = "";
+    /// @notice The start timestamp of the public mint.
+    /// @dev Begins as type(uint256).max to force pagePrice() to underflow before minting starts.
+    uint256 private mintStart = type(uint256).max;
+
+    /*//////////////////////////////////////////////////////////////
+                               DRAWN LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mapping from tokenId to isDrawn bool.
     mapping(uint256 => bool) public isDrawn;
 
-    Goop internal goop;
-
-    /// ----------------------------
-    /// ---- Pricing Parameters ----
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                            PRICING CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     int256 private immutable perPeriodPostSwitchover = wadDiv(10e18, 3e18);
 
@@ -50,13 +66,9 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// @notice Number of pages sold before we switch pricing functions.
     uint256 private numPagesSwitch = 9975;
 
-    /// @notice The start timestamp of the public mint.
-    /// @dev Begins as type(uint256).max to force pagePrice() to underflow before minting starts.
-    uint256 private mintStart = type(uint256).max;
-
-    /// -----------------------
-    /// ------ Authority ------
-    /// -----------------------
+    /*//////////////////////////////////////////////////////////////
+                            AUTHORIZED USERS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice User allowed to set the draw state on pages.
     address public immutable artist;
@@ -64,7 +76,15 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     /// @notice Authority to mint with 0 cost.
     address public immutable artGobblers;
 
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
     error Unauthorized();
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     constructor(address _goop, address _artist)
         LogisticVRGDA(

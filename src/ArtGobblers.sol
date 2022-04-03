@@ -35,17 +35,17 @@ contract ArtGobblers is
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
-    /// -------------------------
-    /// ------- Addresses -------
-    /// -------------------------
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
 
     Goop public immutable goop;
 
     Pages public immutable pages;
 
-    /// --------------------------
-    /// ---- Supply Constants ----
-    /// --------------------------
+    /*//////////////////////////////////////////////////////////////
+                            SUPPLY CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Maximum number of mintable tokens.
     uint256 private constant MAX_SUPPLY = 10000;
@@ -59,9 +59,9 @@ contract ArtGobblers is
     /// @notice Maximum number of tokens publicly mintable via goop.
     uint256 private MAX_MINTABLE_WITH_GOOP = MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY;
 
-    /// ---------------------------
-    /// ---- URI Configuration ----
-    /// ---------------------------
+    /*//////////////////////////////////////////////////////////////
+                            URI CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
@@ -69,17 +69,17 @@ contract ArtGobblers is
     /// @notice URI for gobblers that have yet to be revealed.
     string public UNREVEALED_URI;
 
-    /// ---------------------------
-    /// ---- VRF Configuration ----
-    /// ---------------------------
+    /*//////////////////////////////////////////////////////////////
+                              VRF CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     bytes32 internal immutable chainlinkKeyHash;
 
     uint256 internal immutable chainlinkFee;
 
-    /// -------------------------
-    /// ---- Whitelist State ----
-    /// -------------------------
+    /*//////////////////////////////////////////////////////////////
+                             WHITELIST STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Merkle root of mint whitelist.
     bytes32 public merkleRoot;
@@ -87,9 +87,9 @@ contract ArtGobblers is
     /// @notice Mapping to keep track of which addresses have claimed from whitelist.
     mapping(address => bool) public claimedWhitelist;
 
-    /// ---------------------------
-    /// ---- VRGDA Input State ----
-    /// ---------------------------
+    /*//////////////////////////////////////////////////////////////
+                            VRGDA INPUT STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Timestamp for the start of the mint.
     uint128 public mintStart;
@@ -97,9 +97,9 @@ contract ArtGobblers is
     /// @notice Number of gobblers minted from goop.
     uint128 public numMintedFromGoop;
 
-    /// -------------------------
-    /// ---- Attribute State ----
-    /// -------------------------
+    /*//////////////////////////////////////////////////////////////
+                             ATTRIBUTE STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Struct holding gobbler attributes.
     struct GobblerAttributes {
@@ -114,9 +114,9 @@ contract ArtGobblers is
     /// @notice Maps gobbler ids to their attributes.
     mapping(uint256 => GobblerAttributes) public attributeList;
 
-    /// ----------------------
-    /// ---- Reveal State ----
-    /// ----------------------
+    /*//////////////////////////////////////////////////////////////
+                         ATTRIBUTES REVEAL STATE
+    //////////////////////////////////////////////////////////////*/
 
     // TODO: investigate pack
 
@@ -129,9 +129,9 @@ contract ArtGobblers is
     /// @notice Remaining gobblers to be assigned from seed.
     uint128 public gobblersToBeAssigned;
 
-    /// --------------------------
-    /// ----- Staking State  -----
-    /// --------------------------
+    /*//////////////////////////////////////////////////////////////
+                              STAKING STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Struct holding info required for goop staking reward calculation.
     struct StakingInfo {
@@ -144,9 +144,9 @@ contract ArtGobblers is
     /// @notice Mapping from tokenId to staking info.
     mapping(uint256 => StakingInfo) public stakingInfoMap;
 
-    /// -------------------------------
-    /// ----- Legendary Gobblers  -----
-    /// -------------------------------
+    /*///////////////////////////////////////////////////////////////
+                    LEGENDARY GOBBLER AUCTION STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Last 10 ids are reserved for legendary gobblers.
     uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
@@ -166,23 +166,23 @@ contract ArtGobblers is
     /// @notice Data about the current legendary gobbler auction.
     LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
 
-    /// ------------------------------
-    /// ----- Standard Gobblers  -----
-    /// ------------------------------
+    /*//////////////////////////////////////////////////////////////
+                         STANDARD GOBBLER STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Id of last minted non legendary token.
     uint256 internal currentNonLegendaryId;
 
-    /// ----------------------------
-    /// -------- Art Feeding  ------
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                            ART FEEDING STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mapping from page ids to gobbler ids they were fed to.
     mapping(uint256 => uint256) public pageIdToGobblerId;
 
-    /// ----------------------
-    /// -------- Events ------
-    /// ----------------------
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Merkle root was set.
     event MerkleRootSet(bytes32 merkleRoot);
@@ -190,15 +190,19 @@ contract ArtGobblers is
     /// @notice Legendary gobbler was minted.
     event LegendaryGobblerMint(uint256 tokenId);
 
-    /// ---------------------
-    /// ------- Errors ------
-    /// ---------------------
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error Unauthorized();
 
     error InsufficientGobblerBalance();
 
     error NoRemainingLegendaryGobblers();
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     constructor(
         address vrfCoordinator,
@@ -238,6 +242,10 @@ contract ArtGobblers is
         legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                             WHITELIST LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Set merkle root for minting whitelist, can only be done once.
     function setMerkleRoot(bytes32 _merkleRoot) public requiresAuth {
         // Don't allow setting the merkle root twice.
@@ -266,6 +274,10 @@ contract ArtGobblers is
 
         pages.mintByAuth(msg.sender); // Whitelisted users also get a free page.
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           GOOP MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint from goop, burning the cost.
     function mintFromGoop() public {
@@ -300,6 +312,10 @@ contract ArtGobblers is
             stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+                     LEGENDARY GOBBLER AUCTION LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
@@ -353,6 +369,10 @@ contract ArtGobblers is
                 : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                VRF LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Get the random seed for revealing gobblers.
     function getRandomSeed() public returns (bytes32) {
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
@@ -370,6 +390,10 @@ contract ArtGobblers is
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
         randomSeed = randomness;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         ATTRIBUTES REVEAL LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     function revealGobblers(uint256 numGobblers) public {
@@ -423,6 +447,10 @@ contract ArtGobblers is
         gobblersToBeAssigned -= uint128(numGobblers);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                URI LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Returns a token's URI if it has been minted.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealedIndex are revealed normal gobblers.
@@ -445,15 +473,9 @@ contract ArtGobblers is
         return ""; // Unminted legendaries and invalid token ids.
     }
 
-    /// @notice Convenience function to get staking multiple for a gobbler.
-    function getStakingMultiple(uint256 tokenId) public view returns (uint256 multiple) {
-        multiple = attributeList[tokenId].stakingMultiple;
-    }
-
-    /// @notice Convenience function to get the base issuance rate for a gobbler.
-    function getBaseRate(uint256 tokenId) public view returns (uint256 rate) {
-        rate = attributeList[tokenId].baseRate;
-    }
+    /*//////////////////////////////////////////////////////////////
+                            ART FEEDING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Feed a gobbler a page.
     function feedArt(uint256 gobblerId, uint256 pageId) public {
@@ -466,6 +488,10 @@ contract ArtGobblers is
         // Map the page to the gobbler that ate it.
         pageIdToGobblerId[pageId] = gobblerId;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              STAKING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the balance of goop that is available to withdraw from a gobbler.
     function goopBalance(uint256 gobblerId) public view returns (uint256) {
