@@ -17,7 +17,6 @@ import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
-// TODO: I believe gas went up in commit T cuz forge was underestimating earlier? need to double check
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 // TODO: check everything is being packed properly with forge inspect
 // TODO: ensure it was safe that we removed the max supply checks
