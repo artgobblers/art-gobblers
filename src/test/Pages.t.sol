@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {DSTest} from "ds-test/test.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {stdError} from "forge-std/stdlib.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 
-contract PagesTest is DSTest {
+contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;
@@ -18,9 +19,7 @@ contract PagesTest is DSTest {
     Pages internal pages;
     uint256 mintStart;
 
-    //encodings for expectRevert
-    bytes insufficientBalance =
-        abi.encodeWithSignature("InsufficientBalance()");
+    // encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
     bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
 
@@ -32,14 +31,14 @@ contract PagesTest is DSTest {
         drawAuth = users[0];
         goop = new Goop(address(this));
         pages = new Pages(address(goop), drawAuth);
-        //deploying contract is mint authority
+        // Deploying contract is mint authority
         mintAuth = address(this);
         goop.setPages(address(pages));
         user = users[1];
     }
 
     function testMintBeforeSetMint() public {
-        vm.expectRevert(mintNotStarted);
+        vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
         pages.mint();
     }
@@ -47,7 +46,7 @@ contract PagesTest is DSTest {
     function testMintBeforeStart() public {
         //set mint start in future
         pages.setMintStart(block.timestamp + 1);
-        vm.expectRevert(mintNotStarted);
+        vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
         pages.mint();
     }
@@ -61,7 +60,7 @@ contract PagesTest is DSTest {
     }
 
     function testMintByAuthority() public {
-        //mint by authority for user
+        // mint by authority for user
         pages.mintByAuth(user);
         assertEq(user, pages.ownerOf(1));
     }
@@ -74,15 +73,17 @@ contract PagesTest is DSTest {
 
     function testInitialPrice() public {
         pages.setMintStart(block.timestamp);
+
         uint256 cost = pages.pagePrice();
-        uint256 expectedCost = 591; // computed offline
-        assertEq(cost, expectedCost);
+        uint256 maxDelta = 32340;
+
+        assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
 
     function testInsufficientBalance() public {
         pages.setMintStart(block.timestamp);
         vm.prank(user);
-        vm.expectRevert(insufficientBalance);
+        vm.expectRevert(stdError.arithmeticError);
         pages.mint();
     }
 

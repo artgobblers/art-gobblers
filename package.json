@@ -1,12 +1,12 @@
 {
-  "name": "forge-template",
+  "name": "art-gobblers",
   "author": "FrankieIsLost",
   "version": "1.0.0",
-  "description": "A forge template",
-  "homepage": "https://github.com/FrankieIsLost/forge-template#readme",
+  "description": "Art Gobblers scan the cosmos in search of art producing life.",
+  "homepage": "https://github.com/FrankieIsLost/art-gobblers#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FrankieIsLost/forge-template.git"
+    "url": "git+https://github.com/FrankieIsLost/art-gobblers.git"
   },
   "scripts": {
     "prettier": "prettier --write 'src/**/*.sol'",
