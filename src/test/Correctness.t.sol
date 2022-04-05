@@ -26,27 +26,25 @@ contract CorrectnessTest is DSTest {
 
     int256 internal immutable timeShift = 0;
 
-    //test correctness of pricing function for different combinations of time and quantity sold.
+    uint256 internal immutable FIVE_YEARS = 52 weeks * 5;
+
+    //fuzz test correctness of pricing function for different combinations of time and quantity sold.
     //we match all other parameters (initialPrice, timescale, etc...) to the ones used for
     //gobbler pricing specifically.
-    function testCorrectness() public {
-        uint256[3] memory timeSinceStart = [uint256(1000), uint256(100000), uint256(50000)];
-        uint256[3] memory numSold = [uint256(0), uint256(300), uint256(900)];
-        for (uint256 i = 0; i < 3; i++) {
-            checkPriceWithParameters(
-                timeSinceStart[i],
-                numSold[i],
-                initialPrice,
-                periodPriceDecrease,
-                logisticScale,
-                timeScale,
-                timeShift
-            );
-        }
-    }
-
-    function testFFICorrectnessOne() public {
-        checkPriceWithParameters(1000, 0, initialPrice, periodPriceDecrease, logisticScale, timeScale, timeShift);
+    function testCorrectness(uint256 timeSinceStart, uint256 numSold) public {
+        //limit num sold to max mint
+        vm.assume(numSold < MAX_GOOP_MINT);
+        //limit mint time to 5 yeras
+        vm.assume(timeSinceStart < FIVE_YEARS);
+        checkPriceWithParameters(
+            timeSinceStart,
+            numSold,
+            initialPrice,
+            periodPriceDecrease,
+            logisticScale,
+            timeScale,
+            timeShift
+        );
     }
 
     function checkPriceWithParameters(
@@ -62,7 +60,6 @@ contract CorrectnessTest is DSTest {
 
         //calculate actual price from gda
         uint256 actualPrice = vrgda.getPrice(_timeSinceStart, _numSold);
-        console.log(actualPrice);
         //calculate expected price from python script
         uint256 expectedPrice = calculatePrice(
             _timeSinceStart,
@@ -73,8 +70,6 @@ contract CorrectnessTest is DSTest {
             _timeScale,
             _timeShift
         );
-        console.log(expectedPrice);
-
         //equal within 0.5 percent
         assertApproxEqual(actualPrice, expectedPrice, 50);
     }

@@ -64,7 +64,7 @@ contract VRGDA {
 
         initialValue = logisticScale.div(one59x18 + timeScale.mul(timeShift).exp());
 
-        decayConstant = -(one59x18 - periodPriceDecrease).ln();
+        decayConstant = (one59x18 - periodPriceDecrease).ln();
     }
 
     /// @notice Calculate the price of an according to VRGDA algorithm.
