@@ -11,21 +11,22 @@ def main(args):
 def calculate_gobblers_price(args): 
     pricer = Pricer()
     price = pricer.compute_gobbler_price(
-        args.time_since_start, 
+        args.time_since_start / (60 * 60 * 24), ## convert to seconds 
         args.num_sold, 
-        args.initial_price, 
-        args.per_period_price_decrease, 
-        args.logistic_scale, 
-        args.time_scale, 
-        args.time_shift
+        args.initial_price / (10 ** 18), ## scale decimals 
+        args.per_period_price_decrease / (10 ** 18), ## scale decimals 
+        args.logistic_scale / (10 ** 18), ## scale decimals 
+        args.time_scale / (10 ** 18), ## scale decimals 
+        args.time_shift / (10 ** 18) ## scale decimals 
     )
+    price *= (10 ** 18)
     encode_and_print(price)
 
 def calculate_pages_price(args): 
     print("todo")
 
 def encode_and_print(price):
-    enc = encode_single('uint256', price)
+    enc = encode_single('uint256', int(price))
     ## append 0x for FFI parsing 
     print("0x" + enc.hex())
 
