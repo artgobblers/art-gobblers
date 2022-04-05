@@ -53,7 +53,7 @@ contract PagesTest is DSTestPlus {
 
     function testRegularMint() public {
         pages.setMintStart(block.timestamp);
-        goop.mint(user, pages.pagePrice());
+        goop.mint(user, pages.getCurrentPrice());
         vm.prank(user);
         pages.mint();
         assertEq(user, pages.ownerOf(1));
@@ -74,7 +74,7 @@ contract PagesTest is DSTestPlus {
     function testInitialPrice() public {
         pages.setMintStart(block.timestamp);
 
-        uint256 cost = pages.pagePrice();
+        uint256 cost = pages.getCurrentPrice();
         uint256 maxDelta = 32760;
 
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
@@ -89,7 +89,7 @@ contract PagesTest is DSTestPlus {
 
     function testSetIsDrawn() public {
         pages.setMintStart(block.timestamp);
-        goop.mint(user, pages.pagePrice());
+        goop.mint(user, pages.getCurrentPrice());
         vm.prank(user);
         pages.mint();
         assertTrue(!pages.isDrawn(1));
@@ -100,7 +100,7 @@ contract PagesTest is DSTestPlus {
 
     function testRevertSetIsDrawn() public {
         pages.setMintStart(block.timestamp);
-        goop.mint(user, pages.pagePrice());
+        goop.mint(user, pages.getCurrentPrice());
         vm.prank(user);
         pages.mint();
         vm.expectRevert(unauthorized);
@@ -108,7 +108,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function mintPage(address _user) internal {
-        goop.mint(_user, pages.pagePrice());
+        goop.mint(_user, pages.getCurrentPrice());
         vm.prank(_user);
         pages.mint();
     }

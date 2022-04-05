@@ -51,8 +51,8 @@ contract BenchmarksTest is DSTest {
         vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.
     }
 
-    function testPagePrice() public view {
-        pages.pagePrice();
+    function testGetCurrentPrice() public view {
+        pages.getCurrentPrice();
     }
 
     function testGobblerPrice() public view {
