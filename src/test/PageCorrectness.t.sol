@@ -18,23 +18,23 @@ contract PageCorrectnessTest is DSTest {
 
     //fuzz purchases up to 10,000 at t = 0
     function testPageCorrectnessStart(uint256 numSold) public {
-        //limit num sold to 10,000 to avoid overflows in solidity
+        //limit num sold to 10,000. After this point, price goes so high that it
+        //causes an overflow (this is acceptable behaviour since pages are too expensive
+        //to purchase)
         vm.assume(numSold < 10000);
         checkPagePriceWithParameters(0, numSold);
     }
 
     //fuzz purchases a year after initial mint
     function testPageCorrectnessAfterYear(uint256 numSold) public {
-        //if after a year, we've sold less than 7000 pages, price is 0
-        //if we've sold more than ~11,000, price will and revert (which is expected)
-        vm.assume(numSold > 7000 && numSold < 11000);
-        checkPagePriceWithParameters(52 weeks, numSold);
+        //test correctness post switchup
+        //we cannot use 
+        uint256 lowerLimit = 9975;
+        uint256 upperLimit = 11000;
+        uint256 num = lowerLimit + (numSold % (upperLimit - lowerLimit));
+        checkPagePriceWithParameters(52 weeks, num);
     }
 
-    function testPageCorrectnessSimple() public {
-        checkPagePriceWithParameters(52 weeks, 8000);
-    }
-    
     function checkPagePriceWithParameters(uint256 _timeSinceStart, uint256 _numSold) private {
         // MockVRGDA vrgda = new MockVRGDA(_logisticScale, _timeScale, _timeShift, _initialPrice, _perPeriodPriceDecrease);
         PagePricer pricer = new PagePricer();
