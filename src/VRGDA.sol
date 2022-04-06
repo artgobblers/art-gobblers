@@ -47,7 +47,7 @@ contract VRGDA {
     int256 internal immutable decayConstant;
 
     /// @notice Precompute 1 expressed scaled as a PRBMathSD59x18 number.
-    int256 internal immutable one59x18 = int256(1).fromInt();
+    int256 private immutable one59x18 = int256(1).fromInt();
 
     constructor(
         int256 _logisticScale,

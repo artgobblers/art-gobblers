@@ -3,73 +3,57 @@ pragma solidity >=0.8.0;
 
 import {DSTest} from "ds-test/test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {MockVRGDA} from "./utils/mocks/MockVRGDA.sol";
+import {PagePricer} from "../PagePricer.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 import {console} from "./utils/Console.sol";
 
-contract CorrectnessTest is DSTest {
+contract PageCorrectnessTest is DSTest {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    uint256 internal constant MAX_GOOP_MINT = 7990;
-
-    int256 internal immutable initialPrice = PRBMathSD59x18.fromInt(69);
-
-    int256 internal immutable logisticScale = PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
-
-    int256 internal immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
-
-    int256 internal immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
-
-    int256 internal immutable timeShift = 0;
-
     uint256 internal immutable FIVE_YEARS = 52 weeks * 5;
 
-    //fuzz test correctness of pricing function for different combinations of time and quantity sold.
-    //we match all other parameters (initialPrice, timescale, etc...) to the ones used for
-    //gobbler pricing specifically.
-    function testCorrectness(uint256 timeSinceStart, uint256 numSold) public {
-        //limit num sold to max mint
-        vm.assume(numSold < MAX_GOOP_MINT);
-        //limit mint time to 5 yeras
-        vm.assume(timeSinceStart < FIVE_YEARS);
-        checkPriceWithParameters(
-            timeSinceStart,
-            numSold,
-            initialPrice,
-            periodPriceDecrease,
-            logisticScale,
-            timeScale,
-            timeShift
-        );
+    //fuzz purchases up to 10,000 at t = 0
+    function testPageCorrectnessStart(uint256 numSold) public {
+        //limit num sold to 10,000 to avoid overflows in solidity
+        vm.assume(numSold < 10000);
+        checkPagePriceWithParameters(0, numSold);
     }
 
-    function checkPriceWithParameters(
-        uint256 _timeSinceStart,
-        uint256 _numSold,
-        int256 _initialPrice,
-        int256 _perPeriodPriceDecrease,
-        int256 _logisticScale,
-        int256 _timeScale,
-        int256 _timeShift
-    ) private {
-        MockVRGDA vrgda = new MockVRGDA(_logisticScale, _timeScale, _timeShift, _initialPrice, _perPeriodPriceDecrease);
+    //fuzz purchases a year after initial mint
+    function testPageCorrectnessAfterYear(uint256 numSold) public {
+        //if after a year, we've sold less than 7000 pages, price is 0
+        //if we've sold more than ~11,000, price will and revert (which is expected)
+        vm.assume(numSold > 7000 && numSold < 11000);
+        checkPagePriceWithParameters(52 weeks, numSold);
+    }
 
+    function testPageCorrectnessSimple() public {
+        checkPagePriceWithParameters(52 weeks, 8000);
+    }
+    
+    function checkPagePriceWithParameters(uint256 _timeSinceStart, uint256 _numSold) private {
+        // MockVRGDA vrgda = new MockVRGDA(_logisticScale, _timeScale, _timeShift, _initialPrice, _perPeriodPriceDecrease);
+        PagePricer pricer = new PagePricer();
         //calculate actual price from gda
-        uint256 actualPrice = vrgda.getPrice(_timeSinceStart, _numSold);
+        uint256 actualPrice = pricer.pagePrice(_timeSinceStart, _numSold);
+        console.log("actual price", actualPrice);
         //calculate expected price from python script
         uint256 expectedPrice = calculatePrice(
             _timeSinceStart,
             _numSold,
-            _initialPrice,
-            _perPeriodPriceDecrease,
-            _logisticScale,
-            _timeScale,
-            _timeShift
+            pricer.initialPrice(),
+            pricer.periodPriceDecrease(),
+            pricer.logisticScale(),
+            pricer.timeScale(),
+            pricer.timeShift(),
+            pricer.perPeriodPostSwitchover(),
+            pricer.switchoverTime()
         );
+        console.log("expected price", expectedPrice);
         //equal within 0.5 percent
         assertApproxEqual(actualPrice, expectedPrice, 50);
     }
@@ -81,12 +65,14 @@ contract CorrectnessTest is DSTest {
         int256 _perPeriodPriceDecrease,
         int256 _logisticScale,
         int256 _timeScale,
-        int256 _timeShift
+        int256 _timeShift,
+        int256 _perPeriodPostSwitchover,
+        int256 _switchoverTime
     ) private returns (uint256) {
-        string[] memory inputs = new string[](17);
+        string[] memory inputs = new string[](21);
         inputs[0] = "python3";
         inputs[1] = "analysis/compute_price.py";
-        inputs[2] = "gobblers";
+        inputs[2] = "pages";
         inputs[3] = "--time_since_start";
         inputs[4] = _timeSinceStart.toString();
         inputs[5] = "--num_sold";
@@ -101,6 +87,10 @@ contract CorrectnessTest is DSTest {
         inputs[14] = uint256(_timeScale).toString();
         inputs[15] = "--time_shift";
         inputs[16] = uint256(_timeShift).toString();
+        inputs[17] = "--per_period_post_switchover";
+        inputs[18] = uint256(_perPeriodPostSwitchover).toString();
+        inputs[19] = "--switchover_time";
+        inputs[20] = uint256(_switchoverTime).toString();
         bytes memory res = vm.ffi(inputs);
         uint256 price = abi.decode(res, (uint256));
         return price;
