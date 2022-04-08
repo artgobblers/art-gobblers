@@ -304,18 +304,26 @@ contract ArtGobblersTest is DSTestPlus {
 
     function testGoopRemoval() public {
         mintGobblerToAddress(users[0], 1);
-        vm.warp(block.timestamp + 100000);
+
         setRandomnessAndReveal(1, "seed");
+
+        vm.warp(block.timestamp + 100000);
+
         // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(address(this));
+        uint256 initialBalance = gobblers.goopBalance(users[0]);
+
         //10%
         uint256 removalAmount = initialBalance / 10;
+
         vm.prank(users[0]);
         gobblers.removeGoop(removalAmount);
-        uint256 finalBalance = gobblers.goopBalance(address(this));
+
+        uint256 finalBalance = gobblers.goopBalance(users[0]);
+
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
+
         // user should have removed goop
         assertEq(goop.balanceOf(users[0]), removalAmount);
     }
@@ -331,19 +339,25 @@ contract ArtGobblersTest is DSTestPlus {
 
     function testGoopAddition() public {
         mintGobblerToAddress(users[0], 1);
-        vm.warp(block.timestamp + 100000);
+
         setRandomnessAndReveal(1, "seed");
+
+        vm.warp(block.timestamp + 100000);
+
         // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(address(this));
+        uint256 initialBalance = gobblers.goopBalance(users[0]);
+
         vm.prank(address(gobblers));
-        uint256 additionAmount = 1000;
-        goop.mint(users[0], additionAmount);
+        goop.mint(users[0], 1000);
+
         vm.prank(users[0]);
-        gobblers.addGoop(additionAmount);
-        uint256 finalBalance = gobblers.goopBalance(address(this));
+        gobblers.addGoop(1000);
+
+        uint256 finalBalance = gobblers.goopBalance(users[0]);
+
         // balance should change
         assertTrue(initialBalance != finalBalance);
-        assertEq(initialBalance + additionAmount, finalBalance);
+        assertEq(finalBalance, initialBalance + 1000);
     }
 
     // convenience function to mint single gobbler from goop

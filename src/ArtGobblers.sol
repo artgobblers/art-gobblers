@@ -26,6 +26,7 @@ import {Pages} from "./Pages.sol";
 // TODO: can we make mint start constant by setting merkle root at deploy uwu would save sload
 // TODO: can we save gas by using SSTORE2 for attributes?
 // TODO: trigger afterTransfer on reveal
+// TODO: this contract needs to be marked an ERC1155 receiver
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -457,7 +458,16 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
                 // Select random attributes for current slot:
                 currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-                getAttributesForGobbler[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
+
+                uint64 multiple = uint64(currentRandomSeed % 128) + 1;
+
+                getAttributesForGobbler[currentSlot].stakingMultiple = multiple;
+
+                address slotOwner = ownerOf[currentSlot];
+
+                getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
+                getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
+                getStakingDataForUser[slotOwner].multiple += multiple;
             }
         }
 
