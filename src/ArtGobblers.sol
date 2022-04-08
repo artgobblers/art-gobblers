@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
@@ -10,13 +9,17 @@ import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
+import {VRGDA} from "./utils/VRGDA.sol";
+import {ERC1155B} from "./utils/ERC1155B.sol";
 import {wadDiv} from "./utils/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
+// TODO: events??? do we have events?? indexed??
 // TODO: UNCHECKED
+// TODO: sync link to avoid extcall
 // TODO: Make sure we're ok with people being able to mint one more than the max (cuz we start at 0)
 // TODO: check everything is being packed properly with forge inspect
 // TODO: ensure it was safe that we removed the max supply checks
@@ -25,12 +28,7 @@ import {Pages} from "./Pages.sol";
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is
-    ERC721("Art Gobblers", "GBLR"),
-    Auth(msg.sender, Authority(address(0))),
-    VRFConsumerBase,
-    LogisticVRGDA
-{
+contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFConsumerBase, LogisticVRGDA {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
@@ -101,17 +99,16 @@ contract ArtGobblers is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Struct holding gobbler attributes.
+    // TODO: idx does not need to be this big? split it?
     struct GobblerAttributes {
         /// @notice Index of token after shuffle.
         uint128 idx;
-        /// @notice Base issuance rate for goop.
-        uint64 baseRate;
         /// @notice Multiple on goop issuance.
         uint64 stakingMultiple;
     }
 
     /// @notice Maps gobbler ids to their attributes.
-    mapping(uint256 => GobblerAttributes) public attributeList;
+    mapping(uint256 => GobblerAttributes) public getAttributesForGobbler;
 
     /*//////////////////////////////////////////////////////////////
                          ATTRIBUTES REVEAL STATE
@@ -132,16 +129,18 @@ contract ArtGobblers is
                               STAKING STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct holding info required for goop staking reward calculation.
-    struct StakingInfo {
+    /// @notice Struct holding info required for goop staking reward calculations.
+    struct StakingData {
+        /// @notice The sum of the multiples of all gobblers the user holds.
+        uint64 multiple;
         /// @notice Balance at time of last deposit or withdrawal.
         uint128 lastBalance;
         /// @notice Timestamp of last deposit or withdrawal.
-        uint128 lastTimestamp;
+        uint64 lastTimestamp;
     }
 
-    /// @notice Mapping from tokenId to staking info.
-    mapping(uint256 => StakingInfo) public stakingInfoMap;
+    /// @notice Maps user addresses to their staking data.
+    mapping(address => StakingData) public getStakingDataForUser;
 
     /*///////////////////////////////////////////////////////////////
                     LEGENDARY GOBBLER AUCTION STATE
@@ -195,6 +194,8 @@ contract ArtGobblers is
 
     error Unauthorized();
 
+    error CannotBurnLegendary();
+
     error InsufficientGobblerBalance();
 
     error NoRemainingLegendaryGobblers();
@@ -211,15 +212,16 @@ contract ArtGobblers is
         string memory _baseUri
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
+        VRGDA(
+            69e18, // Initial price.
+            0.25e18 // Per period price decrease.
+        )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value:
             int256(MAX_MINTABLE_WITH_GOOP + 1) * 2e18,
-            // Time scale:
-            wadDiv(1e18, 60e18),
-            0, // Time shift.
-            69e18, // Initial price.
-            0.25e18 // Per period price decrease.
+            wadDiv(1e18, 60e18), // Time scale.
+            0 // Time shift.
         )
     {
         chainlinkKeyHash = _chainlinkKeyHash;
@@ -305,10 +307,12 @@ contract ArtGobblers is
         unchecked {
             uint256 newId = ++currentNonLegendaryId;
 
-            _mint(mintAddress, newId);
+            _mint(mintAddress, newId, ""); // TODO: reentrancy?
 
             // Start generating goop from mint time.
-            stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
+            // TODO: Update the comment above
+            // TODO: Is it safe to do this now that its global per user?
+            getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
         }
     }
 
@@ -328,19 +332,28 @@ contract ArtGobblers is
 
         if (gobblerIds.length != cost) revert InsufficientGobblerBalance();
 
+        uint256 multiple; // The legendary's multiple will be 2x the sum of the gobblers burned.
+
         unchecked {
             // Burn the gobblers provided as tribute.
             for (uint256 i = 0; i < gobblerIds.length; i++) {
-                if (ownerOf[gobblerIds[i]] != msg.sender) revert Unauthorized();
+                uint256 id = gobblerIds[i]; // Cache the current id.
 
-                _burn(gobblerIds[i]); // TODO: can inline this and skip ownership check
+                // TODO: off by one here? does start include all 10?
+                if (id >= LEGENDARY_GOBBLER_ID_START) revert CannotBurnLegendary();
+
+                multiple += getAttributesForGobbler[id].stakingMultiple;
+
+                // TODO: reentrancy?
+                // TODO: batch tranfsfer?
+                _burn(ownerOf[id], id); // TODO: can inline this and skip ownership check?
             }
 
             // Supply caps are properly checked above, so overflow should be impossible here.
             uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(legendaryId + 1));
 
             // Mint the legendary gobbler.
-            _mint(msg.sender, newId);
+            _mint(msg.sender, newId, "");
 
             // It gets a special event.
             emit LegendaryGobblerMint(newId);
@@ -351,6 +364,12 @@ contract ArtGobblers is
             // TODO: is it ok there are no overflow checks on the left shift
             // New start price is max of 100 and prev_cost * 2. Shift left by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
+        }
+
+        unchecked {
+            // The legendary's multiple is 2x the sum of the multiples of the gobblers burned.
+            getAttributesForGobbler[legendaryId].stakingMultiple = uint64(multiple * 2);
+            getAttributesForGobbler[legendaryId].idx = uint128(legendaryId);
         }
     }
 
@@ -364,7 +383,7 @@ contract ArtGobblers is
         // TODO: can we uncheck?
         return
             daysSinceStart >= 30
-                ? 0
+                ? 0 // TODO: why divide
                 : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
@@ -417,24 +436,25 @@ contract ArtGobblers is
                 uint256 swapSlot = lastRevealedIndex + 1 + distance;
 
                 // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-                uint128 swapIndex = attributeList[swapSlot].idx == 0 ? uint128(swapSlot) : attributeList[swapSlot].idx;
+                uint128 swapIndex = getAttributesForGobbler[swapSlot].idx == 0
+                    ? uint128(swapSlot)
+                    : getAttributesForGobbler[swapSlot].idx;
 
                 // Current slot is consecutive to last reveal.
                 uint256 currentSlot = lastRevealedIndex + 1;
 
                 // Again, we derive index based on value:
-                uint128 currentIndex = attributeList[currentSlot].idx == 0
+                uint128 currentIndex = getAttributesForGobbler[currentSlot].idx == 0
                     ? uint128(currentSlot)
-                    : attributeList[currentSlot].idx;
+                    : getAttributesForGobbler[currentSlot].idx;
 
                 // Swap indices.
-                attributeList[currentSlot].idx = swapIndex;
-                attributeList[swapSlot].idx = currentIndex;
+                getAttributesForGobbler[currentSlot].idx = swapIndex;
+                getAttributesForGobbler[swapSlot].idx = currentIndex;
 
                 // Select random attributes for current slot:
                 currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-                attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
-                attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
+                getAttributesForGobbler[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
             }
         }
 
@@ -451,13 +471,13 @@ contract ArtGobblers is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns a token's URI if it has been minted.
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    function uri(uint256 tokenId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealedIndex are revealed normal gobblers.
         if (tokenId <= lastRevealedIndex) {
             // 0 is not a valid id:
             if (tokenId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(attributeList[tokenId].idx).toString()));
+            return string(abi.encodePacked(BASE_URI, uint256(getAttributesForGobbler[tokenId].idx).toString()));
         }
         // Between lastRevealedIndex + 1 and currentNonLegendaryId are minted but not revealed.
         if (tokenId <= currentNonLegendaryId) return UNREVEALED_URI;
@@ -493,44 +513,71 @@ contract ArtGobblers is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the balance of goop that is available to withdraw from a gobbler.
-    function goopBalance(uint256 gobblerId) public view returns (uint256) {
-        uint256 r = attributeList[gobblerId].baseRate;
-        uint256 m = attributeList[gobblerId].stakingMultiple;
-        uint256 s = stakingInfoMap[gobblerId].lastBalance;
-        uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
-
+    // TODO: do we have this return uint128
+    function goopBalance(address user) public view returns (uint256) {
         // TODO: idt this accounts for wads
 
         unchecked {
+            uint256 multiple = getStakingDataForUser[user].multiple;
+            uint256 lastBalance = getStakingDataForUser[user].lastBalance;
+            uint256 timePassed = block.timestamp - getStakingDataForUser[user].lastTimestamp;
+
             // If a user's goop balance is greater than
             // 2**256 - 1 we've got much bigger problems.
-            return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
+            // TODO: check i got the new formula without baserate right
+            return
+                lastBalance +
+                ((multiple * (timePassed * timePassed)) / 4) +
+                (timePassed * FixedPointMathLib.sqrt(multiple * lastBalance));
         }
     }
 
     /// @notice Add goop to gobbler for staking.
-    function addGoop(uint256 gobblerId, uint256 goopAmount) public {
-        if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
-
+    function addGoop(uint256 goopAmount) public {
         // Burn goop being added to gobbler.
         goop.burnForGobblers(msg.sender, goopAmount);
 
         unchecked {
             // If a user has enough goop to overflow their balance we've got big problems.
             // TODO: do we maybe want to use a safecast tho? idk maybe this is not safe.
-            stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
-            stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+            getStakingDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) + goopAmount);
+            getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
         }
     }
 
     /// @notice Remove goop from a gobbler.
-    function removeGoop(uint256 gobblerId, uint256 goopAmount) public {
-        if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
-
-        // Will revert if removed amount is larger than balance.
-        stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) - goopAmount);
-        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+    function removeGoop(uint256 goopAmount) public {
+        // Will revert due to underflow if removed amount is larger than the user's current goop balance.
+        getStakingDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) - goopAmount);
+        getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
         goop.mint(msg.sender, goopAmount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       ERC721 TRANSFER HOOK LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function afterTransfer(
+        address from,
+        address to,
+        uint256 id
+    ) internal override {
+        // TODO: account for address(0)?
+
+        uint64 idMultiple = getAttributesForGobbler[id].stakingMultiple;
+
+        // TODO: uh what do we do about multiple being 0 right after mint... do we need to reassign after shuffle
+
+        // TODO: this is not necessarily safe cuz sum could exceed 64, lets check dave's spreadsheet ensures not possible
+        unchecked {
+            getStakingDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getStakingDataForUser[from].lastTimestamp = uint64(block.timestamp);
+            getStakingDataForUser[from].multiple -= idMultiple;
+
+            getStakingDataForUser[to].lastBalance = uint128(goopBalance(from));
+            getStakingDataForUser[to].lastTimestamp = uint64(block.timestamp);
+            getStakingDataForUser[to].multiple += idMultiple;
+        }
     }
 }

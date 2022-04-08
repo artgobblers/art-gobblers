@@ -191,7 +191,7 @@ contract ArtGobblersTest is DSTestPlus {
     }
 
     function testUnmintedUri() public {
-        assertEq(gobblers.tokenURI(1), "");
+        assertEq(gobblers.uri(1), "");
     }
 
     function testUnrevealedUri() public {
@@ -202,18 +202,20 @@ contract ArtGobblersTest is DSTestPlus {
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         // assert gobbler not revealed after mint
-        assertTrue(stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
+        assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
     }
 
     function testRevealedUri() public {
         mintGobblerToAddress(users[0], 1);
 
         // unrevealed gobblers have 0 value attributes
-        assertEq(gobblers.getStakingMultiple(1), 0);
+
+        (uint128 idx, uint64 multiplier) = gobblers.getAttributesForGobbler(1);
+        assertEq(multiplier, 0);
         setRandomnessAndReveal(1, "seed");
-        (uint256 expectedIndex, , ) = gobblers.attributeList(1);
-        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
-        assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
+
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(idx).toString()));
+        assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
 
     function testMintedLegendaryURI() public {
@@ -228,7 +230,7 @@ contract ArtGobblersTest is DSTestPlus {
         string memory expectedURI = string(
             abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
         );
-        string memory actualURI = gobblers.tokenURI(currentLegendaryId);
+        string memory actualURI = gobblers.uri(currentLegendaryId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
@@ -236,7 +238,7 @@ contract ArtGobblersTest is DSTestPlus {
         (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
         uint256 legendaryId = currentLegendaryId + 1;
-        assertEq(gobblers.tokenURI(legendaryId), "");
+        assertEq(gobblers.uri(legendaryId), "");
     }
 
     function testCantSetRandomSeedWithoutRevealing() public {
@@ -251,16 +253,16 @@ contract ArtGobblersTest is DSTestPlus {
         mintGobblerToAddress(users[0], 100);
         // first 100 gobblers should be unrevealed
         for (uint256 i = 1; i <= 100; i++) {
-            assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
+            assertEq(gobblers.uri(i), gobblers.UNREVEALED_URI());
         }
         setRandomnessAndReveal(50, "seed");
         // first 50 gobblers should now be revealed
         for (uint256 i = 1; i <= 50; i++) {
-            assertTrue(!stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
+            assertTrue(!stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
         // and next 50 should remain unrevealed
         for (uint256 i = 51; i <= 100; i++) {
-            assertTrue(stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
+            assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
     }
 

@@ -7,10 +7,28 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 /// @notice Goop is an in-game token for ArtGobblers. It's a standard ERC20
 /// token that can be burned and minted by the gobblers and pages contract.
 contract Goop is ERC20("Goop", "GOOP", 18) {
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
+
     address public immutable artGobblers;
+
     address public pages;
 
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
     error Unauthorized();
+
+    /// @notice Set addresses with authority to mint and burn.
+    constructor(address _artGobblers) {
+        artGobblers = _artGobblers;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           CONFIGURATION LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Requires caller address to match user address.
     modifier only(address user) {
@@ -19,15 +37,14 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
         _;
     }
 
-    /// @notice Set addresses with authority to mint and burn.
-    constructor(address _artGobblers) {
-        artGobblers = _artGobblers;
-    }
-
     /// @notice Set pages address, callable only by gobblers contract.
     function setPages(address _pages) public only(artGobblers) {
         pages = _pages;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                             MINT/BURN LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     function mint(address to, uint256 value) public only(artGobblers) {
         _mint(to, value);

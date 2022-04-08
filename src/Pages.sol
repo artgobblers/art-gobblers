@@ -8,13 +8,15 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {wadDiv} from "./utils/SignedWadMath.sol";
+import {VRGDA} from "./utils/VRGDA.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
 
 /// @title Pages NFT (PAGE)
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
+contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -56,15 +58,10 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
                             PRICING CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    int256 private immutable perPeriodPostSwitchover = wadDiv(10e18, 3e18);
+    // TODO: do we make this stuff and the above public?
 
-    int256 private immutable switchoverTime = 360e18;
-
-    /// @notice Equal to 1 - periodPriceDecrease.
-    int256 private immutable priceScaling = 0.75e18;
-
-    /// @notice Number of pages sold before we switch pricing functions.
-    uint256 private numPagesSwitch = 9975;
+    /// @notice The id of the first page to be priced using the post switch VRGDA.
+    uint256 private constant SWITCH_ID = 9975;
 
     /*//////////////////////////////////////////////////////////////
                             AUTHORIZED USERS
@@ -82,26 +79,32 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
 
     error Unauthorized();
 
-    /*//////////////////////////////////////////////////////////////
-                               CONSTRUCTOR
-    //////////////////////////////////////////////////////////////*/
-
     constructor(address _goop, address _artist)
+        VRGDA(
+            420e18, // Initial price.
+            0.25e18 // Per period price decrease.
+        )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value:
             10024e18, // TODO: did we ensure to make this 2x?
-            // Time scale:
-            wadDiv(1e18, 30e18),
-            180e18, // Time shift.
-            420e18, // Initial price.
-            0.25e18 // Per period price decrease.
+            wadDiv(1e18, 30e18), // Time scale.
+            180e18 // Time shift.
+        )
+        PostSwitchVRGDA(
+            int256(SWITCH_ID), // Switch id.
+            360e18, // Switch day. // TODO: why do we have day and id?
+            wadDiv(10e18, 3e18) // Per day.
         )
     {
         goop = Goop(_goop);
         artist = _artist;
         artGobblers = msg.sender;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           CONFIGURATION LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Requires caller address to match user address.
     modifier only(address user) {
@@ -114,6 +117,15 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
     function setIsDrawn(uint256 tokenId) public only(artist) {
         isDrawn[tokenId] = true;
     }
+
+    /// @notice Set mint start timestamp for regular minting.
+    function setMintStart(uint256 _mintStart) public only(artGobblers) {
+        mintStart = _mintStart;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a page by burning goop.
     function mint() public {
@@ -128,17 +140,16 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
         }
     }
 
-    /// @notice Set mint start timestamp for regular minting.
-    function setMintStart(uint256 _mintStart) public only(artGobblers) {
-        mintStart = _mintStart;
-    }
-
     /// @notice Mint by authority without paying mint cost.
     function mintByAuth(address addr) public only(artGobblers) {
         unchecked {
             _mint(addr, ++currentId);
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           VRGDA PRICING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the mint cost of a page.
     /// @dev If the number of sales is below a pre-defined threshold, we use the
@@ -149,28 +160,19 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA {
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return
-            (currentId < numPagesSwitch)
-                ? getPrice(timeSinceStart, numMintedFromGoop)
-                : postSwitchPrice(timeSinceStart);
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
-    /// @notice Calculate the mint cost of a page after the switch threshold.
-    function postSwitchPrice(uint256 timeSinceStart) internal view returns (uint256) {
-        // TODO: optimize this like we did in VRGDA.sol
-
-        int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop)) -
-            PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
-
-        // We convert seconds to days here, as we need to prevent overflow.
-        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(DAYS_WAD);
-
-        int256 scalingFactor = priceScaling.pow(time - fInv); // This will always be positive.
-
-        return uint256(initialPrice.mul(scalingFactor));
+    // TODO: should we be more strict about only using ints where we need them?
+    function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
+        return currentId < SWITCH_ID ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    /*//////////////////////////////////////////////////////////////
+                             TOKEN URI LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function uri(uint256 tokenId) public view virtual override returns (string memory) {
         return tokenId > currentId ? "" : string(abi.encodePacked(BASE_URI, tokenId.toString()));
     }
 }
