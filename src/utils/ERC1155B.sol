@@ -3,6 +3,8 @@ pragma solidity >=0.8.0;
 
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
+// TODO: pack ownerOf with attributes?
+
 /// @notice Minimalist and gas efficient ERC1155 implementation optimized for single supply ids.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC1155B.sol)
 abstract contract ERC1155B {
