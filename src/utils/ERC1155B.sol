@@ -278,7 +278,7 @@ abstract contract ERC1155B {
 
         ownerOf[id] = address(0);
 
-        afterTransfer(from, address(0), id);
+        afterTransfer(owner, address(0), id);
 
         emit TransferSingle(msg.sender, owner, address(0), id, 1);
     }
