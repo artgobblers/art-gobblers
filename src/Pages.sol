@@ -7,8 +7,9 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
-import {wadDiv} from "./utils/SignedWadMath.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
+import {ERC1155B} from "./utils/ERC1155B.sol";
+import {wadDiv} from "./utils/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
@@ -16,7 +17,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Pages NFT (PAGE)
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
+contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -134,7 +135,7 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
         goop.burnForPages(msg.sender, price);
 
         unchecked {
-            _mint(msg.sender, ++currentId);
+            _mint(msg.sender, ++currentId, "");
 
             numMintedFromGoop++;
         }
@@ -143,7 +144,7 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Mint by authority without paying mint cost.
     function mintByAuth(address addr) public only(artGobblers) {
         unchecked {
-            _mint(addr, ++currentId);
+            _mint(addr, ++currentId, "");
         }
     }
 

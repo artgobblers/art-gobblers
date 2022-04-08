@@ -344,9 +344,11 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
                 multiple += getAttributesForGobbler[id].stakingMultiple;
 
+                if (msg.sender != ownerOf[id]) revert Unauthorized();
+
                 // TODO: reentrancy?
                 // TODO: batch tranfsfer?
-                _burn(ownerOf[id], id); // TODO: can inline this and skip ownership check?
+                _burn(id); // TODO: can inline this and skip ownership check?
             }
 
             // Supply caps are properly checked above, so overflow should be impossible here.
@@ -502,7 +504,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         if (!pages.isDrawn(pageId) || ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
         // This will revert if the caller does not own the page.
-        pages.transferFrom(msg.sender, address(this), pageId);
+        pages.safeTransferFrom(msg.sender, address(this), pageId, 1, "");
 
         // Map the page to the gobbler that ate it.
         pageIdToGobblerId[pageId] = gobblerId;

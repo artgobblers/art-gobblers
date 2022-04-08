@@ -291,5 +291,5 @@ abstract contract ERC1155B {
         address from,
         address to,
         uint256 id
-    ) internal virtual;
+    ) internal virtual {}
 }

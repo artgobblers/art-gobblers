@@ -64,7 +64,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function testGoopBalance() public view {
-        gobblers.goopBalance(1);
+        gobblers.goopBalance(address(this));
     }
 
     function testMintPage() public {
@@ -83,7 +83,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function testAddAndRemoveGoop() public {
-        gobblers.addGoop(1, 1e18);
-        gobblers.removeGoop(1, 1e18);
+        gobblers.addGoop(1e18);
+        gobblers.removeGoop(1e18);
     }
 }

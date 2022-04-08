@@ -293,13 +293,13 @@ contract ArtGobblersTest is DSTestPlus {
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
         // balance should initially be zero
-        assertEq(gobblers.goopBalance(1), 0);
+        assertEq(gobblers.goopBalance(address(this)), 0);
         vm.warp(block.timestamp + 100000);
         // balance should be zero while no reveal
-        assertEq(gobblers.goopBalance(1), 0);
+        assertEq(gobblers.goopBalance(address(this)), 0);
         setRandomnessAndReveal(1, "seed");
         // balance should grow on same timestamp after reveal
-        assertTrue(gobblers.goopBalance(1) != 0);
+        assertTrue(gobblers.goopBalance(address(this)) != 0);
     }
 
     function testGoopRemoval() public {
@@ -307,12 +307,12 @@ contract ArtGobblersTest is DSTestPlus {
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
         // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(1);
+        uint256 initialBalance = gobblers.goopBalance(address(this));
         //10%
         uint256 removalAmount = initialBalance / 10;
         vm.prank(users[0]);
-        gobblers.removeGoop(1, removalAmount);
-        uint256 finalBalance = gobblers.goopBalance(1);
+        gobblers.removeGoop(removalAmount);
+        uint256 finalBalance = gobblers.goopBalance(address(this));
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
@@ -326,7 +326,7 @@ contract ArtGobblersTest is DSTestPlus {
         setRandomnessAndReveal(1, "seed");
         vm.prank(users[1]);
         vm.expectRevert(unauthorized);
-        gobblers.removeGoop(1, 1);
+        gobblers.removeGoop(1);
     }
 
     function testGoopAddition() public {
@@ -334,13 +334,13 @@ contract ArtGobblersTest is DSTestPlus {
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
         // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(1);
+        uint256 initialBalance = gobblers.goopBalance(address(this));
         vm.prank(address(gobblers));
         uint256 additionAmount = 1000;
         goop.mint(users[0], additionAmount);
         vm.prank(users[0]);
-        gobblers.addGoop(1, additionAmount);
-        uint256 finalBalance = gobblers.goopBalance(1);
+        gobblers.addGoop(additionAmount);
+        uint256 finalBalance = gobblers.goopBalance(address(this));
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance + additionAmount, finalBalance);
