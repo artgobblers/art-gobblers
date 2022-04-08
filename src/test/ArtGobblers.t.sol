@@ -12,8 +12,9 @@ import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
+import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
-contract ArtGobblersTest is DSTestPlus {
+contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -209,19 +210,25 @@ contract ArtGobblersTest is DSTestPlus {
         mintGobblerToAddress(users[0], 1);
 
         // unrevealed gobblers have 0 value attributes
-
-        (uint128 idx, uint64 multiplier) = gobblers.getAttributesForGobbler(1);
+        (uint128 preRevealIdx, uint64 multiplier) = gobblers.getAttributesForGobbler(1);
+        assertEq(preRevealIdx, 0);
         assertEq(multiplier, 0);
+
         setRandomnessAndReveal(1, "seed");
 
+        (uint128 idx, ) = gobblers.getAttributesForGobbler(1);
+
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(idx).toString()));
-        assertTrue(stringEquals(gobblers.uri(1), expectedURI));
+
+        assertEq(gobblers.uri(1), expectedURI);
     }
 
     function testMintedLegendaryURI() public {
         //mint legendary
         vm.warp(block.timestamp + 70 days);
-        uint256[] memory _ids;
+
+        uint256[] memory _ids; // gobbler should be free at this point
+
         gobblers.mintLegendaryGobbler(_ids);
 
         (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
@@ -292,14 +299,24 @@ contract ArtGobblersTest is DSTestPlus {
 
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
+
         // balance should initially be zero
-        assertEq(gobblers.goopBalance(address(this)), 0);
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
         vm.warp(block.timestamp + 100000);
+
         // balance should be zero while no reveal
-        assertEq(gobblers.goopBalance(address(this)), 0);
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
         setRandomnessAndReveal(1, "seed");
-        // balance should grow on same timestamp after reveal
-        assertTrue(gobblers.goopBalance(address(this)) != 0);
+
+        // balance should NOT grow on same timestamp after reveal
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
+        vm.warp(block.timestamp + 100000);
+
+        // balance should grow after reveal
+        assertGt(gobblers.goopBalance(users[0]), 0);
     }
 
     function testGoopRemoval() public {
@@ -392,5 +409,25 @@ contract ArtGobblersTest is DSTestPlus {
     // string equality based on hash
     function stringEquals(string memory s1, string memory s2) internal pure returns (bool) {
         return keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) public pure override returns (bytes4) {
+        return ERC1155TokenReceiver.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return ERC1155TokenReceiver.onERC1155BatchReceived.selector;
     }
 }
