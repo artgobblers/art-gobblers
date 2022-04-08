@@ -325,7 +325,7 @@ contract ArtGobblersTest is DSTestPlus {
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
         vm.prank(users[1]);
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(stdError.arithmeticError);
         gobblers.removeGoop(1);
     }
 
