@@ -126,14 +126,14 @@ abstract contract ERC1155B {
 
             ownerOf[id] = to;
 
+            afterTransfer(from, to, id);
+
             // An array can't have a total length
             // larger than the max uint256 value.
             unchecked {
                 ++i;
             }
         }
-
-        afterTransfer(from, to, id);
 
         emit TransferBatch(msg.sender, from, to, ids, amounts);
 
@@ -162,8 +162,7 @@ abstract contract ERC1155B {
         // the array index counter which cannot possibly overflow.
         unchecked {
             for (uint256 i = 0; i < ownersLength; ++i) {
-                // Balance is 1 if the id's owner matches, 0 otherwise.
-                balances[i] = ownerOf[ids[i]] == owners[i] ? 1 : 0;
+                balances[i] = balanceOf(owners[i], ids[i]);
             }
         }
     }
@@ -205,8 +204,7 @@ abstract contract ERC1155B {
         // Generate an amounts array locally to use in the event below.
         uint256[] memory amounts = new uint256[](idsLength);
 
-        // Storing this outside the loop saves ~7 gas per iteration.
-        uint256 id;
+        uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
         for (uint256 i = 0; i < idsLength; ) {
             id = ids[i];
@@ -247,8 +245,7 @@ abstract contract ERC1155B {
         // Generate an amounts array locally to use in the event below.
         uint256[] memory amounts = new uint256[](idsLength);
 
-        // Storing this outside the loop saves ~7 gas per iteration.
-        uint256 id;
+        uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
         for (uint256 i = 0; i < idsLength; ) {
             id = ids[i];
@@ -274,13 +271,10 @@ abstract contract ERC1155B {
         emit TransferBatch(msg.sender, from, address(0), ids, amounts);
     }
 
-    function _burn(address from, uint256 id) internal virtual {
-        // Burning unminted tokens makes no sense.
-        require(from != address(0), "INVALID_FROM");
-
+    function _burn(uint256 id) internal virtual {
         address owner = ownerOf[id];
 
-        require(owner == from, "WRONG_FROM");
+        require(owner != address(0), "NOT_MINTED");
 
         ownerOf[id] = address(0);
 
