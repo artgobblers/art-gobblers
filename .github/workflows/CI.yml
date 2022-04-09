@@ -23,7 +23,7 @@ jobs:
         run: npm run lint:check
 
       - name: Run tests
-        run: forge test
+        run: forge test --no-match-contract CorrectnessTest
         env:
           # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}

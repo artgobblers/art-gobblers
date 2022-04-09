@@ -3,3 +3,5 @@ cache/
 node_modules/
 .env
 .DS_Store
+env
+__pycache__/
