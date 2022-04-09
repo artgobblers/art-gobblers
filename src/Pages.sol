@@ -46,7 +46,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice The start timestamp of the public mint.
     /// @dev Begins as type(uint256).max to force pagePrice() to underflow before minting starts.
-    uint256 private mintStart = type(uint256).max;
+    uint256 internal mintStart = type(uint256).max;
 
     /*//////////////////////////////////////////////////////////////
                                DRAWN LOGIC
@@ -62,7 +62,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     // TODO: do we make this stuff and the above public?
 
     /// @notice The id of the first page to be priced using the post switch VRGDA.
-    uint256 private constant SWITCH_ID = 9975;
+    uint256 internal constant SWITCH_ID = 9975;
 
     /*//////////////////////////////////////////////////////////////
                             AUTHORIZED USERS
