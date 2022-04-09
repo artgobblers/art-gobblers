@@ -31,22 +31,22 @@ contract CorrectnessTest is DSTestPlus {
     //fuzz test correctness of pricing function for different combinations of time and quantity sold.
     //we match all other parameters (initialPrice, timescale, etc...) to the ones used for
     //gobbler pricing specifically.
-    function testCorrectness(uint256 timeSinceStart, uint256 numSold) public {
-        //limit num sold to max mint
-        numSold = bound(numSold, 0, MAX_GOOP_MINT);
-        //limit mint time to 5 yeras
-        timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
+    // function testCorrectness(uint256 timeSinceStart, uint256 numSold) public {
+    //     //limit num sold to max mint
+    //     numSold = bound(numSold, 0, MAX_GOOP_MINT);
+    //     //limit mint time to 5 yeras
+    //     timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
 
-        checkPriceWithParameters(
-            timeSinceStart,
-            numSold,
-            initialPrice,
-            periodPriceDecrease,
-            logisticScale,
-            timeScale,
-            timeShift
-        );
-    }
+    //     checkPriceWithParameters(
+    //         timeSinceStart,
+    //         numSold,
+    //         initialPrice,
+    //         periodPriceDecrease,
+    //         logisticScale,
+    //         timeScale,
+    //         timeShift
+    //     );
+    // }
 
     function checkPriceWithParameters(
         uint256 _timeSinceStart,
