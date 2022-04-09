@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {DSTest} from "ds-test/test.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {MockVRGDA} from "./utils/mocks/MockVRGDA.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 import {console} from "./utils/Console.sol";
 
-contract CorrectnessTest is DSTest {
+contract CorrectnessTest is DSTestPlus {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -33,9 +33,10 @@ contract CorrectnessTest is DSTest {
     //gobbler pricing specifically.
     function testCorrectness(uint256 timeSinceStart, uint256 numSold) public {
         //limit num sold to max mint
-        vm.assume(numSold < MAX_GOOP_MINT);
+        numSold = bound(numSold, 0, MAX_GOOP_MINT);
         //limit mint time to 5 yeras
-        vm.assume(timeSinceStart < FIVE_YEARS);
+        timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
+
         checkPriceWithParameters(
             timeSinceStart,
             numSold,
@@ -57,7 +58,6 @@ contract CorrectnessTest is DSTest {
         int256 _timeShift
     ) private {
         MockVRGDA vrgda = new MockVRGDA(_logisticScale, _timeScale, _timeShift, _initialPrice, _perPeriodPriceDecrease);
-
         //calculate actual price from gda
         uint256 actualPrice = vrgda.getPrice(_timeSinceStart, _numSold);
         //calculate expected price from python script
@@ -70,8 +70,9 @@ contract CorrectnessTest is DSTest {
             _timeScale,
             _timeShift
         );
-        //equal within 0.5 percent
-        assertApproxEqual(actualPrice, expectedPrice, 50);
+        if (actualPrice == expectedPrice) return;
+        //equal within 1 percent
+        assertRelApproxEq(actualPrice, expectedPrice, 1e16);
     }
 
     function calculatePrice(
@@ -104,15 +105,5 @@ contract CorrectnessTest is DSTest {
         bytes memory res = vm.ffi(inputs);
         uint256 price = abi.decode(res, (uint256));
         return price;
-    }
-
-    function assertApproxEqual(
-        uint256 expected,
-        uint256 actual,
-        uint256 tolerance
-    ) public {
-        uint256 leftBound = (expected * (1000 - tolerance)) / 1000;
-        uint256 rightBound = (expected * (1000 + tolerance)) / 1000;
-        assertTrue(leftBound <= actual && actual <= rightBound);
     }
 }

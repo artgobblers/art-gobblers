@@ -1,7 +1,6 @@
 import math
 import numpy as np
 
-
 class Pricer: 
     
     def compute_gobbler_price(self, time_since_start, num_sold, initial_price, per_period_price_decrease, logistic_scale, time_scale, time_shift):
