@@ -11,7 +11,6 @@ import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
-
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 contract BenchmarksTest is DSTest, ERC1155TokenReceiver {

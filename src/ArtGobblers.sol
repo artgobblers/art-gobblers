@@ -296,8 +296,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     }
 
     /// @notice Gobbler pricing in terms of goop.
-    /// @dev Can revert due to overflow if buying far
-    /// too early/late or beyond the chosen supply cap.
+    /// @dev Will revert if called before minting starts or after all gobblers have been minted.
     function gobblerPrice() public view returns (uint256) {
         // TODO: uh this starts at 0? is that ok? do we want it to underflow before mint?
         // TODO: can we uncheck it? what about pages.sol btw could anyone buy them before anyway
