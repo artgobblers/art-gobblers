@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {MockVRGDA} from "./utils/mocks/MockVRGDA.sol";
+import {MockLogisticVRGDA} from "./utils/mocks/MockLogisticVRGDA.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 import {console} from "./utils/Console.sol";
@@ -52,12 +52,18 @@ contract CorrectnessTest is DSTestPlus {
         uint256 _timeSinceStart,
         uint256 _numSold,
         int256 _initialPrice,
-        int256 _perPeriodPriceDecrease,
+        int256 perPeriodPriceDecrease,
         int256 _logisticScale,
         int256 _timeScale,
         int256 _timeShift
     ) private {
-        MockVRGDA vrgda = new MockVRGDA(_logisticScale, _timeScale, _timeShift, _initialPrice, _perPeriodPriceDecrease);
+        MockLogisticVRGDA vrgda = new MockLogisticVRGDA(
+            _initialPrice,
+            perPeriodPriceDecrease,
+            _logisticScale,
+            _timeScale,
+            _timeShift
+        );
         //calculate actual price from gda
         uint256 actualPrice = vrgda.getPrice(_timeSinceStart, _numSold);
         //calculate expected price from python script
@@ -65,7 +71,7 @@ contract CorrectnessTest is DSTestPlus {
             _timeSinceStart,
             _numSold,
             _initialPrice,
-            _perPeriodPriceDecrease,
+            perPeriodPriceDecrease,
             _logisticScale,
             _timeScale,
             _timeShift
@@ -79,7 +85,7 @@ contract CorrectnessTest is DSTestPlus {
         uint256 _timeSinceStart,
         uint256 _numSold,
         int256 _initialPrice,
-        int256 _perPeriodPriceDecrease,
+        int256 perPeriodPriceDecrease,
         int256 _logisticScale,
         int256 _timeScale,
         int256 _timeShift
@@ -95,7 +101,7 @@ contract CorrectnessTest is DSTestPlus {
         inputs[7] = "--initial_price";
         inputs[8] = uint256(_initialPrice).toString();
         inputs[9] = "--per_period_price_decrease";
-        inputs[10] = uint256(_perPeriodPriceDecrease).toString();
+        inputs[10] = uint256(perPeriodPriceDecrease).toString();
         inputs[11] = "--logistic_scale";
         inputs[12] = uint256(_logisticScale).toString();
         inputs[13] = "--time_scale";

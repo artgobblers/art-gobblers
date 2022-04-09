@@ -23,9 +23,9 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable timeShift;
 
-    /// @notice The initial value the VRGDA logistic pricing formula would output.
+    /// @notice The initial value the logistic formula would output.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable initialValue;
+    int256 private immutable initialLogisticValue;
 
     constructor(
         int256 _logisticScale,
@@ -36,8 +36,7 @@ abstract contract LogisticVRGDA is VRGDA {
         timeScale = _timeScale;
         timeShift = _timeShift;
 
-        // TODO: can we use getTargetSaleDay? why is exp involved again?
-        initialValue = wadDiv(logisticScale, 1e18 + wadExp(wadMul(timeScale, timeShift)));
+        initialLogisticValue = wadDiv(logisticScale, 1e18 + wadExp(wadMul(timeScale, timeShift)));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -46,7 +45,9 @@ abstract contract LogisticVRGDA is VRGDA {
 
     function getTargetSaleDay(int256 idWad) internal view virtual override returns (int256) {
         unchecked {
-            return timeShift + unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialValue) - 1e18), timeScale);
+            return
+                timeShift +
+                unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialLogisticValue) - 1e18), timeScale);
         }
     }
 }
