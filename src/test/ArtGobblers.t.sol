@@ -410,24 +410,4 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function stringEquals(string memory s1, string memory s2) internal pure returns (bool) {
         return keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
-
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) public pure override returns (bytes4) {
-        return ERC1155TokenReceiver.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] calldata,
-        uint256[] calldata,
-        bytes calldata
-    ) external pure override returns (bytes4) {
-        return ERC1155TokenReceiver.onERC1155BatchReceived.selector;
-    }
 }

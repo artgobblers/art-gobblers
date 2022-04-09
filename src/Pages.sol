@@ -90,7 +90,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             // to account for the subtracted initial value:
             10024e18, // TODO: did we ensure to make this 2x?
             wadDiv(1e18, 30e18), // Time scale.
-            180e18 // Time shift.
+            0 // Time shift. // TODO: update these values
         )
         PostSwitchVRGDA(
             int256(SWITCH_ID), // Switch id.
