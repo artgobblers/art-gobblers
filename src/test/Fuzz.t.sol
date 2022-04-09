@@ -40,7 +40,7 @@ contract FuzzTest is DSTestPlus {
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
         gobblers = new ArtGobblers(
             "root",
-            block.timestamp,
+            uint128(block.timestamp),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,

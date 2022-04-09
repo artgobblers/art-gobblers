@@ -97,7 +97,36 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     uint256 public immutable mintStart;
 
     /// @notice Number of gobblers minted from goop.
-    uint256 public numMintedFromGoop; // TODO: what should we pack this with?
+    uint128 public numMintedFromGoop;
+
+    /*//////////////////////////////////////////////////////////////
+                         STANDARD GOBBLER STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Id of last minted non legendary token.
+    uint128 internal currentNonLegendaryId; // TODO: public?
+
+    /*///////////////////////////////////////////////////////////////
+                    LEGENDARY GOBBLER AUCTION STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Last 10 ids are reserved for legendary gobblers.
+    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
+
+    /// @notice Struct holding info required for legendary gobbler auctions.
+    struct LegendaryGobblerAuctionData {
+        /// @notice Start price of current legendary gobbler auction.
+        uint120 currentLegendaryGobblerStartPrice;
+        /// @notice Start timestamp of current legendary gobbler auction.
+        uint120 currentLegendaryGobblerAuctionStart;
+        /// @notice Id of last minted legendary gobbler.
+        /// @dev 16 bits has a max value of ~60,000,
+        /// which is safely within our limits here.
+        uint16 currentLegendaryId;
+    }
+
+    /// @notice Data about the current legendary gobbler auction.
+    LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
 
     /*//////////////////////////////////////////////////////////////
                              ATTRIBUTE STATE
@@ -146,35 +175,6 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
     /// @notice Maps user addresses to their staking data.
     mapping(address => StakingData) public getStakingDataForUser;
-
-    /*///////////////////////////////////////////////////////////////
-                    LEGENDARY GOBBLER AUCTION STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Last 10 ids are reserved for legendary gobblers.
-    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
-
-    /// @notice Struct holding info required for legendary gobbler auctions.
-    struct LegendaryGobblerAuctionData {
-        /// @notice Start price of current legendary gobbler auction.
-        uint120 currentLegendaryGobblerStartPrice;
-        /// @notice Start timestamp of current legendary gobbler auction.
-        uint120 currentLegendaryGobblerAuctionStart;
-        /// @notice Id of last minted legendary gobbler.
-        /// @dev 16 bits has a max value of ~60,000,
-        /// which is safely within our limits here.
-        uint16 currentLegendaryId;
-    }
-
-    /// @notice Data about the current legendary gobbler auction.
-    LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
-
-    /*//////////////////////////////////////////////////////////////
-                         STANDARD GOBBLER STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Id of last minted non legendary token.
-    uint256 internal currentNonLegendaryId;
 
     /*//////////////////////////////////////////////////////////////
                             ART FEEDING STATE

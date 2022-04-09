@@ -39,7 +39,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
         gobblers = new ArtGobblers(
             "root",
-            block.timestamp,
+            uint128(block.timestamp),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
