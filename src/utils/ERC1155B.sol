@@ -106,9 +106,7 @@ abstract contract ERC1155B {
         uint256[] calldata amounts,
         bytes calldata data
     ) public virtual {
-        uint256 idsLength = ids.length; // Saves MLOADs.
-
-        require(idsLength == amounts.length, "LENGTH_MISMATCH");
+        require(ids.length == amounts.length, "LENGTH_MISMATCH");
 
         require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
 
@@ -119,7 +117,7 @@ abstract contract ERC1155B {
         // Unchecked because the only math done is incrementing
         // the array index counter which cannot possibly overflow.
         unchecked {
-            for (uint256 i = 0; i < idsLength; i++) {
+            for (uint256 i = 0; i < ids.length; i++) {
                 id = ids[i];
                 amount = amounts[i];
 
@@ -152,16 +150,14 @@ abstract contract ERC1155B {
         virtual
         returns (uint256[] memory balances)
     {
-        uint256 ownersLength = owners.length; // Saves MLOADs.
+        require(owners.length == ids.length, "LENGTH_MISMATCH");
 
-        require(ownersLength == ids.length, "LENGTH_MISMATCH");
-
-        balances = new uint256[](ownersLength);
+        balances = new uint256[](owners.length);
 
         // Unchecked because the only math done is incrementing
         // the array index counter which cannot possibly overflow.
         unchecked {
-            for (uint256 i = 0; i < ownersLength; ++i) {
+            for (uint256 i = 0; i < owners.length; ++i) {
                 balances[i] = balanceOf(owners[i], ids[i]);
             }
         }
@@ -196,7 +192,7 @@ abstract contract ERC1155B {
 
     function _batchMint(
         address to,
-        uint256[] calldata ids,
+        uint256[] memory ids,
         bytes memory data
     ) internal virtual {
         uint256 idsLength = ids.length; // Saves MLOADs.
