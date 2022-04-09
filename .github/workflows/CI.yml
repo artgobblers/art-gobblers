@@ -7,6 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+
+      - name: Install dev dependencies
+        run: npm install
 
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
@@ -23,7 +27,7 @@ jobs:
         run: npm run lint:check
 
       - name: Run tests
-        run: forge test --no-match-contract CorrectnessTest
+        run: forge test
         env:
           # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}
