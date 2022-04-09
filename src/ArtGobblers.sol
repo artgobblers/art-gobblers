@@ -84,7 +84,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Merkle root of mint whitelist.
-    bytes32 public merkleRoot;
+    bytes32 public immutable merkleRoot;
 
     /// @notice Mapping to keep track of which addresses have claimed from whitelist.
     mapping(address => bool) public claimedWhitelist;
@@ -93,11 +93,11 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                             VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Timestamp for the start of the mint.
-    uint128 public mintStart;
+    /// @notice Timestamp for the start of the whitelist & VRGDA mint.
+    uint256 public immutable mintStart;
 
     /// @notice Number of gobblers minted from goop.
-    uint128 public numMintedFromGoop;
+    uint256 public numMintedFromGoop; // TODO: what should we pack this with?
 
     /*//////////////////////////////////////////////////////////////
                              ATTRIBUTE STATE
@@ -210,6 +210,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     //////////////////////////////////////////////////////////////*/
 
     constructor(
+        bytes32 _merkleRoot,
+        uint256 _mintStart,
         address vrfCoordinator,
         address linkToken,
         bytes32 _chainlinkKeyHash,
@@ -231,8 +233,12 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
+
+        mintStart = _mintStart;
+        merkleRoot = _merkleRoot;
+
         goop = new Goop(address(this));
-        pages = new Pages(address(goop), msg.sender);
+        pages = new Pages(address(goop), msg.sender, _mintStart);
 
         goop.setPages(address(pages));
 
@@ -241,8 +247,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         // Start price for legendary gobblers is 100 gobblers.
         legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
 
-        // First legendary gobbler auction starts 30 days after contract deploy.
-        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(block.timestamp + 30 days);
+        // First legendary gobbler auction starts 30 days after the mint starts.
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(_mintStart + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
         legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
@@ -252,25 +258,11 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                              WHITELIST LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Set merkle root for minting whitelist, can only be done once.
-    function setMerkleRoot(bytes32 _merkleRoot) public requiresAuth {
-        // Don't allow setting the merkle root twice.
-        if (merkleRoot != 0) revert Unauthorized();
-
-        merkleRoot = _merkleRoot;
-
-        mintStart = uint128(block.timestamp);
-
-        pages.setMintStart(block.timestamp);
-
-        emit MerkleRootSet(_merkleRoot);
-    }
-
     /// @notice Mint from whitelist, using a merkle proof.
     function mintFromWhitelist(bytes32[] calldata _merkleProof) public {
         bytes32 root = merkleRoot;
 
-        if (root == 0 || claimedWhitelist[msg.sender]) revert Unauthorized();
+        if (mintStart > block.timestamp || claimedWhitelist[msg.sender]) revert Unauthorized();
 
         if (!MerkleProof.verify(_merkleProof, root, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
 
@@ -289,6 +281,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     function mintFromGoop() public {
         // No need to check supply cap, gobblerPrice()
         // will revert due to overflow if we reach it.
+        // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         mintGobbler(msg.sender);
@@ -299,11 +292,14 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     }
 
     /// @notice Gobbler pricing in terms of goop.
-    /// @dev Will revert if called before minting starts or after all gobblers have been minted.
+    /// @dev Will revert if called before minting starts
+    /// or after all gobblers have been minted via VRGDA.
     function gobblerPrice() public view returns (uint256) {
-        // TODO: uh this starts at 0? is that ok? do we want it to underflow before mint?
-        // TODO: can we uncheck it? what about pages.sol btw could anyone buy them before anyway
-        return getPrice(block.timestamp - mintStart, numMintedFromGoop);
+        // We need checked math here to cause overflow
+        // before minting has begun, preventing mints.
+        uint256 timeSinceStart = block.timestamp - mintStart;
+
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
     function mintGobbler(address mintAddress) internal {
@@ -316,6 +312,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
             // Start generating goop from mint time.
             // TODO: Update the comment above
             // TODO: Is it safe to do this now that its global per user?
+            // TODO: i think this is handled in the transfer hook
             getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
         }
     }

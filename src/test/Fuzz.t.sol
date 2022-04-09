@@ -38,11 +38,17 @@ contract FuzzTest is DSTestPlus {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(address(vrfCoordinator), address(linkToken), keyHash, fee, baseUri);
+        gobblers = new ArtGobblers(
+            "root",
+            block.timestamp,
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            baseUri
+        );
         goop = gobblers.goop();
         pages = gobblers.pages();
-
-        gobblers.setMerkleRoot("root");
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 id) public {

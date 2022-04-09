@@ -48,33 +48,45 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(address(vrfCoordinator), address(linkToken), keyHash, fee, baseUri);
+        gobblers = new ArtGobblers(
+            "root",
+            block.timestamp,
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            baseUri
+        );
         goop = gobblers.goop();
         pages = gobblers.pages();
-    }
 
-    function testSetMerkleRoot() public {
-        bytes32 root = "root";
-        assertTrue(root != gobblers.merkleRoot());
-        gobblers.setMerkleRoot(root);
-        assertEq(root, gobblers.merkleRoot());
-        assertTrue(true);
-    }
-
-    function testSetMerkleRootTwice() public {
-        gobblers.setMerkleRoot("root1");
-        vm.expectRevert(unauthorized);
-        gobblers.setMerkleRoot("root2");
+        assertEq("root", gobblers.merkleRoot());
+        assertEq(block.timestamp, gobblers.mintStart());
     }
 
     function testMintFromWhitelist() public {
         address user = users[0];
-        gobblers.setMerkleRoot(keccak256(abi.encodePacked(user)));
+
+        gobblers = new ArtGobblers(
+            keccak256(abi.encodePacked(user)),
+            block.timestamp,
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            baseUri
+        );
+        goop = gobblers.goop();
+        pages = gobblers.pages();
+
         bytes32[] memory proof;
+
         vm.prank(user);
         gobblers.mintFromWhitelist(proof);
+
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
+
         // and page ownership as well
         assertEq(pages.ownerOf(1), user);
     }
@@ -86,7 +98,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     function testMintFromGoop() public {
-        gobblers.setMerkleRoot("root");
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
         goop.mint(users[0], cost);
@@ -96,7 +107,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     function testMintInsufficientBalance() public {
-        gobblers.setMerkleRoot("root");
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
         gobblers.mintFromGoop();
@@ -113,8 +123,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     // }
 
     function testInitialGobblerPrice() public {
-        gobblers.setMerkleRoot(0);
-
         uint256 cost = gobblers.gobblerPrice();
         uint256 maxDelta = 1500; // 0.0000000000000015
 
@@ -196,7 +204,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     function testUnrevealedUri() public {
-        gobblers.setMerkleRoot(0);
         uint256 gobblerCost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
         goop.mint(users[0], gobblerCost);
@@ -379,11 +386,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     // convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        // merkle root must be set before mints are allowed
-        if (gobblers.merkleRoot() == 0) {
-            gobblers.setMerkleRoot("root");
-        }
-
         uint256 timeDelta = 10 hours;
 
         for (uint256 i = 0; i < num; i++) {

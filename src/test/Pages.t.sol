@@ -26,11 +26,12 @@ contract PagesTest is DSTestPlus {
     function setUp() public {
         //avoid starting at timestamp = 0 for ease of testing
         vm.warp(block.timestamp + 1);
+
         utils = new Utilities();
         users = utils.createUsers(5);
         drawAuth = users[0];
         goop = new Goop(address(this));
-        pages = new Pages(address(goop), drawAuth);
+        pages = new Pages(address(goop), drawAuth, block.timestamp);
         // Deploying contract is mint authority
         mintAuth = address(this);
         goop.setPages(address(pages));
@@ -44,15 +45,14 @@ contract PagesTest is DSTestPlus {
     }
 
     function testMintBeforeStart() public {
-        //set mint start in future
-        pages.setMintStart(block.timestamp + 1);
+        vm.warp(block.timestamp - 1);
+
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
         pages.mint();
     }
 
     function testRegularMint() public {
-        pages.setMintStart(block.timestamp);
         goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
@@ -72,8 +72,6 @@ contract PagesTest is DSTestPlus {
     }
 
     function testInitialPrice() public {
-        pages.setMintStart(block.timestamp);
-
         uint256 cost = pages.pagePrice();
         uint256 maxDelta = 3780;
 
@@ -81,14 +79,12 @@ contract PagesTest is DSTestPlus {
     }
 
     function testInsufficientBalance() public {
-        pages.setMintStart(block.timestamp);
         vm.prank(user);
         vm.expectRevert(stdError.arithmeticError);
         pages.mint();
     }
 
     function testSetIsDrawn() public {
-        pages.setMintStart(block.timestamp);
         goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
@@ -99,7 +95,6 @@ contract PagesTest is DSTestPlus {
     }
 
     function testRevertSetIsDrawn() public {
-        pages.setMintStart(block.timestamp);
         goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();

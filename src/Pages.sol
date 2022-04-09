@@ -44,9 +44,8 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice The number of pages minted from goop.
     uint256 internal numMintedFromGoop;
 
-    /// @notice The start timestamp of the public mint.
-    /// @dev Begins as type(uint256).max to force pagePrice() to underflow before minting starts.
-    uint256 internal mintStart = type(uint256).max;
+    /// @notice Timestamp for the start of the VRGDA mint.
+    uint256 internal immutable mintStart;
 
     /*//////////////////////////////////////////////////////////////
                                DRAWN LOGIC
@@ -80,7 +79,11 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     error Unauthorized();
 
-    constructor(address _goop, address _artist)
+    constructor(
+        address _goop,
+        address _artist,
+        uint256 _mintStart
+    )
         VRGDA(
             420e18, // Initial price.
             0.25e18 // Per period price decrease.
@@ -99,8 +102,11 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         )
     {
         goop = Goop(_goop);
+
         artist = _artist;
         artGobblers = msg.sender;
+
+        mintStart = _mintStart;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -119,20 +125,13 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         isDrawn[tokenId] = true;
     }
 
-    /// @notice Set mint start timestamp for regular minting.
-    function setMintStart(uint256 _mintStart) public only(artGobblers) {
-        mintStart = _mintStart;
-    }
-
     /*//////////////////////////////////////////////////////////////
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a page by burning goop.
     function mint() public {
-        uint256 price = pagePrice(); // This will revert if minting has not started yet.
-
-        goop.burnForPages(msg.sender, price);
+        goop.burnForPages(msg.sender, pagePrice());
 
         unchecked {
             _mint(msg.sender, ++currentId, "");
