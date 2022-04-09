@@ -75,7 +75,7 @@ abstract contract ERC1155B {
         address to,
         uint256 id,
         uint256 amount,
-        bytes memory data
+        bytes calldata data
     ) public virtual {
         require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
 
@@ -102,9 +102,9 @@ abstract contract ERC1155B {
     function safeBatchTransferFrom(
         address from,
         address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
     ) public virtual {
         uint256 idsLength = ids.length; // Saves MLOADs.
 
@@ -146,7 +146,7 @@ abstract contract ERC1155B {
         );
     }
 
-    function balanceOfBatch(address[] memory owners, uint256[] memory ids)
+    function balanceOfBatch(address[] calldata owners, uint256[] calldata ids)
         public
         view
         virtual
@@ -196,7 +196,7 @@ abstract contract ERC1155B {
 
     function _batchMint(
         address to,
-        uint256[] memory ids,
+        uint256[] calldata ids,
         bytes memory data
     ) internal virtual {
         uint256 idsLength = ids.length; // Saves MLOADs.

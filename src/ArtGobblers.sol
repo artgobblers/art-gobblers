@@ -17,6 +17,9 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
+// TODO; all addresses can be constants, predict them
+// TODO: mint timestamp constant
+
 // TODO: events??? do we have events?? indexed??
 // TODO: UNCHECKED
 // TODO: sync link to avoid extcall
@@ -372,7 +375,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         unchecked {
             // The legendary's multiple is 2x the sum of the multiples of the gobblers burned.
             getAttributesForGobbler[legendaryId].stakingMultiple = uint64(multiple * 2);
-            getAttributesForGobbler[legendaryId].idx = uint128(legendaryId);
+            getAttributesForGobbler[legendaryId].idx = uint128(legendaryId); // TODO: wait idt we need to do this lol check uri
         }
     }
 
