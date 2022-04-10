@@ -221,10 +221,10 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
-            // to account for the subtracted initial value:
+            // to account for the subtracted initial value,
+            // and add 1 to ensure all the tokens can be sold:
             int256(MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY + 1) * 2e18,
-            0.014e18, // Time scale.
-            0 // Time shift.
+            0.014e18 // Time scale.
         )
     {
         chainlinkKeyHash = _chainlinkKeyHash;

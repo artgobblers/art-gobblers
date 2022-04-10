@@ -2,9 +2,8 @@
 pragma solidity >=0.8.0;
 
 import {VRGDA} from "./VRGDA.sol";
-import {wadExp, wadLn, wadMul, wadDiv, unsafeWadDiv} from "./SignedWadMath.sol";
+import {wadExp, wadLn, unsafeWadDiv} from "./SignedWadMath.sol";
 
-// TODO: consider removing timeshift from this and the notebook/whitepaper
 // TODO: title and description for all the VRGDA stuff
 abstract contract LogisticVRGDA is VRGDA {
     /*//////////////////////////////////////////////////////////////
@@ -21,24 +20,15 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable timeScale;
 
-    /// @notice Controls the time in which we reach the sigmoid's midpoint.
-    /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable timeShift;
-
     /// @notice The initial value the logistic formula would output.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable initialLogisticValue;
 
-    constructor(
-        int256 _logisticScale,
-        int256 _timeScale,
-        int256 _timeShift
-    ) {
+    constructor(int256 _logisticScale, int256 _timeScale) {
         logisticScale = _logisticScale;
         timeScale = _timeScale;
-        timeShift = _timeShift;
 
-        initialLogisticValue = wadDiv(logisticScale, 1e18 + wadExp(wadMul(timeScale, timeShift)));
+        initialLogisticValue = logisticScale / 2; // TODO: if we use this inline will it be a constant? do we even need this?
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -47,9 +37,7 @@ abstract contract LogisticVRGDA is VRGDA {
 
     function getTargetSaleDay(int256 idWad) internal view virtual override returns (int256) {
         unchecked {
-            return
-                timeShift +
-                unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialLogisticValue) - 1e18), timeScale);
+            return unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialLogisticValue) - 1e18), timeScale);
         }
     }
 }

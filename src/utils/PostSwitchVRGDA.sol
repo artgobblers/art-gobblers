@@ -10,13 +10,13 @@ abstract contract PostSwitchVRGDA is VRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable switchId; // todo: off by one?
+    int256 private immutable switchId;
 
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable switchDay; // TODO: is it day or month?
+    int256 private immutable switchDay;
 
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable perDay; // tODO: is it per day?
+    int256 private immutable perDay;
 
     constructor(
         int256 _switchId,
@@ -34,9 +34,6 @@ abstract contract PostSwitchVRGDA is VRGDA {
 
     function getTargetSaleDay(int256 idWad) internal view virtual override returns (int256) {
         unchecked {
-            // TODO: is unchecked safe?
-            // TODO? can the unsafeWadDiv be a constant? did i do this right? idt i did this right
-            // TODO: how does this compare to linear VRGDA, can we derive one from other?
             return unsafeWadDiv(idWad - switchId, perDay) + switchDay;
         }
     }

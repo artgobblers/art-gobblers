@@ -9,7 +9,6 @@ contract MockLogisticVRGDA is LogisticVRGDA {
         int256 _initialPrice,
         int256 periodPriceDecrease,
         int256 _logisticScale,
-        int256 _timeScale,
-        int256 _timeShift
-    ) VRGDA(_initialPrice, periodPriceDecrease) LogisticVRGDA(_logisticScale, _timeScale, _timeShift) {}
+        int256 _timeScale
+    ) VRGDA(_initialPrice, periodPriceDecrease) LogisticVRGDA(_logisticScale, _timeScale) {}
 }

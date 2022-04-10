@@ -24,8 +24,6 @@ contract CorrectnessTest is DSTestPlus {
 
     int256 internal immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
 
-    int256 internal immutable timeShift = 0;
-
     uint256 internal immutable FIVE_YEARS = 52 weeks * 5;
 
     //fuzz test correctness of pricing function for different combinations of time and quantity sold.
@@ -43,8 +41,7 @@ contract CorrectnessTest is DSTestPlus {
     //         initialPrice,
     //         periodPriceDecrease,
     //         logisticScale,
-    //         timeScale,
-    //         timeShift
+    //         timeScale
     //     );
     // }
 
@@ -54,15 +51,13 @@ contract CorrectnessTest is DSTestPlus {
         int256 _initialPrice,
         int256 perPeriodPriceDecrease,
         int256 _logisticScale,
-        int256 _timeScale,
-        int256 _timeShift
+        int256 _timeScale
     ) private {
         MockLogisticVRGDA vrgda = new MockLogisticVRGDA(
             _initialPrice,
             perPeriodPriceDecrease,
             _logisticScale,
-            _timeScale,
-            _timeShift
+            _timeScale
         );
         //calculate actual price from gda
         uint256 actualPrice = vrgda.getPrice(_timeSinceStart, _numSold);
@@ -73,8 +68,7 @@ contract CorrectnessTest is DSTestPlus {
             _initialPrice,
             perPeriodPriceDecrease,
             _logisticScale,
-            _timeScale,
-            _timeShift
+            _timeScale
         );
         if (actualPrice == expectedPrice) return;
         //equal within 1 percent
@@ -87,8 +81,7 @@ contract CorrectnessTest is DSTestPlus {
         int256 _initialPrice,
         int256 perPeriodPriceDecrease,
         int256 _logisticScale,
-        int256 _timeScale,
-        int256 _timeShift
+        int256 _timeScale
     ) private returns (uint256) {
         string[] memory inputs = new string[](17);
         inputs[0] = "python3";
@@ -107,7 +100,7 @@ contract CorrectnessTest is DSTestPlus {
         inputs[13] = "--time_scale";
         inputs[14] = uint256(_timeScale).toString();
         inputs[15] = "--time_shift";
-        inputs[16] = uint256(_timeShift).toString();
+        inputs[16] = uint256(0).toString();
         bytes memory res = vm.ffi(inputs);
         uint256 price = abi.decode(res, (uint256));
         return price;

@@ -17,8 +17,6 @@ function wadMul(int256 x, int256 y) pure returns (int256 z) {
 }
 
 function wadDiv(int256 x, int256 y) pure returns (int256 z) {
-    // TODO: why dont we need sdiv???
-
     assembly {
         // Store x * y in z for now.
         z := mul(x, 1000000000000000000)
@@ -35,8 +33,6 @@ function wadDiv(int256 x, int256 y) pure returns (int256 z) {
 
 /// @dev NOT OVERFLOW SAFE! ONLY USE WHERE OVERFLOW IS NOT POSSIBLE!
 function unsafeWadMul(int256 x, int256 y) pure returns (int256 z) {
-    // TODO: why dont we need sdiv???
-
     assembly {
         // Multiply x by y and divide by 1e18.
         z := sdiv(mul(x, y), 1000000000000000000)

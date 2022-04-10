@@ -58,10 +58,10 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                             PRICING CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: do we make this stuff and the above public?
-
     /// @notice The id of the first page to be priced using the post switch VRGDA.
-    uint256 internal constant SWITCH_ID = 9975;
+    /// @dev Computed by plugging the switch day into the uninverted pacing formula.
+    /// @dev Represented as an 18 decimal fixed point number.
+    int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
 
     /*//////////////////////////////////////////////////////////////
                             AUTHORIZED USERS
@@ -90,14 +90,14 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
-            // to account for the subtracted initial value:
-            (9999 + 1) * 2e18, // TODO: did we ensure to make this 2x?
-            0.023e18, // Time scale.
-            0 // Time shift.
+            // to account for the subtracted initial value,
+            // and add 1 to ensure all the tokens can be sold:
+            (9999 + 1) * 2e18,
+            0.023e18 // Time scale.
         )
         PostSwitchVRGDA(
-            int256(SWITCH_ID), // Switch id.
-            207e18, // Switch day. // TODO: why do we have day and id?
+            SWITCH_ID_WAD, // Switch id.
+            207e18, // Switch day.
             10e18 // Per day.
         )
     {
@@ -165,7 +165,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     // TODO: should we be more strict about only using ints where we need them?
     function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
-        return currentId < SWITCH_ID ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
+        return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }
 
     /*//////////////////////////////////////////////////////////////

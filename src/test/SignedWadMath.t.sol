@@ -6,13 +6,19 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {wadMul, wadDiv} from "../utils/SignedWadMath.sol";
 
 contract SignedWadMathTest is DSTestPlus {
-    function testWadMul(int256 x, int256 y) public {
-        // Ignore cases where x * y overflows.
-        unchecked {
-            if ((x != 0 && (x * y) / x != y)) return;
-        }
+    function testWadMul(
+        uint256 x,
+        uint256 y,
+        bool negX,
+        bool negY
+    ) public {
+        x = bound(x, 0, 99999999999999e18);
+        y = bound(x, 0, 99999999999999e18);
 
-        assertEq(wadMul(x, y), (x * y) / 1e18);
+        int256 xPrime = negX ? -int256(x) : int256(x);
+        int256 yPrime = negY ? -int256(y) : int256(y);
+
+        assertEq(wadMul(xPrime, yPrime), (xPrime * yPrime) / 1e18);
     }
 
     function testFailWadMulOverflow(int256 x, int256 y) public pure {
@@ -24,13 +30,19 @@ contract SignedWadMathTest is DSTestPlus {
         wadMul(x, y);
     }
 
-    function testWadDiv(int256 x, int256 y) public {
-        // Ignore cases where x * WAD overflows or y is 0.
-        unchecked {
-            if (y == 0 || (x != 0 && (x * 1e18) / 1e18 != x)) return;
-        }
+    function testWadDiv(
+        uint256 x,
+        uint256 y,
+        bool negX,
+        bool negY
+    ) public {
+        x = bound(x, 0, 99999999e18);
+        y = bound(x, 1, 99999999e18);
 
-        assertEq(wadDiv(x, y), (x * 1e18) / y);
+        int256 xPrime = negX ? -int256(x) : int256(x);
+        int256 yPrime = negY ? -int256(y) : int256(y);
+
+        assertEq(wadDiv(xPrime, yPrime), (xPrime * 1e18) / yPrime);
     }
 
     function testFailWadDivOverflow(int256 x, int256 y) public pure {
