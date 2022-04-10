@@ -53,8 +53,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         goop.mint(address(this), type(uint128).max);
 
         gobblers.mintFromGoop();
-
-        pages.mint(); // Initialize the page storage slots.
+        pages.mint();
 
         vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.
     }
