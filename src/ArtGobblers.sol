@@ -11,7 +11,6 @@ import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {ERC1155B} from "./utils/ERC1155B.sol";
-import {wadDiv} from "./utils/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
@@ -57,9 +56,6 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 private constant LEGENDARY_SUPPLY = 10;
-
-    /// @notice Maximum number of tokens publicly mintable via goop.
-    uint256 private MAX_MINTABLE_WITH_GOOP = MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
@@ -220,14 +216,14 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
         VRGDA(
-            69e18, // Initial price.
-            0.25e18 // Per period price decrease.
+            6.9e18, // Initial price.
+            0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value:
-            int256(MAX_MINTABLE_WITH_GOOP + 1) * 2e18,
-            wadDiv(1e18, 60e18), // Time scale.
+            int256(MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY + 1) * 2e18,
+            0.014e18, // Time scale.
             0 // Time shift.
         )
     {

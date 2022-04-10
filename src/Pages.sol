@@ -85,20 +85,20 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         uint256 _mintStart
     )
         VRGDA(
-            420e18, // Initial price.
-            0.25e18 // Per period price decrease.
+            4.20e18, // Initial price.
+            0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value:
-            10024e18, // TODO: did we ensure to make this 2x?
-            wadDiv(1e18, 30e18), // Time scale.
-            0 // Time shift. // TODO: update these values
+            (9999 + 1) * 2e18, // TODO: did we ensure to make this 2x?
+            0.023e18, // Time scale.
+            0 // Time shift.
         )
         PostSwitchVRGDA(
             int256(SWITCH_ID), // Switch id.
-            360e18, // Switch day. // TODO: why do we have day and id?
-            wadDiv(10e18, 3e18) // Per day.
+            207e18, // Switch day. // TODO: why do we have day and id?
+            10e18 // Per day.
         )
     {
         goop = Goop(_goop);

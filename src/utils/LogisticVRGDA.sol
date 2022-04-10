@@ -4,6 +4,8 @@ pragma solidity >=0.8.0;
 import {VRGDA} from "./VRGDA.sol";
 import {wadExp, wadLn, wadMul, wadDiv, unsafeWadDiv} from "./SignedWadMath.sol";
 
+// TODO: consider removing timeshift from this and the notebook/whitepaper
+// TODO: title and description for all the VRGDA stuff
 abstract contract LogisticVRGDA is VRGDA {
     /*//////////////////////////////////////////////////////////////
                            PRICING PARAMETERS
