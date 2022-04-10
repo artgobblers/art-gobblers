@@ -73,7 +73,7 @@ contract PagesTest is DSTestPlus {
 
     function testInitialPrice() public {
         uint256 cost = pages.pagePrice();
-        uint256 maxDelta = 3780;
+        uint256 maxDelta = 3780; // 0.00000000000000378
 
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
