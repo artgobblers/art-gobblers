@@ -28,7 +28,8 @@ abstract contract LogisticVRGDA is VRGDA {
         logisticScale = _logisticScale;
         timeScale = _timeScale;
 
-        initialLogisticValue = logisticScale / 2; // TODO: if we use this inline will it be a constant? do we even need this?
+        // Right shift by 1 is like dividing by 2.
+        initialLogisticValue = logisticScale >> 1;
     }
 
     /*//////////////////////////////////////////////////////////////
