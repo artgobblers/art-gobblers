@@ -40,7 +40,6 @@ abstract contract VRGDA {
     /// @notice Calculate the price of an NFT according to the VRGDA algorithm.
     /// @param timeSinceStart The time since the initial sale, in seconds.
     /// @param id The token id to get the price of at the current time.
-    // TODO: maybe we cast back to uint asap to get more overflow headroom. at least can do after exp
     function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
         unchecked {
             return
@@ -62,6 +61,7 @@ abstract contract VRGDA {
         }
     }
 
+    // TODO: idt we should use idWad or describe it as "for a given token id" when its actually for the num sold (which is 1 less than the id)
     /// @dev Get the target sale day (relative to the starting time) for a given token id.
     /// @param idWad The id of the token to get the target sale day for, scaled by 1e18.
     /// @return The target day (relative) to sell the given token id on, scaled by 1e18.

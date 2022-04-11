@@ -16,8 +16,9 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
+// TODO: can we just have tokenid start with 0 why 1 bro its confusing af
+
 // TODO; all addresses can be constants, predict them
-// TODO: mint timestamp constant
 
 // TODO: events??? do we have events?? indexed??
 // TODO: UNCHECKED
@@ -294,6 +295,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         // We need checked math here to cause overflow
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
+
+        // TODO: is it ok that numMintedFromGoop starts at 0? idts at all that means we can do +1 more than the limit? or at least pricing is behind idk
 
         return getPrice(timeSinceStart, numMintedFromGoop);
     }

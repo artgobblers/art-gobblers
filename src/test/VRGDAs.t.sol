@@ -51,6 +51,7 @@ contract VRGDAsTest is DSTestPlus {
         pages = gobblers.pages();
     }
 
+    // TODO: this rly isnt an id its cummulative sold
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 id) public {
         gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 7990));
     }
