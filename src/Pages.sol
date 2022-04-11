@@ -163,7 +163,6 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
-    // TODO: should we be more strict about only using ints where we need them?
     function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
         return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }

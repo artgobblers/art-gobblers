@@ -12,7 +12,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-contract FuzzTest is DSTestPlus {
+contract VRGDAsTest is DSTestPlus {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -55,9 +55,7 @@ contract FuzzTest is DSTestPlus {
         gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 7990));
     }
 
-    function testNoOverflowForLogisticPages(uint256 timeSinceStart, uint256 id) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 5011));
+    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 id) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 10000));
     }
-
-    // TODO: testNoOverflow for linear pages
 }
