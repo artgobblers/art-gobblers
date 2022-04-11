@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-// adapter from dapptools-starter-kit
+// @dev This contract has been adapted to fit with dappTools
 pragma solidity ^0.8.0;
 
-import "openzeppelin/token/ERC20/ERC20.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 interface ERC677Receiver {
     function onTokenTransfer(
@@ -14,10 +14,11 @@ interface ERC677Receiver {
 }
 
 contract LinkToken is ERC20 {
-    uint256 initialSupply = 1000000000000000000000000;
+    uint256 constant INITIAL_SUPPLY = 1000000000000000000000000;
+    uint8 constant DECIMALS = 18;
 
-    constructor() ERC20("LinkToken", "LINK") {
-        _mint(msg.sender, initialSupply);
+    constructor() ERC20("LinkToken", "LINK", DECIMALS) {
+        _mint(msg.sender, INITIAL_SUPPLY);
     }
 
     event Transfer(address indexed from, address indexed to, uint256 value, bytes data);

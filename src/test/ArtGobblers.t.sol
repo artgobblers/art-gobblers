@@ -10,7 +10,7 @@ import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
-import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {MockVRFCoordinatorV2} from "./utils/mocks/MockVRFCoordinatorV2.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
@@ -23,13 +23,19 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     address payable[] internal users;
 
     ArtGobblers private gobblers;
-    VRFCoordinatorMock private vrfCoordinator;
+    MockVRFCoordinatorV2 private vrfCoordinator;
     LinkToken private linkToken;
     Goop goop;
     Pages pages;
 
-    bytes32 private keyHash;
-    uint256 private fee;
+    uint256 nextRequestId = 1;
+
+    uint96 constant FUND_AMOUNT = 1 * 10**18;
+
+    // Initialized as blank, fine for testing
+    uint64 subId;
+    bytes32 keyHash; // gasLane
+
     string private baseUri = "base";
 
     uint256[] ids;
@@ -47,16 +53,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         utils = new Utilities();
         users = utils.createUsers(5);
         linkToken = new LinkToken();
-        vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(
-            "root",
-            block.timestamp,
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
-            baseUri
-        );
+        vrfCoordinator = new MockVRFCoordinatorV2();
+        subId = vrfCoordinator.createSubscription();
+        vrfCoordinator.fundSubscription(subId, FUND_AMOUNT);
+
+        gobblers = new ArtGobblers("root", block.timestamp, address(vrfCoordinator), keyHash, subId, baseUri);
         goop = gobblers.goop();
         pages = gobblers.pages();
 
@@ -71,9 +72,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             keccak256(abi.encodePacked(user)),
             block.timestamp,
             address(vrfCoordinator),
-            address(linkToken),
             keyHash,
-            fee,
+            subId,
             baseUri
         );
         goop = gobblers.goop();
@@ -221,7 +221,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(preRevealIdx, 0);
         assertEq(multiplier, 0);
 
-        setRandomnessAndReveal(1, "seed");
+        revealGobbler(1);
 
         (uint128 idx, ) = gobblers.getAttributesForGobbler(1);
 
@@ -255,27 +255,27 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.uri(legendaryId), "");
     }
 
-    function testCantSetRandomSeedWithoutRevealing() public {
-        mintGobblerToAddress(users[0], 2);
-        setRandomnessAndReveal(1, "seed");
-        // should fail since there is one remaining gobbler to be revealed with seed
-        vm.expectRevert(unauthorized);
-        setRandomnessAndReveal(1, "seed");
-    }
+    // function testCantSetRandomSeedWithoutRevealing() public {
+    //     mintGobblerToAddress(users[0], 2);
+    //     revealGobbler(1);
+    //     // should fail since there is one remaining gobbler to be revealed with seed
+    //     vm.expectRevert(unauthorized);
+    //     revealGobbler(1);
+    // }
 
     function testMultiReveal() public {
-        mintGobblerToAddress(users[0], 100);
+        mintGobblerToAddress(users[0], 10);
         // first 100 gobblers should be unrevealed
-        for (uint256 i = 1; i <= 100; i++) {
+        for (uint256 i = 1; i <= 10; i++) {
             assertEq(gobblers.uri(i), gobblers.UNREVEALED_URI());
         }
-        setRandomnessAndReveal(50, "seed");
-        // first 50 gobblers should now be revealed
-        for (uint256 i = 1; i <= 50; i++) {
+        revealGobbler(5);
+        // first 5 gobblers should now be revealed
+        for (uint256 i = 1; i <= 5; i++) {
             assertTrue(!stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
-        // and next 50 should remain unrevealed
-        for (uint256 i = 51; i <= 100; i++) {
+        // and next 5 should remain unrevealed
+        for (uint256 i = 6; i <= 10; i++) {
             assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
     }
@@ -315,7 +315,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // balance should be zero while no reveal
         assertEq(gobblers.goopBalance(users[0]), 0);
 
-        setRandomnessAndReveal(1, "seed");
+        revealGobbler(1);
 
         // balance should NOT grow on same timestamp after reveal
         assertEq(gobblers.goopBalance(users[0]), 0);
@@ -329,7 +329,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testGoopRemoval() public {
         mintGobblerToAddress(users[0], 1);
 
-        setRandomnessAndReveal(1, "seed");
+        revealGobbler(1);
 
         vm.warp(block.timestamp + 100000);
 
@@ -355,7 +355,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testCantRemoveGoop() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 100000);
-        setRandomnessAndReveal(1, "seed");
+        revealGobbler(1);
         vm.prank(users[1]);
         vm.expectRevert(stdError.arithmeticError);
         gobblers.removeGoop(1);
@@ -364,7 +364,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testGoopAddition() public {
         mintGobblerToAddress(users[0], 1);
 
-        setRandomnessAndReveal(1, "seed");
+        revealGobbler(1);
 
         vm.warp(block.timestamp + 100000);
 
@@ -399,13 +399,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.stopPrank();
     }
 
-    // convenience function to call back vrf with randomness and reveal gobblers
-    function setRandomnessAndReveal(uint256 numReveal, string memory seed) internal {
-        bytes32 requestId = gobblers.getRandomSeed();
-        uint256 randomness = uint256(keccak256(abi.encodePacked(seed)));
-        // call back from coordinator
-        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
-        gobblers.revealGobblers(numReveal);
+    function revealGobbler(uint256 numReveal) internal {
+        for (uint256 i = 0; i < numReveal; i++) {
+            vrfCoordinator.fulfillRandomWords(nextRequestId++, address(gobblers));
+        }
     }
 
     // string equality based on hash

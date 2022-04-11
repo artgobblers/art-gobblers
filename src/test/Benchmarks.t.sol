@@ -9,7 +9,7 @@ import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
-import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {MockVRFCoordinatorV2} from "./utils/mocks/MockVRFCoordinatorV2.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
@@ -22,30 +22,28 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     address payable[] internal users;
 
     ArtGobblers private gobblers;
-    VRFCoordinatorMock private vrfCoordinator;
+    MockVRFCoordinatorV2 private vrfCoordinator;
     LinkToken private linkToken;
-
     Goop goop;
     Pages pages;
 
-    bytes32 private keyHash;
-    uint256 private fee;
+    uint96 constant FUND_AMOUNT = 1 * 10**18;
+
+    // Initialized as blank, fine for testing
+    uint64 subId;
+    bytes32 keyHash; // gasLane
+
     string private baseUri = "base";
 
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
         linkToken = new LinkToken();
-        vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(
-            "root",
-            uint128(block.timestamp),
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
-            baseUri
-        );
+        vrfCoordinator = new MockVRFCoordinatorV2();
+        subId = vrfCoordinator.createSubscription();
+        vrfCoordinator.fundSubscription(subId, FUND_AMOUNT);
+
+        gobblers = new ArtGobblers("root", block.timestamp, address(vrfCoordinator), keyHash, subId, baseUri);
         goop = gobblers.goop();
         pages = gobblers.pages();
 

@@ -7,7 +7,8 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
-import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
+import {VRFCoordinatorV2Interface} from "chainlink/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFConsumerBaseV2} from "chainlink/v0.8/VRFConsumerBaseV2.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {ERC1155B} from "./utils/ERC1155B.sol";
@@ -33,7 +34,7 @@ import {Pages} from "./Pages.sol";
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFConsumerBase, LogisticVRGDA {
+contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFConsumerBaseV2, LogisticVRGDA {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
@@ -74,7 +75,15 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
     bytes32 internal immutable chainlinkKeyHash;
 
-    uint256 internal immutable chainlinkFee;
+    VRFCoordinatorV2Interface internal immutable vrfCoordinator;
+
+    uint32 internal immutable callbackGasLimit = 100000;
+
+    uint16 internal immutable requestConfirmations = 3;
+
+    uint32 internal immutable numWords = 1;
+
+    uint64 internal immutable chainlinkSubscriptionId;
 
     /*//////////////////////////////////////////////////////////////
                              WHITELIST STATE
@@ -145,16 +154,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                          ATTRIBUTES REVEAL STATE
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: investigate pack
-
-    /// @notice Random seed obtained from VRF.
-    uint256 public randomSeed;
-
     /// @notice Index of last token that has been revealed.
     uint128 public lastRevealedIndex;
-
-    /// @notice Remaining gobblers to be assigned from seed.
-    uint128 public gobblersToBeAssigned;
 
     /*//////////////////////////////////////////////////////////////
                               STAKING STATE
@@ -209,13 +210,12 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     constructor(
         bytes32 _merkleRoot,
         uint256 _mintStart,
-        address vrfCoordinator,
-        address linkToken,
+        address _vrfCoordinator,
         bytes32 _chainlinkKeyHash,
-        uint256 _chainlinkFee,
+        uint64 _chainlinkSubscriptionId,
         string memory _baseUri
     )
-        VRFConsumerBase(vrfCoordinator, linkToken)
+        VRFConsumerBaseV2(_vrfCoordinator)
         VRGDA(
             6.9e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -229,7 +229,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         )
     {
         chainlinkKeyHash = _chainlinkKeyHash;
-        chainlinkFee = _chainlinkFee;
+        vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
+        chainlinkSubscriptionId = _chainlinkSubscriptionId;
 
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
@@ -313,6 +314,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
             // TODO: Is it safe to do this now that its global per user?
             // TODO: i think this is handled in the transfer hook
             getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
+
+            requestRandomnessForReveal();
         }
     }
 
@@ -393,88 +396,70 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                                 VRF LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Get the random seed for revealing gobblers.
-    function getRandomSeed() public returns (bytes32) {
-        // A random seed can only be requested when all gobblers from previous seed have been assigned.
-        // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (gobblersToBeAssigned != 0) revert Unauthorized();
-
-        // Fix number of gobblers to be revealed from seed.
-        gobblersToBeAssigned = uint128(currentNonLegendaryId - lastRevealedIndex);
-
-        // Will revert if we don't have enough LINK to afford the request.
-        return requestRandomness(chainlinkKeyHash, chainlinkFee);
+    /// @notice request random word to assign gobbler
+    function requestRandomnessForReveal() internal {
+        vrfCoordinator.requestRandomWords(
+            chainlinkKeyHash,
+            chainlinkSubscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
     }
 
-    /// @notice Callback from chainlink VRF. sets active attributes and seed.
-    function fulfillRandomness(bytes32, uint256 randomness) internal override {
-        randomSeed = randomness;
+    function fulfillRandomWords(uint256, uint256[] memory randomWords) internal override {
+        //shuffle gobblerId with random word
+        knuthShuffle(randomWords[0]);
     }
 
     /*//////////////////////////////////////////////////////////////
                          ATTRIBUTES REVEAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
-    function revealGobblers(uint256 numGobblers) public {
-        // Can't reveal more gobblers than were available when seed was generated.
-        if (numGobblers > gobblersToBeAssigned) revert Unauthorized();
-
-        uint256 currentRandomSeed = randomSeed;
-
-        // @audit TODO return to this. Particularly check randomness is updated each time, what is idx doing, etc.
-
-        // Implements a Knuth shuffle. If something in
-        // here can overflow we've got bigger problems.
+    /// @notice knuth shuffle random gobbler and select attributes 
+    function knuthShuffle(uint256 randomSeed) public {
         unchecked {
-            for (uint256 i = 0; i < numGobblers; i++) {
-                // Number of slots that have not been assigned.
-                uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
 
-                // Randomly pick distance for swap.
-                uint256 distance = randomSeed % remainingSlots;
+            uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
 
-                // Select swap slot, adding distance to next reveal slot.
-                uint256 swapSlot = lastRevealedIndex + 1 + distance;
+            // Randomly pick distance for swap.
+            uint256 distance = randomSeed % remainingSlots;
 
-                // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-                uint128 swapIndex = getAttributesForGobbler[swapSlot].idx == 0
-                    ? uint128(swapSlot)
-                    : getAttributesForGobbler[swapSlot].idx;
+            // Select swap slot, adding distance to next reveal slot.
+            uint256 swapSlot = lastRevealedIndex + 1 + distance;
 
-                // Current slot is consecutive to last reveal.
-                uint256 currentSlot = lastRevealedIndex + 1;
+            // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
+            uint128 swapIndex = getAttributesForGobbler[swapSlot].idx == 0
+                ? uint128(swapSlot)
+                : getAttributesForGobbler[swapSlot].idx;
 
-                // Again, we derive index based on value:
-                uint128 currentIndex = getAttributesForGobbler[currentSlot].idx == 0
-                    ? uint128(currentSlot)
-                    : getAttributesForGobbler[currentSlot].idx;
+            // Current slot is consecutive to last reveal.
+            uint256 currentSlot = lastRevealedIndex + 1;
 
-                // Swap indices.
-                getAttributesForGobbler[currentSlot].idx = swapIndex;
-                getAttributesForGobbler[swapSlot].idx = currentIndex;
+            // Again, we derive index based on value:
+            uint128 currentIndex = getAttributesForGobbler[currentSlot].idx == 0
+                ? uint128(currentSlot)
+                : getAttributesForGobbler[currentSlot].idx;
 
-                // Select random attributes for current slot:
-                currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
+            // Swap indices.
+            getAttributesForGobbler[currentSlot].idx = swapIndex;
+            getAttributesForGobbler[swapSlot].idx = currentIndex;
 
-                uint64 multiple = uint64(currentRandomSeed % 128) + 1;
+            // Select random attributes for current slot:
+            //TODO: Should we split entropy from single word instead of rehashing?
+            randomSeed = uint256(keccak256(abi.encodePacked(randomSeed)));
 
-                getAttributesForGobbler[currentSlot].stakingMultiple = multiple;
+            uint64 multiple = uint64(randomSeed % 128) + 1;
 
-                address slotOwner = ownerOf[currentSlot];
+            getAttributesForGobbler[currentSlot].stakingMultiple = multiple;
 
-                getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
-                getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
-                getStakingDataForUser[slotOwner].multiple += multiple;
-            }
+            address slotOwner = ownerOf[currentSlot];
+
+            getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
+            getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
+            getStakingDataForUser[slotOwner].multiple += multiple;
+            lastRevealedIndex++;
         }
-
-        // Update state all at once.
-        randomSeed = currentRandomSeed;
-
-        // TODO: can we uncheck these safely?
-        lastRevealedIndex += uint128(numGobblers);
-        gobblersToBeAssigned -= uint128(numGobblers);
     }
 
     /*//////////////////////////////////////////////////////////////
