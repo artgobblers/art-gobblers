@@ -74,8 +74,8 @@ contract VRGDAsTest is DSTestPlus {
         gobblers.getPrice(bound(timeSinceStart, 444 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7507));
     }
 
-    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 10000));
+    function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 7991, type(uint128).max));
     }
 
     function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
@@ -87,6 +87,10 @@ contract VRGDAsTest is DSTestPlus {
             assertGt(price, previousPrice);
             previousPrice = price;
         }
+    }
+
+    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 sold) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 10000));
     }
 
     function testGobblerPriceStrictlyIncreasesForTenThousandPages() public {
