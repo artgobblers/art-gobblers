@@ -87,7 +87,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintGobbler() public {
-        // TODO: why is minting a gobbler more expensive than a page?
+        // TODO: why is minting a gobbler so much more expensive than a page?
         gobblers.mintFromGoop();
     }
 

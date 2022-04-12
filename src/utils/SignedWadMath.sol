@@ -107,226 +107,84 @@ function wadExp(int256 x) pure returns (int256 r) {
     }
 }
 
-function wadLn(int256 a) pure returns (int256 ret) {
+// Integer log2
+// @returns floor(log2(x)) if x is nonzero, otherwise 0. This is the same
+//          as the location of the highest set bit.
+// Consumes 232 gas. This could have been an 3 gas EVM opcode though.
+function ilog2(uint256 x) pure returns (uint256 r) {
+    assembly {
+        r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+        r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+        r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
+        r := or(r, shl(4, lt(0xffff, shr(r, x))))
+        r := or(r, shl(3, lt(0xff, shr(r, x))))
+        r := or(r, shl(2, lt(0xf, shr(r, x))))
+        r := or(r, shl(1, lt(0x3, shr(r, x))))
+        r := or(r, lt(0x1, shr(r, x)))
+    }
+}
+
+// Computes ln(x) in 1e18 fixed point.
+// Reverts if x is negative or zero.
+// Consumes 670 gas.
+function wadLn(int256 x) pure returns (int256 r) {
     unchecked {
-        // The real natural logarithm is not defined for negative numbers or zero.
-        // TODO: did i do this conversion to <= from < properly? should i have added or subtracted one lol
+        if (x < 1) {
+            if (x < 0) revert("UNDEFINED");
+            revert("OVERFLOW");
+        }
 
-        bool ln36;
+        // We want to convert x from 10**18 fixed point to 2**96 fixed point.
+        // We do this by multiplying by 2**96 / 10**18.
+        // But since ln(x * C) = ln(x) + ln(C), we can simply do nothing here
+        // and add ln(2**96 / 10**18) at the end.
 
+        // Reduce range of x to (1, 2) * 2**96
+        // ln(2^k * x) = k * ln(2) + ln(x)
+        // Note: inlining ilog2 saves 8 gas.
+        int256 k = int256(ilog2(uint256(x))) - 96;
+        x <<= uint256(159 - k);
+        x = int256(uint256(x) >> 159);
+
+        // Evaluate using a (8, 8)-term rational approximation
+        // p is made monic, we will multiply by a scale factor later
+        int256 p = x + 3273285459638523848632254066296;
+        p = ((p * x) >> 96) + 24828157081833163892658089445524;
+        p = ((p * x) >> 96) + 43456485725739037958740375743393;
+        p = ((p * x) >> 96) - 11111509109440967052023855526967;
+        p = ((p * x) >> 96) - 45023709667254063763336534515857;
+        p = ((p * x) >> 96) - 14706773417378608786704636184526;
+        p = p * x - (795164235651350426258249787498 << 96);
+        //emit log_named_int("p", p);
+        // We leave p in 2**192 basis so we don't need to scale it back up for the division.
+        // q is monic by convention
+        int256 q = x + 5573035233440673466300451813936;
+        q = ((q * x) >> 96) + 71694874799317883764090561454958;
+        q = ((q * x) >> 96) + 283447036172924575727196451306956;
+        q = ((q * x) >> 96) + 401686690394027663651624208769553;
+        q = ((q * x) >> 96) + 204048457590392012362485061816622;
+        q = ((q * x) >> 96) + 31853899698501571402653359427138;
+        q = ((q * x) >> 96) + 909429971244387300277376558375;
         assembly {
-            ln36 := and(gt(a, 900000000000000000), lt(a, 1100000000000000000))
+            // Div in assembly because solidity adds a zero check despite the `unchecked`.
+            // The q polynomial is known not to have zeros in the domain. (All roots are complex)
+            // No scaling required because p is already 2**96 too large.
+            r := sdiv(p, q)
         }
+        // r is in the range (0, 0.125) * 2**96
 
-        if (ln36) {
-            // Since ln(1) = 0, a value of x close to one will yield a very small result, which makes using 36 digits
-            // worthwhile.
-
-            // First, we transform x to a 36 digit fixed point value.
-            a *= 1e18;
-
-            // We will use the following Taylor expansion, which converges very rapidly. Let z = (x - 1) / (x + 1).
-            // ln(x) = 2 * (z + z^3 / 3 + z^5 / 5 + z^7 / 7 + ... + z^(2 * n + 1) / (2 * n + 1))
-
-            // Recall that 36 digit fixed point division requires multiplying by ONE_36, and multiplication requires
-            // division by ONE_36.
-
-            int256 z;
-            assembly {
-                z := sdiv(
-                    mul(sub(a, 1000000000000000000000000000000000000), 1000000000000000000000000000000000000),
-                    add(a, 1000000000000000000000000000000000000)
-                )
-            }
-
-            int256 z_squared;
-            assembly {
-                z_squared := sdiv(mul(z, z), 1000000000000000000000000000000000000)
-            }
-
-            // num is the numerator of the series: the z^(2 * n + 1) term
-            int256 num = z;
-
-            // seriesSum holds the accumulated sum of each term in the series, starting with the initial z
-            int256 seriesSum = num;
-
-            // In each step, the numerator is multiplied by z^2
-            assembly {
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 3))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 5))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 7))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 9))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 11))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 13))
-
-                num := sdiv(mul(num, z_squared), 1000000000000000000000000000000000000)
-                seriesSum := add(seriesSum, sdiv(num, 15))
-            }
-
-            // 8 Taylor terms are sufficient for 36 decimal precision.
-            assembly {
-                ret := sdiv(seriesSum, 500000000000000000)
-            }
-        } else {
-            // TODO: did i transform this from < to <= right?
-            if (a < 1e18) {
-                // Since ln(a^k) = k * ln(a), we can compute ln(a) as ln(a) = ln((1/a)^(-1)) = - ln((1/a)). If a is less
-                // than one, 1/a will be greater than one, and this if statement will not be entered in the recursive call.
-                // Fixed point division requires multiplying by ONE_18.
-                return -wadLn(1e36 / a);
-            }
-
-            // First, we use the fact that ln^(a * b) = ln(a) + ln(b) to decompose ln(a) into a sum of powers of two, which
-            // we call x_n, where x_n == 2^(7 - n), which are the natural logarithm of precomputed quantities a_n (that is,
-            // ln(a_n) = x_n). We choose the first x_n, x0, to equal 2^7 because the exponential of all larger powers cannot
-            // be represented as 18 fixed point decimal numbers in 256 bits, and are therefore larger than a.
-            // At the end of this process we will have the sum of all x_n = ln(a_n) that apply, and the remainder of this
-            // decomposition, which will be lower than the smallest a_n.
-            // ln(a) = k_0 * x_0 + k_1 * x_1 + ... + k_n * x_n + ln(remainder), where each k_n equals either 0 or 1.
-            // We mutate a by subtracting a_n, making it the remainder of the decomposition.
-
-            // For reasons related to how `exp` works, the first two a_n (e^(2^7) and e^(2^6)) are not stored as fixed point
-            // numbers with 18 decimals, but instead as plain integers with 0 decimals, so we need to multiply them by
-            // ONE_18 to convert them to fixed point.
-            // For each a_n, we test if that term is present in the decomposition (if a is larger than it), and if so divide
-            // by it and compute the accumulated sum.
-
-            int256 sum = 0;
-
-            assembly {
-                if iszero(lt(a, 38877084059945950922200000000000000000000000000000000000000000000000000000)) {
-                    a := div(a, 38877084059945950922200000000000000000000000000000000000)
-                    sum := add(sum, 128000000000000000000)
-                }
-
-                if iszero(lt(a, 6235149080811616882910000000000000000000000000)) {
-                    a := div(a, 6235149080811616882910000000)
-                    sum := add(sum, 64000000000000000000)
-                }
-            }
-
-            // All other a_n and x_n are stored as 20 digit fixed point numbers, so we convert the sum and a to this format.
-            sum *= 100;
-            a *= 100;
-
-            assembly {
-                if iszero(lt(a, 7896296018268069516100000000000000)) {
-                    a := div(mul(a, 100000000000000000000), 7896296018268069516100000000000000)
-                    sum := add(sum, 3200000000000000000000)
-                }
-
-                if iszero(lt(a, 888611052050787263676000000)) {
-                    a := div(mul(a, 100000000000000000000), 888611052050787263676000000)
-                    sum := add(sum, 1600000000000000000000)
-                }
-
-                if iszero(lt(a, 298095798704172827474000)) {
-                    a := div(mul(a, 100000000000000000000), 298095798704172827474000)
-                    sum := add(sum, 800000000000000000000)
-                }
-
-                if iszero(lt(a, 5459815003314423907810)) {
-                    a := div(mul(a, 100000000000000000000), 5459815003314423907810)
-                    sum := add(sum, 400000000000000000000)
-                }
-
-                if iszero(lt(a, 738905609893065022723)) {
-                    a := div(mul(a, 100000000000000000000), 738905609893065022723)
-                    sum := add(sum, 200000000000000000000)
-                }
-
-                if iszero(lt(a, 271828182845904523536)) {
-                    a := div(mul(a, 100000000000000000000), 271828182845904523536)
-                    sum := add(sum, 100000000000000000000)
-                }
-
-                if iszero(lt(a, 164872127070012814685)) {
-                    a := div(mul(a, 100000000000000000000), 164872127070012814685)
-                    sum := add(sum, 50000000000000000000)
-                }
-
-                if iszero(lt(a, 128402541668774148407)) {
-                    a := div(mul(a, 100000000000000000000), 128402541668774148407)
-                    sum := add(sum, 25000000000000000000)
-                }
-
-                if iszero(lt(a, 113314845306682631683)) {
-                    a := div(mul(a, 100000000000000000000), 113314845306682631683)
-                    sum := add(sum, 12500000000000000000)
-                }
-
-                if iszero(lt(a, 106449445891785942956)) {
-                    a := div(mul(a, 100000000000000000000), 106449445891785942956)
-                    sum := add(sum, 6250000000000000000)
-                }
-            }
-
-            // a is now a small number (smaller than a_11, which roughly equals 1.06). This means we can use a Taylor series
-            // that converges rapidly for values of `a` close to one - the same one used in ln_36.
-            // Let z = (a - 1) / (a + 1).
-            // ln(a) = 2 * (z + z^3 / 3 + z^5 / 5 + z^7 / 7 + ... + z^(2 * n + 1) / (2 * n + 1))
-
-            // Recall that 20 digit fixed point division requires multiplying by ONE_20, and multiplication requires
-            // division by ONE_20.
-            int256 z;
-            assembly {
-                z := div(mul(sub(a, 100000000000000000000), 100000000000000000000), add(a, 100000000000000000000))
-            }
-
-            int256 z_squared;
-            assembly {
-                z_squared := div(mul(z, z), 100000000000000000000)
-            }
-
-            // num is the numerator of the series: the z^(2 * n + 1) term
-            int256 num = z;
-
-            // seriesSum holds the accumulated sum of each term in the series, starting with the initial z
-            int256 seriesSum = num;
-
-            // In each step, the numerator is multiplied by z^2
-
-            assembly {
-                num := div(mul(num, z_squared), 100000000000000000000)
-                seriesSum := add(seriesSum, div(num, 3))
-
-                num := div(mul(num, z_squared), 100000000000000000000)
-                seriesSum := add(seriesSum, div(num, 5))
-
-                num := div(mul(num, z_squared), 100000000000000000000)
-                seriesSum := add(seriesSum, div(num, 7))
-
-                num := div(mul(num, z_squared), 100000000000000000000)
-                seriesSum := add(seriesSum, div(num, 9))
-
-                num := div(mul(num, z_squared), 100000000000000000000)
-                seriesSum := add(seriesSum, div(num, 11))
-            }
-
-            // 6 Taylor terms are sufficient for 36 decimal precision.
-
-            // Finally, we multiply by 2 (non fixed point) to compute ln(remainder)
-
-            seriesSum *= 2;
-
-            // We now have the sum of all x_n present, and the Taylor approximation of the logarithm of the remainder (both
-            // with 20 decimals). All that remains is to sum these two, and then drop two digits to return a 18 decimal
-            // value.
-
-            assembly {
-                ret := div(add(sum, seriesSum), 100)
-            }
-        }
+        // Finalization, we need to
+        // * multiply by the scale factor s = 5.549…
+        // * add ln(2**96 / 10**18)
+        // * add k * ln(2)
+        // * multiply by 10**18 / 2**96 = 5**18 >> 78
+        // mul s * 5e18 * 2**96, base is now 5**18 * 2**192
+        r *= 1677202110996718588342820967067443963516166;
+        // add ln(2) * k * 5e18 * 2**192
+        r += 16597577552685614221487285958193947469193820559219878177908093499208371 * k;
+        // add ln(2**96 / 10**18) * 5e18 * 2**192
+        r += 600920179829731861736702779321621459595472258049074101567377883020018308;
+        // base conversion: mul 2**18 / 2**192
+        r >>= 174;
     }
 }
