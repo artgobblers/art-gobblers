@@ -84,9 +84,18 @@ contract VRGDAsTest is DSTestPlus {
 
         while (sold <= 7507) {
             uint256 price = gobblers.getPrice(0 days, sold++);
-
             assertGt(price, previousPrice);
+            previousPrice = price;
+        }
+    }
 
+    function testGobblerPriceStrictlyIncreasesForTenThousandPages() public {
+        uint256 sold;
+        uint256 previousPrice;
+
+        while (sold <= 10000) {
+            uint256 price = pages.getPrice(0 days, sold++);
+            assertGt(price, previousPrice);
             previousPrice = price;
         }
     }
