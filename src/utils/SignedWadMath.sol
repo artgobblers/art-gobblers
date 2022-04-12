@@ -114,10 +114,7 @@ function wadExp(int256 x) pure returns (int256 r) {
 // Consumes 670 gas.
 function wadLn(int256 x) pure returns (int256 r) {
     unchecked {
-        if (x < 1) {
-            if (x < 0) revert("UNDEFINED");
-            revert("OVERFLOW");
-        }
+        require(x > 0, "UNDEFINED");
 
         // We want to convert x from 10**18 fixed point to 2**96 fixed point.
         // We do this by multiplying by 2**96 / 10**18.
@@ -160,6 +157,7 @@ function wadLn(int256 x) pure returns (int256 r) {
         q = ((q * x) >> 96) + 204048457590392012362485061816622;
         q = ((q * x) >> 96) + 31853899698501571402653359427138;
         q = ((q * x) >> 96) + 909429971244387300277376558375;
+
         assembly {
             // Div in assembly because solidity adds a zero check despite the `unchecked`.
             // The q polynomial is known not to have zeros in the domain. (All roots are complex)
