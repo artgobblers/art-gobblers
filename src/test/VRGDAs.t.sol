@@ -51,12 +51,43 @@ contract VRGDAsTest is DSTestPlus {
         pages = gobblers.pages();
     }
 
-    // TODO: this rly isnt an id its cummulative sold
-    function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 id) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 7990));
+    // function testFindGobblerOverflowPoint() public view {
+    //     uint256 sold;
+    //     while (true) {
+    //         gobblers.getPrice(0 days, sold++);
+    //     }
+    // }
+
+    // function testFindLastGobblerTooEarlyOverflowPoint() public {
+    //     uint256 time = 999 days;
+    //     while (true) {
+    //         emit log_uint((time -= 1 days) / 1 days);
+    //         gobblers.getPrice(time, 7990);
+    //     }
+    // }
+
+    function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7507));
     }
 
-    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 id) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(id, 0, 10000));
+    function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
+        gobblers.getPrice(bound(timeSinceStart, 444 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7507));
+    }
+
+    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 sold) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 10000));
+    }
+
+    function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
+        uint256 sold;
+        uint256 previousPrice;
+
+        while (sold <= 7507) {
+            uint256 price = gobblers.getPrice(0 days, sold++);
+
+            assertGt(price, previousPrice);
+
+            previousPrice = price;
+        }
     }
 }

@@ -38,7 +38,7 @@ abstract contract LogisticVRGDA is VRGDA {
 
     function getTargetSaleDay(int256 idWad) internal view virtual override returns (int256) {
         unchecked {
-            return unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialLogisticValue) - 1e18), timeScale);
+            return -unsafeWadDiv(wadLn(unsafeWadDiv(logisticScale, idWad + initialLogisticValue) - 1e18), timeScale);
         }
     }
 }
