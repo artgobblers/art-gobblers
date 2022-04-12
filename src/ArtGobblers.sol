@@ -266,8 +266,6 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
         claimedWhitelist[msg.sender] = true;
 
         mintGobbler(msg.sender);
-
-        pages.mintByAuth(msg.sender); // Whitelisted users also get a free page.
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -22,14 +22,6 @@ contract GoopTest is DSTest {
         goop = new Goop(address(this));
     }
 
-    function testMintByAuthority() public {
-        uint256 initialSupply = goop.totalSupply();
-        uint256 mintAmount = 100000;
-        goop.mint(address(this), mintAmount);
-        uint256 finalSupply = goop.totalSupply();
-        assertEq(finalSupply, initialSupply + mintAmount);
-    }
-
     function testMintByNonAuthority() public {
         uint256 mintAmount = 100000;
         vm.prank(users[0]);

@@ -86,9 +86,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
-
-        // and page ownership as well
-        assertEq(pages.ownerOf(1), user);
     }
 
     function testMintNotInWhitelist() public {

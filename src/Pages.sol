@@ -140,13 +140,6 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
-    /// @notice Mint by authority without paying mint cost.
-    function mintByAuth(address addr) public only(artGobblers) {
-        unchecked {
-            _mint(addr, ++currentId, "");
-        }
-    }
-
     /*//////////////////////////////////////////////////////////////
                            VRGDA PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
