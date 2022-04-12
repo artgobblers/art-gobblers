@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+// TODO: fuzz remco stuff against bal and PRB
+
 function wadMul(int256 x, int256 y) pure returns (int256 z) {
     assembly {
         // Store x * y in z for now.
@@ -107,23 +109,6 @@ function wadExp(int256 x) pure returns (int256 r) {
     }
 }
 
-// Integer log2
-// @returns floor(log2(x)) if x is nonzero, otherwise 0. This is the same
-//          as the location of the highest set bit.
-// Consumes 232 gas. This could have been an 3 gas EVM opcode though.
-function ilog2(uint256 x) pure returns (uint256 r) {
-    assembly {
-        r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
-        r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
-        r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
-        r := or(r, shl(4, lt(0xffff, shr(r, x))))
-        r := or(r, shl(3, lt(0xff, shr(r, x))))
-        r := or(r, shl(2, lt(0xf, shr(r, x))))
-        r := or(r, shl(1, lt(0x3, shr(r, x))))
-        r := or(r, lt(0x1, shr(r, x)))
-    }
-}
-
 // Computes ln(x) in 1e18 fixed point.
 // Reverts if x is negative or zero.
 // Consumes 670 gas.
@@ -139,10 +124,20 @@ function wadLn(int256 x) pure returns (int256 r) {
         // But since ln(x * C) = ln(x) + ln(C), we can simply do nothing here
         // and add ln(2**96 / 10**18) at the end.
 
+        assembly {
+            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
+            r := or(r, shl(4, lt(0xffff, shr(r, x))))
+            r := or(r, shl(3, lt(0xff, shr(r, x))))
+            r := or(r, shl(2, lt(0xf, shr(r, x))))
+            r := or(r, shl(1, lt(0x3, shr(r, x))))
+            r := or(r, lt(0x1, shr(r, x)))
+        }
+
         // Reduce range of x to (1, 2) * 2**96
         // ln(2^k * x) = k * ln(2) + ln(x)
-        // Note: inlining ilog2 saves 8 gas.
-        int256 k = int256(ilog2(uint256(x))) - 96;
+        int256 k = r - 96;
         x <<= uint256(159 - k);
         x = int256(uint256(x) >> 159);
 
@@ -155,7 +150,7 @@ function wadLn(int256 x) pure returns (int256 r) {
         p = ((p * x) >> 96) - 45023709667254063763336534515857;
         p = ((p * x) >> 96) - 14706773417378608786704636184526;
         p = p * x - (795164235651350426258249787498 << 96);
-        //emit log_named_int("p", p);
+
         // We leave p in 2**192 basis so we don't need to scale it back up for the division.
         // q is monic by convention
         int256 q = x + 5573035233440673466300451813936;
