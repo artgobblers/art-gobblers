@@ -164,6 +164,7 @@ function wadLn(int256 x) pure returns (int256 r) {
             // No scaling required because p is already 2**96 too large.
             r := sdiv(p, q)
         }
+
         // r is in the range (0, 0.125) * 2**96
 
         // Finalization, we need to
