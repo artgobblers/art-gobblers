@@ -33,6 +33,8 @@ import {Pages} from "./Pages.sol";
 // TODO: trigger afterTransfer on reveal
 // TODO: this contract needs to be marked an ERC1155 receiver
 
+// TODO: should we use SSTORE2 for setting multiples offchain?
+
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
