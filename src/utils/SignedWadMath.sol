@@ -115,7 +115,7 @@ function wadLn(int256 a) pure returns (int256 ret) {
         bool ln36;
 
         assembly {
-            ln36 := and(gt(a, 90000000000000000), lt(a, 1100000000000000000))
+            ln36 := and(gt(a, 900000000000000000), lt(a, 1100000000000000000))
         }
 
         if (ln36) {
@@ -180,7 +180,7 @@ function wadLn(int256 a) pure returns (int256 ret) {
             }
         } else {
             // TODO: did i transform this from < to <= right?
-            if (a <= 999999999999999999) {
+            if (a < 1e18) {
                 // Since ln(a^k) = k * ln(a), we can compute ln(a) as ln(a) = ln((1/a)^(-1)) = - ln((1/a)). If a is less
                 // than one, 1/a will be greater than one, and this if statement will not be entered in the recursive call.
                 // Fixed point division requires multiplying by ONE_18.
