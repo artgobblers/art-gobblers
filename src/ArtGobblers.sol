@@ -2,8 +2,10 @@
 pragma solidity >=0.8.0;
 
 import {Auth, Authority} from "solmate/auth/Auth.sol";
+import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+// TODO: solmate impls for these
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
@@ -16,7 +18,7 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
-// TODO: can we just have tokenid start with 0 why 1 bro its confusing af
+// TODO: comprehensive natspec
 
 // TODO; all addresses can be constants, predict them
 
@@ -33,7 +35,13 @@ import {Pages} from "./Pages.sol";
 
 /// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFConsumerBase, LogisticVRGDA {
+contract ArtGobblers is
+    ERC1155B,
+    ERC1155TokenReceiver,
+    Auth(msg.sender, Authority(address(0))),
+    VRFConsumerBase,
+    LogisticVRGDA
+{
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
@@ -43,7 +51,7 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
 
     Goop public immutable goop;
 
-    Pages public immutable pages;
+    Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
@@ -177,8 +185,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                             ART FEEDING STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mapping from page ids to gobbler ids they were fed to.
-    mapping(uint256 => uint256) public pageIdToGobblerId;
+    /// @notice Mapping from NFT contracts to their ids to gobbler ids they were fed to.
+    mapping(ERC1155B => mapping(uint256 => uint256)) public getGobblerFromFedArt;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -195,6 +203,8 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
     //////////////////////////////////////////////////////////////*/
 
     error Unauthorized();
+
+    error AlreadyEaten();
 
     error CannotBurnLegendary();
 
@@ -505,16 +515,26 @@ contract ArtGobblers is ERC1155B, Auth(msg.sender, Authority(address(0))), VRFCo
                             ART FEEDING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Feed a gobbler a page.
-    function feedArt(uint256 gobblerId, uint256 pageId) public {
-        // The page must be drawn on and the caller must own this gobbler:
-        if (!pages.isDrawn(pageId) || ownerOf[gobblerId] != msg.sender) revert Unauthorized();
+    /// @notice Feed a gobbler an ERC1155B token.
+    // TODO: do we want to support ERC721 and standard 1155 as well or
+    // TODO: if we want to support standard 1155 maybe we should map gobbler ids to nfts to ids
+    // TODO: also don't forget we'll need 721 recipient functions if we support that
+    function feedArt(
+        uint256 gobblerId,
+        ERC1155B nft,
+        uint256 id
+    ) public {
+        // The caller must own the gobbler they're feeding.
+        if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
-        // This will revert if the caller does not own the page.
-        pages.safeTransferFrom(msg.sender, address(this), pageId, 1, "");
+        // In case the NFT is not an 1155B, prevent eating it twice:
+        if (getGobblerFromFedArt[nft][id] != 0) revert AlreadyEaten();
 
-        // Map the page to the gobbler that ate it.
-        pageIdToGobblerId[pageId] = gobblerId;
+        // Assume this is an 1155B based NFT, so we'll only transfer 1.
+        nft.safeTransferFrom(msg.sender, address(this), id, 1, "");
+
+        // Map the NFT to the gobbler that ate it.
+        getGobblerFromFedArt[nft][id] = gobblerId;
     }
 
     /*//////////////////////////////////////////////////////////////

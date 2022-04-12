@@ -46,15 +46,17 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
                              MINT/BURN LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function mint(address to, uint256 value) public only(artGobblers) {
-        _mint(to, value);
+    function mint(address to, uint256 amount) public only(artGobblers) {
+        _mint(to, amount);
     }
 
-    function burnForGobblers(address from, uint256 value) public only(artGobblers) {
-        _burn(from, value);
+    // TODO: we could just transferFrom dont need special burn auth?
+    function burnForGobblers(address from, uint256 amount) public only(artGobblers) {
+        _burn(from, amount);
     }
 
-    function burnForPages(address from, uint256 value) public only(pages) {
-        _burn(from, value);
+    // TODO: we could just transferFrom dont need special burn auth?
+    function burnForPages(address from, uint256 amount) public only(pages) {
+        _burn(from, amount);
     }
 }

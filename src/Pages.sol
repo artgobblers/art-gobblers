@@ -15,6 +15,9 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
 
+// TODO: we should have custom ERC1155B for pages that has a custom isApprovedForAll function that always returns true for pages.
+// TODO: ^ after we do that make sure to remove approvals in tests
+
 /// @title Pages NFT (PAGE)
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
@@ -25,7 +28,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop internal goop;
+    Goop internal goop; // todo: public?
 
     /*//////////////////////////////////////////////////////////////
                               URI CONSTANTS
@@ -39,7 +42,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Id of last mint.
-    uint256 internal currentId;
+    uint256 internal currentId; // todo: public???
 
     /// @notice The number of pages minted from goop.
     uint256 internal numMintedFromGoop;
@@ -69,9 +72,6 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice User allowed to set the draw state on pages.
     address public immutable artist;
-
-    /// @notice Authority to mint with 0 cost.
-    address public immutable artGobblers;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -104,7 +104,6 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         goop = Goop(_goop);
 
         artist = _artist;
-        artGobblers = msg.sender;
 
         mintStart = _mintStart;
     }
@@ -121,6 +120,7 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     }
 
     /// @notice Set whether a page is drawn.
+    // TODO: do we still need this
     function setIsDrawn(uint256 tokenId) public only(artist) {
         isDrawn[tokenId] = true;
     }
@@ -129,8 +129,11 @@ contract Pages is ERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    // TODO: do we want the ability to mint pages out of thin air for promotional reasons?
+
     /// @notice Mint a page by burning goop.
     function mint() public {
+        // TODO: we could just transferFrom dont need special burn auth
         goop.burnForPages(msg.sender, pagePrice());
 
         unchecked {
