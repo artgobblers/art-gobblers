@@ -69,17 +69,17 @@ contract ArtGobblers is
     /// ----------------------------
 
     /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
-    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(69);
+    int256 public immutable initialPrice = 6.9e19;
 
     /// @notice Scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve, which needs
     /// to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
     int256 private immutable logisticScale = PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
 
     /// @notice Time scale of 1/60 gives us the appropriate time period for sales.
-    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(60));
+    int256 private immutable timeScale = 0.014e18;
 
     /// @notice Price decrease 25% per period.
-    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
+    int256 private immutable periodPriceDecrease = 0.31e18;
 
     /// @notice TimeShift is 0 to give us appropriate issuance curve
     int256 private immutable timeShift = 0;
