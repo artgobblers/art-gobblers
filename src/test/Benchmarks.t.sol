@@ -66,6 +66,14 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.gobblerPrice();
     }
 
+    function testGetGobblerPrice() public view {
+        gobblers.getPrice(0 days, 7500);
+    }
+
+    function testGetPagePrice() public view {
+        pages.getPrice(0 days, 7500);
+    }
+
     function testLegendaryGobblersPrice() public view {
         gobblers.legendaryGobblerPrice();
     }
