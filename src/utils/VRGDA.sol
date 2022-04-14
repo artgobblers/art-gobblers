@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {wadExp, wadLn, wadMul, unsafeWadMul, unsafeWadDiv} from "./SignedWadMath.sol";
+import {wadExp, wadLn, wadMul, unsafeWadMul, toWadUnsafe} from "./SignedWadMath.sol";
 
 /// @title Variable Rate Gradual Dutch Auction
-/// @notice Sell NFTs roughly according to an issuance schedule.
-/// @dev More details: https://github.com/transmissions11/VRGDAs
+/// @notice Sell tokens roughly according to an issuance schedule.
 abstract contract VRGDA {
-    /*//////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Scaling constant to change units between days and seconds.
-    /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant DAYS_WAD = 1 days * 1e18;
-
     /*//////////////////////////////////////////////////////////////
                             VRGDA PARAMETERS
     //////////////////////////////////////////////////////////////*/
@@ -37,10 +28,10 @@ abstract contract VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate the price of an NFT according to the VRGDA algorithm.
+    /// @notice Calculate the price of an token according to the VRGDA formula.
     /// @param timeSinceStart The time since the initial sale, in seconds.
-    /// @param id The token id to get the price of at the current time.
-    function getPrice(uint256 timeSinceStart, uint256 id) public view returns (uint256) {
+    /// @param sold The number of tokens that have been sold so far.
+    function getPrice(uint256 timeSinceStart, uint256 sold) public view returns (uint256) {
         unchecked {
             return
                 uint256(
@@ -49,11 +40,9 @@ abstract contract VRGDA {
                         wadExp(
                             unsafeWadMul(
                                 decayConstant,
-                                // Multiplying timeSinceStart by 1e18 can overflow
-                                // without detection, but the sun will devour our
-                                // solar system before we need to worry about it.
-                                unsafeWadDiv(int256(timeSinceStart * 1e18), DAYS_WAD) -
-                                    getTargetSaleDay(int256(id * 1e18))
+                                // Theoretically calling toWadUnsafe with timeSinceStart and sold can overflow without
+                                // detection, but under any reasonable circumstance they will never be large enough.
+                                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold))
                             )
                         )
                     )
@@ -61,9 +50,9 @@ abstract contract VRGDA {
         }
     }
 
-    // TODO: idt we should use idWad or describe it as "for a given token id" when its actually for the num sold (which is 1 less than the id)
-    /// @dev Get the target sale day (relative to the starting time) for a given token id.
-    /// @param idWad The id of the token to get the target sale day for, scaled by 1e18.
-    /// @return The target day (relative) to sell the given token id on, scaled by 1e18.
-    function getTargetSaleDay(int256 idWad) internal view virtual returns (int256);
+    /// @dev Given a number of tokens, return the target day they should all be sold by.
+    /// @param tokens The number of tokens to get the target sale day for, scaled by 1e18.
+    /// @return The target day that the tokens should all be sold by, scaled by 1e18, where the
+    /// day is relative, such that 0 means the tokens should be sold on the first day of auctions.
+    function getTargetSaleDay(int256 tokens) internal view virtual returns (int256);
 }
