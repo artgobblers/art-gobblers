@@ -3,6 +3,26 @@ pragma solidity >=0.8.0;
 
 // TODO: fuzz remco stuff against bal and PRB
 
+// TODO: needs tests
+// TODO: not using this
+function toWad(int256 x) pure returns (int256 z) {
+    assembly {
+        if iszero(slt(x, 57896044618658097711785492504343953926634992332820282019728)) {
+            revert(0, 0)
+        }
+
+        z := mul(x, 1000000000000000000)
+    }
+}
+
+// TODO: fuzz
+/// @dev NOT OVERFLOW SAFE! ONLY USE WHERE OVERFLOW IS NOT POSSIBLE!
+function toWadUnsafe(uint256 x) pure returns (int256 z) {
+    assembly {
+        z := mul(x, 1000000000000000000)
+    }
+}
+
 function wadMul(int256 x, int256 y) pure returns (int256 z) {
     assembly {
         // Store x * y in z for now.
@@ -47,6 +67,13 @@ function unsafeWadDiv(int256 x, int256 y) pure returns (int256 z) {
     assembly {
         // Multiply x by 1e18 and divide it by y.
         z := sdiv(mul(x, 1000000000000000000), y)
+    }
+}
+
+/// @dev Note: Will return 0 instead of reverting if y is zero.
+function unsafeDiv(int256 x, int256 y) pure returns (int256 z) {
+    assembly {
+        z := sdiv(x, y)
     }
 }
 

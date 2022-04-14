@@ -32,9 +32,9 @@ abstract contract PostSwitchVRGDA is VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getTargetSaleDay(int256 idWad) internal view virtual override returns (int256) {
+    function getTargetSaleDay(int256 tokens) internal view virtual override returns (int256) {
         unchecked {
-            return unsafeWadDiv(idWad - switchId, perDay) + switchDay;
+            return unsafeWadDiv(tokens - switchId, perDay) + switchDay;
         }
     }
 }
