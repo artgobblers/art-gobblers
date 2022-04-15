@@ -12,51 +12,68 @@ import {VRGDA} from "./utils/VRGDA.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
+// todo: events?
+
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
-    /// ----------------------------
-    /// --------- State ------------
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
 
-    /// @notice Id of last mint.
-    uint256 internal currentId;
+    Goop internal goop; // todo: public?
 
-    /// @notice The number of pages minted from goop.
-    uint256 internal numMintedFromGoop;
+    /*//////////////////////////////////////////////////////////////
+                              URI CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Base token URI.
     string internal constant BASE_URI = "";
 
+    /*//////////////////////////////////////////////////////////////
+                              MINTING STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Id of last mint.
+    uint256 internal currentId; // todo: public???
+
+    /// @notice The number of pages minted from goop.
+    uint256 internal numMintedFromGoop;
+
+    /// @notice Timestamp for the start of the VRGDA mint.
+    uint256 internal mintStart = type(uint256).max;
+
+    /*//////////////////////////////////////////////////////////////
+                               DRAWN LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Mapping from tokenId to isDrawn bool.
     mapping(uint256 => bool) public isDrawn;
 
-    Goop internal goop;
-
-    /// ----------------------------
-    /// ---- Pricing Parameters ----
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                            PRICING CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice The id of the first page to be priced using the post switch VRGDA.
     /// @dev Computed by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
 
-    /// @notice Start of public mint.
-    /// @dev Begins as type(uint256).max to pagePrice() underflow before minting starts.
-    uint256 private mintStart = type(uint256).max;
-
-    /// -----------------------
-    /// ------ Authority ------
-    /// -----------------------
+    /*//////////////////////////////////////////////////////////////
+                            AUTHORIZED USERS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice User allowed to set the draw state on pages.
     address public immutable artist;
 
     /// @notice Authority to mint with 0 cost.
     address public immutable artGobblers;
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error Unauthorized();
 

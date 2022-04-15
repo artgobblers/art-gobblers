@@ -19,6 +19,7 @@ import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
+// TODO: events
 
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is
@@ -31,24 +32,17 @@ contract ArtGobblers is
     using FixedPointMathLib for uint256;
     using PRBMathSD59x18 for int256;
 
-    /// ----------------------------
-    /// ---- Minting Parameters ----
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
 
-    /// @notice Id of last minted token.
-    uint256 internal currentNonLegendaryId;
+    Goop public immutable goop;
 
-    /// @notice Base URI for minted gobblers.
-    string public BASE_URI;
+    Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
-    /// @notice URI for gobblers that have yet to be revealed.
-    string public UNREVEALED_URI;
-
-    /// @notice Merkle root of mint whitelist.
-    bytes32 public merkleRoot;
-
-    /// @notice Mapping to keep track of which addresses have claimed from whitelist.
-    mapping(address => bool) public claimedWhitelist;
+    /*//////////////////////////////////////////////////////////////
+                            SUPPLY CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Maximum number of mintable tokens.
     uint256 private constant MAX_SUPPLY = 10000;
@@ -59,42 +53,76 @@ contract ArtGobblers is
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 private constant LEGENDARY_SUPPLY = 10;
 
-    /// @notice Index of last token that has been revealed.
-    uint128 public lastRevealedIndex;
+    /*//////////////////////////////////////////////////////////////
+                            URI CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
 
-    /// @notice Remaining gobblers to be assigned from seed.
-    uint128 public gobblersToBeAssigned;
+    /// @notice Base URI for minted gobblers.
+    string public BASE_URI;
 
-    /// @notice Random seed obtained from VRF.
-    uint256 public randomSeed;
+    /// @notice URI for gobblers that have yet to be revealed.
+    string public UNREVEALED_URI;
 
-    /// ----------------------------
-    /// ---- Pricing Parameters ----
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                              VRF CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
-    /// @notice Timestamp for start of mint.
-    uint256 public mintStart;
+    bytes32 internal immutable chainlinkKeyHash;
+
+    uint256 internal immutable chainlinkFee;
+
+    /*//////////////////////////////////////////////////////////////
+                             WHITELIST STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Merkle root of mint whitelist.
+    bytes32 public merkleRoot;
+
+    /// @notice Mapping to keep track of which addresses have claimed from whitelist.
+    mapping(address => bool) public claimedWhitelist;
+
+    /*//////////////////////////////////////////////////////////////
+                            VRGDA INPUT STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Timestamp for the start of the whitelist & VRGDA mint.
+    uint256 public mintStart = type(uint256).max;
 
     /// @notice Number of gobblers minted from goop.
-    uint256 public numMintedFromGoop;
+    uint128 public numMintedFromGoop;
 
-    /// --------------------
-    /// -------- VRF -------
-    /// --------------------
+    /*//////////////////////////////////////////////////////////////
+                         STANDARD GOBBLER STATE
+    //////////////////////////////////////////////////////////////*/
 
-    bytes32 internal chainlinkKeyHash;
+    /// @notice Id of last minted non legendary token.
+    uint128 internal currentNonLegendaryId; // TODO: public?
 
-    uint256 internal chainlinkFee;
+    /*///////////////////////////////////////////////////////////////
+                    LEGENDARY GOBBLER AUCTION STATE
+    //////////////////////////////////////////////////////////////*/
 
-    /// @notice Map Chainlink request id to token ids.
-    mapping(bytes32 => uint256) public requestIdToTokenId;
+    /// @notice Last 10 ids are reserved for legendary gobblers.
+    uint256 private constant LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
 
-    /// @notice Map token id to random seed produced by VRF
-    mapping(uint256 => uint256) public tokenIdToRandomSeed;
+    /// @notice Struct holding info required for legendary gobbler auctions.
+    struct LegendaryGobblerAuctionData {
+        /// @notice Start price of current legendary gobbler auction.
+        uint120 currentLegendaryGobblerStartPrice;
+        /// @notice Start timestamp of current legendary gobbler auction.
+        uint120 currentLegendaryGobblerAuctionStart;
+        /// @notice Id of last minted legendary gobbler.
+        /// @dev 16 bits has a max value of ~60,000,
+        /// which is safely within our limits here.
+        uint16 currentLegendaryId;
+    }
 
-    /// --------------------------
-    /// -------- Attributes ------
-    /// --------------------------
+    /// @notice Data about the current legendary gobbler auction.
+    LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
+
+    /*//////////////////////////////////////////////////////////////
+                             ATTRIBUTE STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Struct holding gobbler attributes.
     struct GobblerAttributes {
@@ -107,59 +135,48 @@ contract ArtGobblers is
     }
 
     /// @notice Maps gobbler ids to their attributes.
-    mapping(uint256 => GobblerAttributes) public attributeList;
+    mapping(uint256 => GobblerAttributes) public getAttributesForGobbler;
 
-    /// --------------------------
-    /// -------- Addresses ------
-    /// --------------------------
+    /*//////////////////////////////////////////////////////////////
+                         ATTRIBUTES REVEAL STATE
+    //////////////////////////////////////////////////////////////*/
 
-    Goop public immutable goop;
+    // TODO: investigate pack
 
-    Pages public immutable pages;
+    /// @notice Random seed obtained from VRF.
+    uint256 public randomSeed;
 
-    /// --------------------------
-    /// -------- Staking  --------
-    /// --------------------------
+    /// @notice Index of last token that has been revealed.
+    uint128 public lastRevealedIndex;
 
-    /// @notice Struct holding info required for goop staking reward calculation.
-    struct StakingInfo {
+    /// @notice Remaining gobblers to be assigned from seed.
+    uint128 public gobblersToBeAssigned;
+
+    /*//////////////////////////////////////////////////////////////
+                              STAKING STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Struct holding info required for goop staking reward calculations.
+    struct StakingData {
         /// @notice Balance at time of last deposit or withdrawal.
         uint128 lastBalance;
         /// @notice Timestamp of last deposit or withdrawal.
         uint128 lastTimestamp;
     }
 
-    /// @notice Mapping from tokenId to staking info.
-    mapping(uint256 => StakingInfo) public stakingInfoMap;
+    /// @notice Maps token ids to their staking ata.
+    mapping(uint256 => StakingData) public getStakingDataForId;
 
-    /// -------------------------------
-    /// ----- Legendary Gobblers  -----
-    /// -------------------------------
-
-    // TODO: pack these:
-
-    /// @notice Start price of current legendary gobbler auction.
-    uint256 public currentLegendaryGobblerStartPrice;
-
-    /// @notice Start timestamp of current legendary gobbler auction.
-    uint256 public currentLegendaryGobblerAuctionStart;
-
-    /// @notice Last 10 ids are reserved for legendary gobblers.
-    uint256 private immutable LEGENDARY_GOBBLER_ID_START = MAX_SUPPLY - 10;
-
-    /// @notice Id of last minted legendary gobbler.
-    uint256 public currentLegendaryId;
-
-    /// ----------------------------
-    /// -------- Feeding Art  ------
-    /// ----------------------------
+    /*//////////////////////////////////////////////////////////////
+                            ART FEEDING STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mapping from page ids to gobbler ids they were fed to.
     mapping(uint256 => uint256) public pageIdToGobblerId;
 
-    /// ----------------------
-    /// -------- Events ------
-    /// ----------------------
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Merkle root was set.
     event MerkleRootSet(bytes32 merkleRoot);
@@ -167,9 +184,9 @@ contract ArtGobblers is
     /// @notice Legendary gobbler was minted.
     event LegendaryGobblerMint(uint256 tokenId);
 
-    /// ----------------------
-    /// -------- Errors ------
-    /// ----------------------
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error Unauthorized();
 
@@ -209,13 +226,13 @@ contract ArtGobblers is
         BASE_URI = _baseUri;
 
         // Start price for legendary gobblers is 100 gobblers.
-        currentLegendaryGobblerStartPrice = 100;
+        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
 
         // First legendary gobbler auction starts 30 days after contract deploy.
-        currentLegendaryGobblerAuctionStart = block.timestamp + 30 days;
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(block.timestamp + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
-        currentLegendaryId = LEGENDARY_GOBBLER_ID_START;
+        legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
     }
 
     /// @notice Set merkle root for minting whitelist, can only be done once.
@@ -260,8 +277,14 @@ contract ArtGobblers is
     }
 
     /// @notice Gobbler pricing in terms of goop.
+    /// @dev Will revert if called before minting starts
+    /// or after all gobblers have been minted via VRGDA.
     function gobblerPrice() public view returns (uint256) {
-        return getPrice(block.timestamp - mintStart, numMintedFromGoop);
+        // We need checked math here to cause overflow
+        // before minting has begun, preventing mints.
+        uint256 timeSinceStart = block.timestamp - mintStart;
+
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
     function mintGobbler(address mintAddress) internal {
@@ -272,15 +295,15 @@ contract ArtGobblers is
         _mint(mintAddress, newId);
 
         // Start generating goop from mint time.
-        stakingInfoMap[newId].lastTimestamp = uint128(block.timestamp);
+        getStakingDataForId[newId].lastTimestamp = uint128(block.timestamp);
     }
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
-        uint256 currentId = currentLegendaryId;
+        uint256 legendaryId = legendaryGobblerAuctionData.currentLegendaryId;
 
-        // When current ID surpasses max supply, we've minted all 10 legendary gobblers:
-        if (currentId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
+        // When legendary id surpasses max supply, we've minted all 10 legendary gobblers:
+        if (legendaryId >= MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
@@ -296,7 +319,8 @@ contract ArtGobblers is
             }
         }
 
-        uint256 newId = (currentLegendaryId = currentId + 1);
+        // Supply caps are properly checked above, so overflow should be impossible here.
+        uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(legendaryId + 1));
 
         // Mint the legendary gobbler.
         _mint(msg.sender, newId);
@@ -305,19 +329,24 @@ contract ArtGobblers is
         emit LegendaryGobblerMint(newId);
 
         // Start a new auction, 30 days after the previous start.
-        currentLegendaryGobblerAuctionStart += 30 days;
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
 
-        // New start price is max of (100, prev_cost*2).
-        currentLegendaryGobblerStartPrice = cost < 50 ? 100 : cost << 1; // Shift left by 1 is like multiplication by 2.
+        // New start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
+        legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
     /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
     function legendaryGobblerPrice() public view returns (uint256) {
-        uint256 daysSinceStart = (block.timestamp - currentLegendaryGobblerAuctionStart) / 1 days;
+        uint256 daysSinceStart = (block.timestamp - legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart) /
+            1 days;
 
         // If more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days.
-        return daysSinceStart >= 30 ? 0 : (currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
+        // TODO: can we uncheck?
+        return
+            daysSinceStart >= 30
+                ? 0 // TODO: why divide
+                : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
     /// @notice Get the random seed for revealing gobblers.
@@ -359,24 +388,26 @@ contract ArtGobblers is
             uint256 swapSlot = lastRevealedIndex + 1 + distance;
 
             // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-            uint128 swapIndex = attributeList[swapSlot].idx == 0 ? uint128(swapSlot) : attributeList[swapSlot].idx;
+            uint128 swapIndex = getAttributesForGobbler[swapSlot].idx == 0
+                ? uint128(swapSlot)
+                : getAttributesForGobbler[swapSlot].idx;
 
             // Current slot is consecutive to last reveal.
             uint256 currentSlot = lastRevealedIndex + 1;
 
             // Again, we derive index based on value:
-            uint128 currentIndex = attributeList[currentSlot].idx == 0
+            uint128 currentIndex = getAttributesForGobbler[currentSlot].idx == 0
                 ? uint128(currentSlot)
-                : attributeList[currentSlot].idx;
+                : getAttributesForGobbler[currentSlot].idx;
 
             // Swap indices.
-            attributeList[currentSlot].idx = swapIndex;
-            attributeList[swapSlot].idx = currentIndex;
+            getAttributesForGobbler[currentSlot].idx = swapIndex;
+            getAttributesForGobbler[swapSlot].idx = currentIndex;
 
             // Select random attributes for current slot:
             currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-            attributeList[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
-            attributeList[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
+            getAttributesForGobbler[currentSlot].baseRate = uint64(currentRandomSeed % 4) + 1;
+            getAttributesForGobbler[currentSlot].stakingMultiple = uint64(currentRandomSeed % 128) + 1;
         }
 
         // Update state all at once.
@@ -392,7 +423,7 @@ contract ArtGobblers is
             // 0 is not a valid id:
             if (tokenId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(attributeList[tokenId].idx).toString()));
+            return string(abi.encodePacked(BASE_URI, uint256(getAttributesForGobbler[tokenId].idx).toString()));
         }
         // Between lastRevealedIndex + 1 and currentNonLegendaryId are minted but not revealed.
         if (tokenId <= currentNonLegendaryId) return UNREVEALED_URI;
@@ -401,19 +432,20 @@ contract ArtGobblers is
         if (tokenId <= LEGENDARY_GOBBLER_ID_START) return "";
 
         // Between LEGENDARY_GOBBLER_ID_START and currentLegendaryId are minted legendaries.
-        if (tokenId <= currentLegendaryId) return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        if (tokenId <= legendaryGobblerAuctionData.currentLegendaryId)
+            return string(abi.encodePacked(BASE_URI, tokenId.toString()));
 
         return ""; // Unminted legendaries and invalid token ids.
     }
 
     /// @notice Convenience function to get staking multiple for a gobbler.
     function getStakingMultiple(uint256 tokenId) public view returns (uint256 multiple) {
-        multiple = attributeList[tokenId].stakingMultiple;
+        multiple = getAttributesForGobbler[tokenId].stakingMultiple;
     }
 
     /// @notice Convenience function to get the base issuance rate for a gobbler.
     function getBaseRate(uint256 tokenId) public view returns (uint256 rate) {
-        rate = attributeList[tokenId].baseRate;
+        rate = getAttributesForGobbler[tokenId].baseRate;
     }
 
     /// @notice Feed a gobbler a page.
@@ -430,10 +462,10 @@ contract ArtGobblers is
 
     /// @notice Calculate the balance of goop that is available to withdraw from a gobbler.
     function goopBalance(uint256 gobblerId) public view returns (uint256) {
-        uint256 r = attributeList[gobblerId].baseRate;
-        uint256 m = attributeList[gobblerId].stakingMultiple;
-        uint256 s = stakingInfoMap[gobblerId].lastBalance;
-        uint256 t = block.timestamp - stakingInfoMap[gobblerId].lastTimestamp;
+        uint256 r = getAttributesForGobbler[gobblerId].baseRate;
+        uint256 m = getAttributesForGobbler[gobblerId].stakingMultiple;
+        uint256 s = getStakingDataForId[gobblerId].lastBalance;
+        uint256 t = block.timestamp - getStakingDataForId[gobblerId].lastTimestamp;
 
         // TODO: unchecked?
         return ((m * t * t) / 4) + (t * (m * s + r * r).sqrt()) + s;
@@ -447,8 +479,8 @@ contract ArtGobblers is
         goop.burnForGobblers(msg.sender, goopAmount);
 
         // Update last balance with newly added goop.
-        stakingInfoMap[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
-        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+        getStakingDataForId[gobblerId].lastBalance = uint128(goopBalance(gobblerId) + goopAmount);
+        getStakingDataForId[gobblerId].lastTimestamp = uint128(block.timestamp);
     }
 
     /// @notice Remove goop from a gobbler.
@@ -458,8 +490,8 @@ contract ArtGobblers is
         uint256 balance = goopBalance(gobblerId);
 
         // Will revert if removed amount is larger than balance.
-        stakingInfoMap[gobblerId].lastBalance = uint128(balance - goopAmount);
-        stakingInfoMap[gobblerId].lastTimestamp = uint128(block.timestamp);
+        getStakingDataForId[gobblerId].lastBalance = uint128(balance - goopAmount);
+        getStakingDataForId[gobblerId].lastTimestamp = uint128(block.timestamp);
 
         goop.mint(msg.sender, goopAmount);
     }
