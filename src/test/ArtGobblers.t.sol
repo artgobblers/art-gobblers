@@ -5,7 +5,7 @@ import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {stdError} from "forge-std/stdlib.sol";
+import {stdError} from "forge-std/Test.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
@@ -181,7 +181,9 @@ contract ArtGobblersTest is DSTest {
         for (uint256 i = 1; i <= cost; i++) {
             //all gobblers burned
             ids.push(i);
-            assertEq(gobblers.ownerOf(i), address(0x0));
+
+            vm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(i);
         }
     }
 
