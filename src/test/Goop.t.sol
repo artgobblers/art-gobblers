@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {stdError} from "forge-std/stdlib.sol";
+import {stdError} from "forge-std/Test.sol";
 import {Goop} from "../Goop.sol";
 
 contract GoopTest is DSTest {
