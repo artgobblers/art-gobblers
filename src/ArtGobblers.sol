@@ -12,9 +12,11 @@ import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
+import {VRGDA} from "./utils/VRGDA.sol";
+import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {VRGDA} from "./VRGDA.sol";
 
 // TODO: UNCHECKED
 
@@ -23,7 +25,7 @@ contract ArtGobblers is
     ERC721("Art Gobblers", "GBLR"),
     Auth(msg.sender, Authority(address(0))),
     VRFConsumerBase,
-    VRGDA
+    LogisticVRGDA
 {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
@@ -49,11 +51,13 @@ contract ArtGobblers is
     mapping(address => bool) public claimedWhitelist;
 
     /// @notice Maximum number of mintable tokens.
-    uint256 public constant MAX_SUPPLY = 10000;
+    uint256 private constant MAX_SUPPLY = 10000;
 
-    /// @notice Maximum number of goop mintable tokens.
-    /// @dev 10000 (max supply) - 2000 (whitelist) - 10 (legendaries)
-    uint256 public constant MAX_GOOP_MINT = 7990;
+    /// @notice Maximum amount of gobblers mintable via whitelist.
+    uint256 private constant WHITELIST_SUPPLY = 2000;
+
+    /// @notice Maximum amount of mintable legendary gobblers.
+    uint256 private constant LEGENDARY_SUPPLY = 10;
 
     /// @notice Index of last token that has been revealed.
     uint128 public lastRevealedIndex;
@@ -67,22 +71,6 @@ contract ArtGobblers is
     /// ----------------------------
     /// ---- Pricing Parameters ----
     /// ----------------------------
-
-    /// @notice Initial price does not affect mechanism behavior at equilibrium, so can be anything.
-    int256 public immutable initialPrice = 6.9e19;
-
-    /// @notice Scale needs to be twice (MAX_GOOP_MINT + 1). Scale controls the asymptote of the logistic curve, which needs
-    /// to be exactly above the max mint number. We need to multiply by 2 to adjust for the vertical translation of the curve.
-    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(int256((MAX_GOOP_MINT + 1) * 2));
-
-    /// @notice Time scale of 1/60 gives us the appropriate time period for sales.
-    int256 private immutable timeScale = 0.014e18;
-
-    /// @notice Price decrease 25% per period.
-    int256 private immutable periodPriceDecrease = 0.31e18;
-
-    /// @notice TimeShift is 0 to give us appropriate issuance curve
-    int256 private immutable timeShift = 0;
 
     /// @notice Timestamp for start of mint.
     uint256 public mintStart;
@@ -199,7 +187,17 @@ contract ArtGobblers is
         string memory _baseUri
     )
         VRFConsumerBase(vrfCoordinator, linkToken)
-        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        VRGDA(
+            6.9e18, // Initial price.
+            0.31e18 // Per period price decrease.
+        )
+        LogisticVRGDA(
+            // Logistic scale. We multiply by 2x (as a wad)
+            // to account for the subtracted initial value,
+            // and add 1 to ensure all the tokens can be sold:
+            int256(MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY + 1) * 2e18,
+            0.014e18 // Time scale.
+        )
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
@@ -251,8 +249,9 @@ contract ArtGobblers is
 
     /// @notice Mint from goop, burning the cost.
     function mintFromGoop() public {
-        if (numMintedFromGoop >= MAX_GOOP_MINT) revert NoRemainingGobblers();
-
+        // No need to check mint cap, gobblerPrice()
+        // will revert due to overflow if we reach it.
+        // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         mintGobbler(msg.sender);

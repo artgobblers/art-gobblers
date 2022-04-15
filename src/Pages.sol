@@ -8,10 +8,12 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {Goop} from "./Goop.sol";
-import {VRGDA} from "./VRGDA.sol";
+import {VRGDA} from "./utils/VRGDA.sol";
+import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is ERC721("Pages", "PAGE"), VRGDA {
+contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -37,25 +39,10 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// ---- Pricing Parameters ----
     /// ----------------------------
 
-    int256 public immutable initialPrice = PRBMathSD59x18.fromInt(420);
-
-    int256 private immutable logisticScale = PRBMathSD59x18.fromInt(10024);
-
-    int256 private immutable timeScale = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(30));
-
-    int256 private immutable timeShift = PRBMathSD59x18.fromInt(180);
-
-    int256 private immutable periodPriceDecrease = PRBMathSD59x18.fromInt(1).div(PRBMathSD59x18.fromInt(4));
-
-    int256 private immutable perPeriodPostSwitchover = PRBMathSD59x18.fromInt(10).div(PRBMathSD59x18.fromInt(3));
-
-    int256 private immutable switchoverTime = PRBMathSD59x18.fromInt(360);
-
-    /// @notice Equal to 1 - periodPriceDecrease.
-    int256 private immutable priceScaling = PRBMathSD59x18.fromInt(3).div(PRBMathSD59x18.fromInt(4));
-
-    /// @notice Number of pages sold before we switch pricing functions.
-    uint256 private numPagesSwitch = 9975;
+    /// @notice The id of the first page to be priced using the post switch VRGDA.
+    /// @dev Computed by plugging the switch day into the uninverted pacing formula.
+    /// @dev Represented as an 18 decimal fixed point number.
+    int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
 
     /// @notice Start of public mint.
     /// @dev Begins as type(uint256).max to pagePrice() underflow before minting starts.
@@ -74,7 +61,22 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     error Unauthorized();
 
     constructor(address _goop, address _artist)
-        VRGDA(logisticScale, timeScale, timeShift, initialPrice, periodPriceDecrease)
+        VRGDA(
+            4.20e18, // Initial price.
+            0.31e18 // Per period price decrease.
+        )
+        LogisticVRGDA(
+            // Logistic scale. We multiply by 2x (as a wad)
+            // to account for the subtracted initial value,
+            // and add 1 to ensure all the tokens can be sold:
+            (9999 + 1) * 2e18,
+            0.023e18 // Time scale.
+        )
+        PostSwitchVRGDA(
+            SWITCH_ID_WAD, // Switch id.
+            207e18, // Switch day.
+            10e18 // Per day.
+        )
     {
         goop = Goop(_goop);
         artist = _artist;
@@ -95,9 +97,7 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
 
     /// @notice Mint a page by burning goop.
     function mint() public {
-        uint256 price = pagePrice(); // This will revert if minting has not started yet.
-
-        goop.burnForPages(msg.sender, price);
+        goop.burnForPages(msg.sender, pagePrice());
 
         _mint(msg.sender, ++currentId);
 
@@ -119,27 +119,15 @@ contract Pages is ERC721("Pages", "PAGE"), VRGDA {
     /// VRGDA pricing algorithm, otherwise we use the post-switch pricing formula.
     /// @dev Reverts due to underflow if minting hasn't started yet. Done to save gas.
     function pagePrice() public view returns (uint256) {
+        // We need checked math here to cause overflow
+        // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return
-            (currentId < numPagesSwitch)
-                ? getPrice(timeSinceStart, numMintedFromGoop)
-                : postSwitchPrice(timeSinceStart);
+        return getPrice(timeSinceStart, numMintedFromGoop);
     }
 
-    /// @notice Calculate the mint cost of a page after the switch threshold.
-    function postSwitchPrice(uint256 timeSinceStart) internal view returns (uint256) {
-        // TODO: optimize this like we did in VRGDA.sol
-
-        int256 fInv = (PRBMathSD59x18.fromInt(int256(numMintedFromGoop)) -
-            PRBMathSD59x18.fromInt(int256(numPagesSwitch))).div(perPeriodPostSwitchover) + switchoverTime;
-
-        // We convert seconds to days here, as we need to prevent overflow.
-        int256 time = PRBMathSD59x18.fromInt(int256(timeSinceStart)).div(dayScaling);
-
-        int256 scalingFactor = priceScaling.pow(time - fInv); // This will always be positive.
-
-        return uint256(initialPrice.mul(scalingFactor));
+    function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
+        return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
