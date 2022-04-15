@@ -38,14 +38,21 @@ contract BenchmarksTest is DSTest {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
-        gobblers = new ArtGobblers(address(vrfCoordinator), address(linkToken), keyHash, fee, baseUri);
+        gobblers = new ArtGobblers(
+            "root",
+            block.timestamp,
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            baseUri
+        );
         goop = gobblers.goop();
         pages = gobblers.pages();
 
         vm.prank(address(gobblers));
         goop.mint(address(this), type(uint128).max);
 
-        gobblers.setMerkleRoot("root");
         gobblers.mintFromGoop();
 
         vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.

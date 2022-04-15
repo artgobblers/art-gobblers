@@ -187,13 +187,13 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
     constructor(
         bytes32 _merkleRoot,
         uint256 _mintStart,
-        address vrfCoordinator,
-        address linkToken,
+        address _vrfCoordinator,
+        address _linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
         string memory _baseUri
     )
-        VRFConsumerBase(vrfCoordinator, linkToken)
+        VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
             6.9e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -213,7 +213,7 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
         merkleRoot = _merkleRoot;
 
         goop = new Goop(address(this));
-        pages = new Pages(address(goop), msg.sender, _mintStart);
+        pages = new Pages(_mintStart, address(goop), msg.sender);
 
         goop.setPages(address(pages));
 

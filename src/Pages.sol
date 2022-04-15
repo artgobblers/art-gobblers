@@ -78,9 +78,9 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     error Unauthorized();
 
     constructor(
+        uint256 _mintStart,
         address _goop,
-        address _artist,
-        uint256 _mintStart
+        address _artist
     )
         VRGDA(
             4.20e18, // Initial price.
@@ -99,13 +99,13 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
             10e18 // Per day.
         )
     {
+        mintStart = _mintStart;
+
         goop = Goop(_goop);
 
         artist = _artist;
 
         artGobblers = msg.sender;
-
-        mintStart = _mintStart;
     }
 
     /// @notice Requires caller address to match user address.
