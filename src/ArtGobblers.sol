@@ -291,7 +291,7 @@ contract ArtGobblers is
         // Burn the gobblers provided as tribute.
         unchecked {
             for (uint256 i = 0; i < gobblerIds.length; i++) {
-                if (ownerOf[gobblerIds[i]] != msg.sender) revert Unauthorized();
+                if (_ownerOf[gobblerIds[i]] != msg.sender) revert Unauthorized();
 
                 _burn(gobblerIds[i]); // TODO: can inline this and skip ownership check
             }
@@ -420,7 +420,7 @@ contract ArtGobblers is
     /// @notice Feed a gobbler a page.
     function feedArt(uint256 gobblerId, uint256 pageId) public {
         // The page must be drawn on and the caller must own this gobbler:
-        if (!pages.isDrawn(pageId) || ownerOf[gobblerId] != msg.sender) revert Unauthorized();
+        if (!pages.isDrawn(pageId) || _ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
         // This will revert if the caller does not own the page.
         pages.transferFrom(msg.sender, address(this), pageId);
@@ -442,7 +442,7 @@ contract ArtGobblers is
 
     /// @notice Add goop to gobbler for staking.
     function addGoop(uint256 gobblerId, uint256 goopAmount) public {
-        if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
+        if (_ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
         // Burn goop being added to gobbler.
         goop.burnForGobblers(msg.sender, goopAmount);
@@ -454,7 +454,7 @@ contract ArtGobblers is
 
     /// @notice Remove goop from a gobbler.
     function removeGoop(uint256 gobblerId, uint256 goopAmount) public {
-        if (ownerOf[gobblerId] != msg.sender) revert Unauthorized();
+        if (_ownerOf[gobblerId] != msg.sender) revert Unauthorized();
 
         uint256 balance = goopBalance(gobblerId);
 
