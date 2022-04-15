@@ -182,6 +182,7 @@ contract ArtGobblersTest is DSTest {
             //all gobblers burned
             ids.push(i);
 
+            // TODO: will need to change this when we switch to 1155B
             vm.expectRevert("NOT_MINTED");
             gobblers.ownerOf(i);
         }
