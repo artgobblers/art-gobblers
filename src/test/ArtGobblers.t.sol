@@ -155,9 +155,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     function testMintLegendaryGobbler() public {
-        uint256 startTime = block.timestamp + 30 days;
-
-        vm.warp(startTime);
+        vm.warp(block.timestamp + 30 days);
 
         uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 100);
@@ -176,8 +174,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
 
         assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum);
-
-        vm.warp(startTime); // mintGobblerToAddress warps time forward
 
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
@@ -201,8 +197,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
         assertEq(legendaryId, 9991);
 
-        uint256 startTime = block.timestamp;
-
         uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 66);
 
@@ -210,8 +204,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(cost, "seed");
 
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
-
-        vm.warp(startTime); // mintGobblerToAddress warps time forward
 
         ids[0] = legendaryId; // the legendary we minted
 
@@ -433,8 +425,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         pages.mint();
 
-        pages.setApprovalForAll(address(gobblers), true);
-
         gobblers.feedArt(1, address(pages), 1);
 
         vm.stopPrank();
@@ -500,17 +490,20 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     // convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        uint256 timeDelta = 10 hours;
+        uint256 startTime = block.timestamp;
 
         for (uint256 i = 0; i < num; i++) {
-            vm.warp(block.timestamp + timeDelta);
+            vm.warp(block.timestamp + 24 hours);
+
             vm.startPrank(address(gobblers));
             goop.mint(addr, gobblers.gobblerPrice());
             vm.stopPrank();
+
             vm.prank(addr);
             gobblers.mintFromGoop();
         }
-        vm.stopPrank();
+
+        vm.warp(startTime); // return to start time.
     }
 
     // convenience function to call back vrf with randomness and reveal gobblers
