@@ -13,6 +13,7 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 // todo: events?
 
+/// @title Pages NFT (PAGE)
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
@@ -105,6 +106,10 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         artist = _artist;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           CONFIGURATION LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Requires caller address to match user address.
     modifier only(address user) {
         if (msg.sender != user) revert Unauthorized();
@@ -113,25 +118,32 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     }
 
     /// @notice Set whether a page is drawn.
-    /// @param pageId The id of the page to set.
-    function setIsDrawn(uint256 pageId) public only(artist) {
-        isDrawn[pageId] = true;
+    // TODO: do we still need this
+    function setIsDrawn(uint256 tokenId) public only(artist) {
+        isDrawn[tokenId] = true;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    // TODO: do we want the ability to mint pages out of thin air for promotional reasons?
 
     /// @notice Mint a page by burning goop.
     function mint() public {
+        // TODO: we could just transferFrom dont need special burn auth
         goop.burnForPages(msg.sender, pagePrice());
 
-        ++numMintedFromGoop;
+        unchecked {
+            _mint(msg.sender, ++currentId, "");
 
-        _mint(msg.sender, ++currentId, "");
+            numMintedFromGoop++;
+        }
     }
 
-    /// @notice Mint by authority without paying mint cost.
-    /// @param user The address of the user to mint to.
-    function mintByAuth(address user) public only(artGobblers) {
-        _mint(user, ++currentId, "");
-    }
+    /*//////////////////////////////////////////////////////////////
+                           VRGDA PRICING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the mint cost of a page.
     /// @dev If the number of sales is below a pre-defined threshold, we use the
@@ -148,6 +160,10 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
         return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                             TOKEN URI LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     function uri(uint256 pageId) public view virtual override returns (string memory) {
         if (pageId > currentId) return "";

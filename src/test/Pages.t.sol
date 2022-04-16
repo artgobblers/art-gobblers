@@ -59,21 +59,9 @@ contract PagesTest is DSTestPlus {
         assertEq(user, pages.ownerOf(1));
     }
 
-    function testMintByAuthority() public {
-        // mint by authority for user
-        pages.mintByAuth(user);
-        assertEq(user, pages.ownerOf(1));
-    }
-
-    function testMintByAuthorityRevert() public {
-        vm.prank(user);
-        vm.expectRevert(unauthorized);
-        pages.mintByAuth(user);
-    }
-
     function testInitialPrice() public {
         uint256 cost = pages.pagePrice();
-        uint256 maxDelta = 32760;
+        uint256 maxDelta = 5; // 0.000000000000000005
 
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
