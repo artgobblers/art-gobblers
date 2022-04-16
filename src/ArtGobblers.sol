@@ -466,11 +466,11 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
         // The page must be drawn on and the caller must own this gobbler:
         if (!pages.isDrawn(pageId) || getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
-        // This will revert if the caller does not own the page.
-        pages.transferFrom(msg.sender, address(this), pageId);
-
         // Map the page to the gobbler that ate it.
         pageIdToGobblerId[pageId] = gobblerId;
+
+        // This will revert if the caller does not own the page.
+        pages.safeTransferFrom(msg.sender, address(this), pageId, 1, "");
     }
 
     /*//////////////////////////////////////////////////////////////

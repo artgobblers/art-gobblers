@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
-
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
 import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {Goop} from "./Goop.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
+import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 // todo: events?
 
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
+contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
     using PRBMathSD59x18 for int256;
 
@@ -49,7 +48,7 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
                                DRAWN LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mapping from tokenId to isDrawn bool.
+    /// @notice Mapping from pageId to isDrawn bool.
     mapping(uint256 => bool) public isDrawn;
 
     /*//////////////////////////////////////////////////////////////
@@ -67,9 +66,6 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice User allowed to set the draw state on pages.
     address public immutable artist;
-
-    /// @notice Authority to mint with 0 cost.
-    address public immutable artGobblers;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -98,14 +94,15 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
             207e18, // Switch day.
             10e18 // Per day.
         )
+        PagesERC1155B(
+            msg.sender // Sets artGobblers.
+        )
     {
         mintStart = _mintStart;
 
         goop = Goop(_goop);
 
         artist = _artist;
-
-        artGobblers = msg.sender;
     }
 
     /// @notice Requires caller address to match user address.
@@ -116,22 +113,24 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
     }
 
     /// @notice Set whether a page is drawn.
-    function setIsDrawn(uint256 tokenId) public only(artist) {
-        isDrawn[tokenId] = true;
+    /// @param pageId The id of the page to set.
+    function setIsDrawn(uint256 pageId) public only(artist) {
+        isDrawn[pageId] = true;
     }
 
     /// @notice Mint a page by burning goop.
     function mint() public {
         goop.burnForPages(msg.sender, pagePrice());
 
-        _mint(msg.sender, ++currentId);
+        ++numMintedFromGoop;
 
-        numMintedFromGoop++;
+        _mint(msg.sender, ++currentId, "");
     }
 
     /// @notice Mint by authority without paying mint cost.
-    function mintByAuth(address addr) public only(artGobblers) {
-        _mint(addr, ++currentId);
+    /// @param user The address of the user to mint to.
+    function mintByAuth(address user) public only(artGobblers) {
+        _mint(user, ++currentId, "");
     }
 
     /// @notice Calculate the mint cost of a page.
@@ -150,9 +149,9 @@ contract Pages is ERC721("Pages", "PAGE"), LogisticVRGDA, PostSwitchVRGDA {
         return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (tokenId > currentId) return "";
+    function uri(uint256 pageId) public view virtual override returns (string memory) {
+        if (pageId > currentId) return "";
 
-        return string(abi.encodePacked(BASE_URI, tokenId.toString()));
+        return string(abi.encodePacked(BASE_URI, pageId.toString()));
     }
 }
