@@ -12,6 +12,7 @@ import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
@@ -36,6 +37,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     //encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
+    bytes alreadyEaten = abi.encodeWithSignature("AlreadyEaten()");
     bytes cannotBurnLegendary = abi.encodeWithSignature("CannotBurnLegendary()");
     bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
     bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
@@ -70,8 +72,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintFromWhitelist(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
-        // and page ownership as well
-        assertEq(pages.ownerOf(1), user);
     }
 
     function testMintNotInWhitelist() public {
@@ -417,6 +417,85 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
         assertEq(gobblers.getUserStakingMultiple(users[1]), initialUserMultiple);
+    }
+
+    function testFeedingArt() public {
+        address user = users[0];
+
+        mintGobblerToAddress(user, 1);
+
+        uint256 pagePrice = pages.pagePrice();
+
+        vm.prank(address(gobblers));
+        goop.mint(user, pagePrice);
+
+        vm.startPrank(user);
+
+        pages.mint();
+
+        pages.setApprovalForAll(address(gobblers), true);
+
+        gobblers.feedArt(1, address(pages), 1);
+
+        vm.stopPrank();
+
+        assertEq(gobblers.getGobblerFromFedArt(address(pages), 1), 1);
+    }
+
+    function testCantFeedArtToUnownedGobbler() public {
+        address user = users[0];
+
+        uint256 pagePrice = pages.pagePrice();
+
+        vm.prank(address(gobblers));
+        goop.mint(user, pagePrice);
+
+        vm.startPrank(user);
+
+        pages.mint();
+
+        pages.setApprovalForAll(address(gobblers), true);
+
+        vm.expectRevert(unauthorized);
+        gobblers.feedArt(1, address(pages), 1);
+
+        vm.stopPrank();
+    }
+
+    function testCantFeedUnownedArt() public {
+        address user = users[0];
+
+        mintGobblerToAddress(user, 1);
+
+        vm.startPrank(user);
+
+        pages.setApprovalForAll(address(gobblers), true);
+
+        vm.expectRevert("WRONG_FROM");
+        gobblers.feedArt(1, address(pages), 1);
+
+        vm.stopPrank();
+    }
+
+    function testCantFeedArtTwice() public {
+        MockERC1155 token = new MockERC1155();
+
+        address user = users[0];
+
+        mintGobblerToAddress(user, 1);
+
+        token.mint(user, 1, 2, "");
+
+        vm.startPrank(user);
+
+        token.setApprovalForAll(address(gobblers), true);
+
+        gobblers.feedArt(1, address(token), 1);
+
+        vm.expectRevert(alreadyEaten);
+        gobblers.feedArt(1, address(token), 1);
+
+        vm.stopPrank();
     }
 
     // convenience function to mint single gobbler from goop
