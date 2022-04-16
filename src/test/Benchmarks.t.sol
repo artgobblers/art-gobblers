@@ -55,8 +55,13 @@ contract BenchmarksTest is DSTest {
 
         gobblers.mintFromGoop();
 
+        // TODO: remove this and do in the legendary gobbler benchmark
         vm.warp(block.timestamp + 60 days); // Long enough for legendary gobblers to be free.
+
+        gobblers.addGoop(1e18);
     }
+
+    // TODO: benchmark large legendary gobbler mint
 
     function testPagePrice() public view {
         pages.pagePrice();
@@ -71,7 +76,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function testGoopBalance() public view {
-        gobblers.goopBalance(1);
+        gobblers.goopBalance(address(this));
     }
 
     function testMintPage() public {
@@ -88,8 +93,11 @@ contract BenchmarksTest is DSTest {
         gobblers.mintLegendaryGobbler(ids);
     }
 
-    function testAddAndRemoveGoop() public {
-        gobblers.addGoop(1, 1e18);
-        gobblers.removeGoop(1, 1e18);
+    function testAddGoop() public {
+        gobblers.addGoop(1e18);
+    }
+
+    function testRemoveGoop() public {
+        gobblers.removeGoop(1e18);
     }
 }
