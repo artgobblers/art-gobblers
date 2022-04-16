@@ -178,7 +178,7 @@ abstract contract GobblersERC1155B {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        INTERNAL MINT/BURN LOGIC
+                           INTERNAL MINT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function _mint(
@@ -200,82 +200,6 @@ abstract contract GobblersERC1155B {
                     ERC1155TokenReceiver.onERC1155Received.selector,
             "UNSAFE_RECIPIENT"
         );
-    }
-
-    function _batchMint(
-        address to,
-        uint256[] memory ids,
-        bytes memory data
-    ) internal virtual {
-        uint256 idsLength = ids.length; // Saves MLOADs.
-
-        // Generate an amounts array locally to use in the event below.
-        uint256[] memory amounts = new uint256[](idsLength);
-
-        uint256 id; // Storing outside the loop saves ~7 gas per iteration.
-
-        // Unchecked because the only math done is incrementing
-        // the array index counter which cannot possibly overflow.
-        unchecked {
-            for (uint256 i = 0; i < idsLength; ++i) {
-                id = ids[i];
-
-                // Minting twice would effectively be a force transfer.
-                require(getGobblerData[id].owner == address(0), "ALREADY_MINTED");
-
-                getGobblerData[id].owner = to;
-
-                amounts[i] = 1;
-            }
-        }
-
-        emit TransferBatch(msg.sender, address(0), to, ids, amounts);
-
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, address(0), ids, amounts, data) ==
-                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-            "UNSAFE_RECIPIENT"
-        );
-    }
-
-    function _batchBurn(address from, uint256[] memory ids) internal virtual {
-        // Burning unminted tokens makes no sense.
-        require(from != address(0), "INVALID_FROM");
-
-        uint256 idsLength = ids.length; // Saves MLOADs.
-
-        // Generate an amounts array locally to use in the event below.
-        uint256[] memory amounts = new uint256[](idsLength);
-
-        uint256 id; // Storing outside the loop saves ~7 gas per iteration.
-
-        // Unchecked because the only math done is incrementing
-        // the array index counter which cannot possibly overflow.
-        unchecked {
-            for (uint256 i = 0; i < idsLength; ++i) {
-                id = ids[i];
-
-                require(getGobblerData[id].owner == from, "WRONG_FROM");
-
-                getGobblerData[id].owner = address(0);
-
-                amounts[i] = 1;
-            }
-        }
-
-        emit TransferBatch(msg.sender, from, address(0), ids, amounts);
-    }
-
-    function _burn(uint256 id) internal virtual {
-        address owner = getGobblerData[id].owner;
-
-        require(owner != address(0), "NOT_MINTED");
-
-        getGobblerData[id].owner = address(0);
-
-        emit TransferSingle(msg.sender, owner, address(0), id, 1);
     }
 
     /*//////////////////////////////////////////////////////////////
