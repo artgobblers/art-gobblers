@@ -284,31 +284,43 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
         unchecked {
             uint256 burnedMultipleTotal; // The legendary's stakingMultiple will be 2x the sum of the gobblers burned.
 
-            uint256 id; // Storing this outside the loop saves ~7 gas per iteration.
+            /*//////////////////////////////////////////////////////////////
+                                    BATCH BURN LOGIC
+            //////////////////////////////////////////////////////////////*/
 
-            // Burn the gobblers provided as tribute.
-            for (uint256 i = 0; i < gobblerIds.length; i++) {
-                id = gobblerIds[i]; // Cache the current id.
+            // Generate an amounts array locally to use in the event below.
+            uint256[] memory amounts = new uint256[](gobblerIds.length);
 
-                // TODO: off by one here? does start include all 10?
+            uint256 id; // Storing outside the loop saves ~7 gas per iteration.
+
+            for (uint256 i = 0; i < gobblerIds.length; ++i) {
+                id = gobblerIds[i];
+
                 if (id >= LEGENDARY_GOBBLER_ID_START) revert CannotBurnLegendary();
 
-                if (msg.sender != getGobblerData[id].owner) revert Unauthorized();
+                require(getGobblerData[id].owner == msg.sender, "WRONG_FROM");
 
                 burnedMultipleTotal += getGobblerData[id].stakingMultiple;
 
-                // TODO: do we clear each's attributes or no? we can if we want to easily with 1155 for no cost penalty
+                // TODO: SHOULD we clear attributes as well or just owner? even cheaper to clear attributes i think
+                getGobblerData[id].owner = address(0);
 
-                _burn(id); // TODO: batch transfer with 1155.
+                amounts[i] = 1;
             }
 
+            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
+
+            /*//////////////////////////////////////////////////////////////
+                                LEGENDARY MINTING LOGIC
+            //////////////////////////////////////////////////////////////*/
+
             // Supply caps are properly checked above, so overflow should be impossible here.
-            uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(lastLegendaryId + 1));
+            uint256 newLegendaryId = ++lastLegendaryId;
 
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the legendary's stakingMultiple 2x the sum of the multiples of the gobblers burned.
             // Must be done before minting as the transfer hook will update the user's stakingMultiple.
-            getGobblerData[newId].stakingMultiple = uint48(burnedMultipleTotal << 1);
+            getGobblerData[newLegendaryId].stakingMultiple = uint48(burnedMultipleTotal << 1);
 
             // Update the user's staking data in one big batch. We add burnedMultipleTotal to their
             // staking multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -317,17 +329,17 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
             getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getStakingDataForUser[msg.sender].stakingMultiple += uint64(burnedMultipleTotal);
 
-            // Start a new auction, 30 days after the previous start.
+            // Start a new auction, 30 days after the previous start, and update the current legendary id.
+            // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
+            legendaryGobblerAuctionData.currentLegendaryId = uint16(newLegendaryId);
             legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
-
-            // New start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // It gets a special event.
-            emit LegendaryGobblerMint(newId);
+            emit LegendaryGobblerMint(newLegendaryId);
 
             // Mint the legendary gobbler.
-            _mint(msg.sender, newId, "");
+            _mint(msg.sender, newLegendaryId, "");
         }
     }
 

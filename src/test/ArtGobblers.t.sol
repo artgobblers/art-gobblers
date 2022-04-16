@@ -195,6 +195,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     function testCannotMintLegendaryWithLegendary() public {
         vm.warp(block.timestamp + 70 days);
+        vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
 
         (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
