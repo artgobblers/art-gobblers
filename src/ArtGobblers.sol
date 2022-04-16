@@ -17,6 +17,7 @@ import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
 // TODO: events
+//
 
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
