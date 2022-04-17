@@ -6,8 +6,12 @@ library BitmapLib {
         mapping(uint256 => uint256) map;
     }
 
-    function get(Bitmap storage bitmap, uint256 index) internal view returns (bool) {
-        return bitmap.map[index >> 8] & (1 << (index & 0xff)) != 0;
+    function get(Bitmap storage bitmap, uint256 index) internal view returns (bool isSet) {
+        uint256 value = bitmap.map[index >> 8] & (1 << (index & 0xff));
+
+        assembly {
+            isSet := value // Assign isSet to whether the value is non zero.
+        }
     }
 
     function setTo(
