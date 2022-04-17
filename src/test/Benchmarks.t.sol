@@ -57,6 +57,8 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
         pages.mint();
 
+        pages.setIsDrawn(1);
+
         gobblers.addGoop(1e18);
 
         vm.warp(block.timestamp + 30 days);
@@ -98,6 +100,14 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
     function testFeedArt() public {
         gobblers.feedArt(1, address(pages), 1);
+    }
+
+    function testSetIsDrawnClose() public {
+        pages.setIsDrawn(2);
+    }
+
+    function testSetIsDrawnFar() public {
+        pages.setIsDrawn(99999);
     }
 
     function testMintLegendaryGobbler() public {
