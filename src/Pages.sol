@@ -3,10 +3,9 @@ pragma solidity >=0.8.0;
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
-
 import {Goop} from "./Goop.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
+import {BitmapLib} from "./utils/Bitmap.sol";
 import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
@@ -17,7 +16,7 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
-    using PRBMathSD59x18 for int256;
+    using BitmapLib for BitmapLib.Bitmap;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -49,8 +48,15 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                DRAWN LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mapping from pageId to isDrawn bool.
-    mapping(uint256 => bool) public isDrawn;
+    /// @notice Bitmap from pageId to isDrawn bool.
+    BitmapLib.Bitmap internal isDrawnBitmap; // TODO: do we need this at all
+
+    /// @notice Gets whether a page is drawn.
+    /// @param pageId The page id.
+    /// @return Whether the page is drawn.
+    function isDrawn(uint256 pageId) public view returns (bool) {
+        return isDrawnBitmap.get(pageId);
+    }
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -120,7 +126,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Set whether a page is drawn.
     // TODO: do we still need this
     function setIsDrawn(uint256 tokenId) public only(artist) {
-        isDrawn[tokenId] = true;
+        isDrawnBitmap.set(tokenId);
     }
 
     /*//////////////////////////////////////////////////////////////

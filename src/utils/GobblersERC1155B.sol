@@ -1,9 +1,7 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
-
-// TODO: pack ownerOf with attributes?
 
 /// @notice ERC1155B implementation optimized for ArtGobblers by using the ownerOf storage slot to store attribute data.
 /// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC1155B.sol)
