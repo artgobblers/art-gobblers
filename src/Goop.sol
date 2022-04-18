@@ -3,8 +3,8 @@ pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
-/// @notice Goop is an in-game token for ArtGobblers. It's a standard ERC20
-/// token that can be burned and minted by the gobblers and pages contract.
+/// @title Goop Token (GOOP)
+/// @notice Goop is an in-game token for ArtGobblers.
 contract Goop is ERC20("Goop", "GOOP", 18) {
     address public immutable artGobblers;
     address public pages;
