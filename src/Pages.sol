@@ -3,8 +3,6 @@ pragma solidity >=0.8.0;
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
-
 import {Goop} from "./Goop.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
 import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
