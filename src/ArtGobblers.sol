@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
@@ -18,8 +19,9 @@ import {Pages} from "./Pages.sol";
 // TODO: UNCHECKED
 // TODO: events
 
+/// @title Art Gobblers NFT (GBLR)
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
@@ -147,8 +149,8 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
                             ART FEEDING STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mapping from page ids to gobbler ids they were fed to.
-    mapping(uint256 => uint256) public pageIdToGobblerId;
+    /// @notice Mapping from NFT contracts to their ids to gobbler ids they were fed to.
+    mapping(address => mapping(uint256 => uint256)) public getGobblerFromFedArt;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -162,6 +164,8 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
     //////////////////////////////////////////////////////////////*/
 
     error Unauthorized();
+
+    error AlreadyEaten();
 
     error CannotBurnLegendary();
 
@@ -230,8 +234,6 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
         claimedWhitelist[msg.sender] = true;
 
         _mint(msg.sender, ++currentNonLegendaryId, "");
-
-        pages.mintByAuth(msg.sender); // Whitelisted users also get a free page. // TODO: remove
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -471,18 +473,27 @@ contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
                             ART FEEDING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Feed a gobbler a page.
+    /// @notice Feed a gobbler a work of art.
     /// @param gobblerId The gobbler to feed the page.
-    /// @param pageId The page id to feed to the gobbler.
-    function feedArt(uint256 gobblerId, uint256 pageId) public {
-        // The page must be drawn on and the caller must own this gobbler:
-        if (!pages.isDrawn(pageId) || getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
+    /// @param nft The contract of the work of art.
+    /// @param id The id of the work of art.
+    /// @dev NFTs should be ERC1155s, ideally ERC1155Bs.
+    function feedArt(
+        uint256 gobblerId,
+        address nft,
+        uint256 id
+    ) public {
+        // The caller must own the gobbler they're feeding.
+        if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
-        // Map the page to the gobbler that ate it.
-        pageIdToGobblerId[pageId] = gobblerId;
+        // In case the NFT is not an 1155B, prevent eating it twice.
+        if (getGobblerFromFedArt[nft][id] != 0) revert AlreadyEaten();
 
-        // This will revert if the caller does not own the page.
-        pages.safeTransferFrom(msg.sender, address(this), pageId, 1, "");
+        // We're assuming this is an 1155B-esque NFT, so we'll only transfer 1.
+        ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
+
+        // Map the NFT to the gobbler that ate it.
+        getGobblerFromFedArt[nft][id] = gobblerId;
     }
 
     /*//////////////////////////////////////////////////////////////
