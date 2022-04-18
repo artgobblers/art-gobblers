@@ -15,7 +15,6 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
-    using PRBMathSD59x18 for int256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
