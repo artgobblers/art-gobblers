@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {DSTest} from "ds-test/test.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -13,7 +13,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-contract ArtGobblersTest is DSTest {
+contract ArtGobblersTest is DSTestPlus {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -112,10 +112,10 @@ contract ArtGobblersTest is DSTest {
     // }
 
     function testInitialGobblerPrice() public {
-        gobblers.setMerkleRoot(0);
         uint256 cost = gobblers.gobblerPrice();
-        uint256 expectedCost = uint256(gobblers.initialPrice());
-        assertEq(cost, expectedCost);
+        uint256 maxDelta = 10; // 0.00000000000000001
+
+        assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
     function testLegendaryGobblerMintBeforeStart() public {
