@@ -2,13 +2,10 @@
 pragma solidity >=0.8.0;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
-
-import {PRBMathSD59x18} from "prb-math/PRBMathSD59x18.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
@@ -22,15 +19,9 @@ import {Pages} from "./Pages.sol";
 // TODO: events
 
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is
-    ERC721("Art Gobblers", "GBLR"),
-    Auth(msg.sender, Authority(address(0))),
-    VRFConsumerBase,
-    LogisticVRGDA
-{
+contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, LogisticVRGDA {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
-    using PRBMathSD59x18 for int256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -76,7 +67,7 @@ contract ArtGobblers is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Merkle root of mint whitelist.
-    bytes32 public merkleRoot;
+    bytes32 public immutable merkleRoot;
 
     /// @notice Mapping to keep track of which addresses have claimed from whitelist.
     mapping(address => bool) public claimedWhitelist;
@@ -86,7 +77,7 @@ contract ArtGobblers is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Timestamp for the start of the whitelist & VRGDA mint.
-    uint256 public mintStart = type(uint256).max;
+    uint256 public immutable mintStart;
 
     /// @notice Number of gobblers minted from goop.
     uint128 public numMintedFromGoop;
@@ -178,9 +169,6 @@ contract ArtGobblers is
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Merkle root was set.
-    event MerkleRootSet(bytes32 merkleRoot);
-
     /// @notice Legendary gobbler was minted.
     event LegendaryGobblerMint(uint256 tokenId);
 
@@ -197,13 +185,15 @@ contract ArtGobblers is
     error NoRemainingGobblers();
 
     constructor(
-        address vrfCoordinator,
-        address linkToken,
+        bytes32 _merkleRoot,
+        uint256 _mintStart,
+        address _vrfCoordinator,
+        address _linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
         string memory _baseUri
     )
-        VRFConsumerBase(vrfCoordinator, linkToken)
+        VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
             6.9e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -218,8 +208,12 @@ contract ArtGobblers is
     {
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
+
+        mintStart = _mintStart;
+        merkleRoot = _merkleRoot;
+
         goop = new Goop(address(this));
-        pages = new Pages(address(goop), msg.sender);
+        pages = new Pages(_mintStart, address(goop), msg.sender);
 
         goop.setPages(address(pages));
 
@@ -228,34 +222,23 @@ contract ArtGobblers is
         // Start price for legendary gobblers is 100 gobblers.
         legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
 
-        // First legendary gobbler auction starts 30 days after contract deploy.
-        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(block.timestamp + 30 days);
+        // First legendary gobbler auction starts 30 days after the mint starts.
+        legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart = uint120(_mintStart + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
         legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
     }
 
-    /// @notice Set merkle root for minting whitelist, can only be done once.
-    function setMerkleRoot(bytes32 _merkleRoot) public requiresAuth {
-        // Don't allow setting the merkle root twice.
-        if (merkleRoot != 0) revert Unauthorized();
-
-        merkleRoot = _merkleRoot;
-
-        mintStart = block.timestamp;
-
-        pages.setMintStart(block.timestamp);
-
-        emit MerkleRootSet(_merkleRoot);
-    }
+    /*//////////////////////////////////////////////////////////////
+                             WHITELIST LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint from whitelist, using a merkle proof.
     function mintFromWhitelist(bytes32[] calldata _merkleProof) public {
-        bytes32 root = merkleRoot;
+        if (mintStart > block.timestamp || claimedWhitelist[msg.sender]) revert Unauthorized();
 
-        if (root == 0 || claimedWhitelist[msg.sender]) revert Unauthorized();
-
-        if (!MerkleProof.verify(_merkleProof, root, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
+        if (!MerkleProof.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))))
+            revert Unauthorized();
 
         claimedWhitelist[msg.sender] = true;
 
@@ -263,6 +246,10 @@ contract ArtGobblers is
 
         pages.mintByAuth(msg.sender); // Whitelisted users also get a free page.
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           GOOP MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint from goop, burning the cost.
     function mintFromGoop() public {
@@ -297,6 +284,10 @@ contract ArtGobblers is
         // Start generating goop from mint time.
         getStakingDataForId[newId].lastTimestamp = uint128(block.timestamp);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                     LEGENDARY GOBBLER AUCTION LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) public {
@@ -349,6 +340,10 @@ contract ArtGobblers is
                 : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                VRF LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Get the random seed for revealing gobblers.
     function getRandomSeed() public returns (bytes32) {
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
@@ -366,6 +361,10 @@ contract ArtGobblers is
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
         randomSeed = randomness;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         ATTRIBUTES REVEAL LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     function revealGobblers(uint256 numGobblers) public {
@@ -416,6 +415,10 @@ contract ArtGobblers is
         gobblersToBeAssigned -= uint128(numGobblers);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                URI LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Returns a token's URI if it has been minted.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealedIndex are revealed normal gobblers.
@@ -438,6 +441,10 @@ contract ArtGobblers is
         return ""; // Unminted legendaries and invalid token ids.
     }
 
+    /*//////////////////////////////////////////////////////////////
+                          CONVENIENCE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Convenience function to get staking multiple for a gobbler.
     function getStakingMultiple(uint256 tokenId) public view returns (uint256 multiple) {
         multiple = getAttributesForGobbler[tokenId].stakingMultiple;
@@ -447,6 +454,10 @@ contract ArtGobblers is
     function getBaseRate(uint256 tokenId) public view returns (uint256 rate) {
         rate = getAttributesForGobbler[tokenId].baseRate;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            ART FEEDING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Feed a gobbler a page.
     function feedArt(uint256 gobblerId, uint256 pageId) public {
@@ -459,6 +470,10 @@ contract ArtGobblers is
         // Map the page to the gobbler that ate it.
         pageIdToGobblerId[pageId] = gobblerId;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              STAKING LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the balance of goop that is available to withdraw from a gobbler.
     function goopBalance(uint256 gobblerId) public view returns (uint256) {
