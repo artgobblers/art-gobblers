@@ -35,6 +35,7 @@ contract ArtGobblersTest is DSTestPlus {
 
     //encodings for expectRevert
     bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
+    bytes cannotBurnLegendary = abi.encodeWithSignature("CannotBurnLegendary()");
     bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
     bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
     bytes noRemainingLegendary = abi.encodeWithSignature("NoRemainingLegendaryGobblers()");
@@ -154,33 +155,71 @@ contract ArtGobblersTest is DSTestPlus {
 
     function testMintLegendaryGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
+
         vm.warp(startTime);
 
         uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 100);
+
         mintGobblerToAddress(users[0], cost);
-        //assert cost is not zero
-        assertTrue(cost != 0);
+        setRandomnessAndReveal(cost, "seed");
+
+        uint256 stakingMultipleSum;
+
         for (uint256 i = 1; i <= cost; i++) {
-            //all gobblers owned by user
             ids.push(i);
+
             assertEq(gobblers.ownerOf(i), users[0]);
+
+            stakingMultipleSum += gobblers.getGobblerStakingMultiple(i);
         }
-        vm.warp(startTime);
+
+        assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum);
+
+        vm.warp(startTime); // mintGobblerToAddress warps time forward
+
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
 
         (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
-        //legendary is owned by user
+        // Legendary is owned by user.
         assertEq(gobblers.ownerOf(currentLegendaryId), users[0]);
-        for (uint256 i = 1; i <= cost; i++) {
-            //all gobblers burned
-            ids.push(i);
 
+        assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum * 2);
+        assertEq(gobblers.getGobblerStakingMultiple(currentLegendaryId), stakingMultipleSum * 2);
+
+        for (uint256 i = 1; i <= cost; i++) {
             // TODO: will need to change this when we switch to 1155B
             vm.expectRevert("NOT_MINTED");
             gobblers.ownerOf(i);
         }
+    }
+
+    function testCannotMintLegendaryWithLegendary() public {
+        vm.warp(block.timestamp + 70 days);
+        gobblers.mintLegendaryGobbler(ids);
+
+        (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
+        assertEq(legendaryId, 9991);
+
+        uint256 startTime = block.timestamp;
+
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 66);
+
+        mintGobblerToAddress(users[0], cost);
+        setRandomnessAndReveal(cost, "seed");
+
+        for (uint256 i = 1; i <= cost; i++) ids.push(i);
+
+        vm.warp(startTime); // mintGobblerToAddress warps time forward
+
+        ids[0] = legendaryId; // the legendary we minted
+
+        vm.prank(users[0]);
+        vm.expectRevert(cannotBurnLegendary);
+        gobblers.mintLegendaryGobbler(ids);
     }
 
     function testUnmintedUri() public {
@@ -201,9 +240,9 @@ contract ArtGobblersTest is DSTestPlus {
         mintGobblerToAddress(users[0], 1);
 
         // unrevealed gobblers have 0 value attributes
-        assertEq(gobblers.getStakingMultiple(1), 0);
+        assertEq(gobblers.getGobblerStakingMultiple(1), 0);
         setRandomnessAndReveal(1, "seed");
-        (uint256 expectedIndex, , ) = gobblers.getAttributesForGobbler(1);
+        (uint256 expectedIndex, ) = gobblers.getAttributesForGobbler(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
         assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
     }
@@ -269,7 +308,7 @@ contract ArtGobblersTest is DSTestPlus {
     //     setRandomnessAndReveal(mintCount, "seed");
     //     // count ids
     //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, , ) = gobblers.getAttributesForGobbler(i);
+    //         (uint256 tokenId, ) = gobblers.getAttributesForGobbler(i);
     //         counts[tokenId]++;
     //     }
     //     // check that all ids are unique
@@ -284,30 +323,47 @@ contract ArtGobblersTest is DSTestPlus {
 
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
+
         // balance should initially be zero
-        assertEq(gobblers.goopBalance(1), 0);
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
         vm.warp(block.timestamp + 100000);
+
         // balance should be zero while no reveal
-        assertEq(gobblers.goopBalance(1), 0);
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
         setRandomnessAndReveal(1, "seed");
-        // balance should grow on same timestamp after reveal
-        assertTrue(gobblers.goopBalance(1) != 0);
+
+        // balance should NOT grow on same timestamp after reveal
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
+        vm.warp(block.timestamp + 100000);
+
+        // balance should grow after reveal
+        assertGt(gobblers.goopBalance(users[0]), 0);
     }
 
     function testGoopRemoval() public {
         mintGobblerToAddress(users[0], 1);
-        vm.warp(block.timestamp + 100000);
+
         setRandomnessAndReveal(1, "seed");
-        // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(1);
+
+        vm.warp(block.timestamp + 100000);
+
+        uint256 initialBalance = gobblers.goopBalance(users[0]);
+
         //10%
         uint256 removalAmount = initialBalance / 10;
+
         vm.prank(users[0]);
-        gobblers.removeGoop(1, removalAmount);
-        uint256 finalBalance = gobblers.goopBalance(1);
+        gobblers.removeGoop(removalAmount);
+
+        uint256 finalBalance = gobblers.goopBalance(users[0]);
+
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
+
         // user should have removed goop
         assertEq(goop.balanceOf(users[0]), removalAmount);
     }
@@ -317,25 +373,52 @@ contract ArtGobblersTest is DSTestPlus {
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
         vm.prank(users[1]);
-        vm.expectRevert(unauthorized);
-        gobblers.removeGoop(1, 1);
+        vm.expectRevert(stdError.arithmeticError);
+        gobblers.removeGoop(1);
     }
 
     function testGoopAddition() public {
         mintGobblerToAddress(users[0], 1);
+
+        assertEq(gobblers.getGobblerStakingMultiple(1), 0);
+        assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
+
+        // waiting after mint to reveal shouldn't effect balance
         vm.warp(block.timestamp + 100000);
+        assertEq(gobblers.goopBalance(users[0]), 0);
+
         setRandomnessAndReveal(1, "seed");
-        // balance should grow on same timestamp after reveal
-        uint256 initialBalance = gobblers.goopBalance(1);
+
+        uint256 gobblerMultiple = gobblers.getGobblerStakingMultiple(1);
+        assertGt(gobblerMultiple, 0);
+        assertEq(gobblers.getUserStakingMultiple(users[0]), gobblerMultiple);
+
         vm.prank(address(gobblers));
+
         uint256 additionAmount = 1000;
+
         goop.mint(users[0], additionAmount);
+
         vm.prank(users[0]);
-        gobblers.addGoop(1, additionAmount);
-        uint256 finalBalance = gobblers.goopBalance(1);
-        // balance should change
-        assertTrue(initialBalance != finalBalance);
-        assertEq(initialBalance + additionAmount, finalBalance);
+
+        gobblers.addGoop(additionAmount);
+
+        assertEq(gobblers.goopBalance(users[0]), additionAmount);
+    }
+
+    function testStakingMultiplierUpdatesAfterTransfer() public {
+        mintGobblerToAddress(users[0], 1);
+        setRandomnessAndReveal(1, "seed");
+
+        uint256 initialUserMultiple = gobblers.getUserStakingMultiple(users[0]);
+        assertGt(initialUserMultiple, 0);
+        assertEq(gobblers.getUserStakingMultiple(users[1]), 0);
+
+        vm.prank(users[0]);
+        gobblers.transferFrom(users[0], users[1], 1);
+
+        assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
+        assertEq(gobblers.getUserStakingMultiple(users[1]), initialUserMultiple);
     }
 
     // convenience function to mint single gobbler from goop
