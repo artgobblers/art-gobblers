@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
       - uses: actions/setup-node@v2
       - name: Install dev dependencies
         run: npm install
@@ -25,4 +26,4 @@ jobs:
         run: npm run lint:check
 
       - name: Run tests
-        run: forge test --no-match-contract CorrectnessTest
+        run: forge test --no-match-test FFI
