@@ -112,6 +112,8 @@ contract ArtGobblersTest is DSTestPlus {
     // }
 
     function testInitialGobblerPrice() public {
+        gobblers.setMerkleRoot("root");
+
         uint256 cost = gobblers.gobblerPrice();
         uint256 maxDelta = 10; // 0.00000000000000001
 
@@ -176,8 +178,11 @@ contract ArtGobblersTest is DSTestPlus {
         vm.warp(startTime);
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
+
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
         //legendary is owned by user
-        assertEq(gobblers.ownerOf(gobblers.currentLegendaryId()), users[0]);
+        assertEq(gobblers.ownerOf(currentLegendaryId), users[0]);
         for (uint256 i = 1; i <= cost; i++) {
             //all gobblers burned
             ids.push(i);
@@ -209,7 +214,7 @@ contract ArtGobblersTest is DSTestPlus {
         // unrevealed gobblers have 0 value attributes
         assertEq(gobblers.getStakingMultiple(1), 0);
         setRandomnessAndReveal(1, "seed");
-        (uint256 expectedIndex, , ) = gobblers.attributeList(1);
+        (uint256 expectedIndex, , ) = gobblers.getAttributesForGobbler(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
         assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
     }
@@ -217,17 +222,25 @@ contract ArtGobblersTest is DSTestPlus {
     function testMintedLegendaryURI() public {
         //mint legendary
         vm.warp(block.timestamp + 70 days);
-        uint256[] memory _ids;
+
+        uint256[] memory _ids; // gobbler should be free at this point
+
         gobblers.mintLegendaryGobbler(_ids);
-        uint256 legendaryId = gobblers.currentLegendaryId();
+
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
         //expected URI should not be shuffled
-        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), legendaryId.toString()));
-        string memory actualURI = gobblers.tokenURI(legendaryId);
+        string memory expectedURI = string(
+            abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
+        );
+        string memory actualURI = gobblers.tokenURI(currentLegendaryId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
     function testUnmintedLegendaryUri() public {
-        uint256 legendaryId = gobblers.currentLegendaryId() + 1;
+        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+
+        uint256 legendaryId = currentLegendaryId + 1;
         assertEq(gobblers.tokenURI(legendaryId), "");
     }
 
@@ -267,7 +280,7 @@ contract ArtGobblersTest is DSTestPlus {
     //     setRandomnessAndReveal(mintCount, "seed");
     //     // count ids
     //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, , ) = gobblers.attributeList(i);
+    //         (uint256 tokenId, , ) = gobblers.getAttributesForGobbler(i);
     //         counts[tokenId]++;
     //     }
     //     // check that all ids are unique
