@@ -1,19 +1,14 @@
-name: CI
-on:
-  push:
-    branches:
-      - master
-  pull_request:
+name: Tests
+
+on: [push, pull_request]
 
 jobs:
-  run-ci:
+  forge-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
       - uses: actions/setup-node@v2
+
       - name: Install dev dependencies
         run: npm install
 
@@ -22,8 +17,17 @@ jobs:
         with:
           version: nightly
 
+      - name: Install dependencies
+        run: forge install
+
+      - name: Check gas snapshots
+        run: forge snapshot --check
+
       - name: Run lint check
         run: npm run lint:check
 
       - name: Run tests
         run: forge test --no-match-test FFI
+        env:
+          # Only fuzz intensely if we're running this action on a push to master or for a PR going into master:
+          FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/master' || github.base_ref == 'master') && 'intense' }}

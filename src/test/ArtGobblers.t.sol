@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
+import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -13,7 +14,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-contract ArtGobblersTest is DSTestPlus {
+contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -189,15 +190,12 @@ contract ArtGobblersTest is DSTestPlus {
         assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum * 2);
         assertEq(gobblers.getGobblerStakingMultiple(currentLegendaryId), stakingMultipleSum * 2);
 
-        for (uint256 i = 1; i <= cost; i++) {
-            // TODO: will need to change this when we switch to 1155B
-            vm.expectRevert("NOT_MINTED");
-            gobblers.ownerOf(i);
-        }
+        for (uint256 i = 1; i <= cost; i++) assertEq(gobblers.ownerOf(i), address(0));
     }
 
     function testCannotMintLegendaryWithLegendary() public {
         vm.warp(block.timestamp + 70 days);
+        vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
 
         (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
@@ -223,7 +221,7 @@ contract ArtGobblersTest is DSTestPlus {
     }
 
     function testUnmintedUri() public {
-        assertEq(gobblers.tokenURI(1), "");
+        assertEq(gobblers.uri(1), "");
     }
 
     function testUnrevealedUri() public {
@@ -233,7 +231,7 @@ contract ArtGobblersTest is DSTestPlus {
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         // assert gobbler not revealed after mint
-        assertTrue(stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
+        assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
     }
 
     function testRevealedUri() public {
@@ -242,9 +240,9 @@ contract ArtGobblersTest is DSTestPlus {
         // unrevealed gobblers have 0 value attributes
         assertEq(gobblers.getGobblerStakingMultiple(1), 0);
         setRandomnessAndReveal(1, "seed");
-        (uint256 expectedIndex, ) = gobblers.getAttributesForGobbler(1);
-        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
-        assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
+        (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
+        assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
 
     function testMintedLegendaryURI() public {
@@ -261,7 +259,7 @@ contract ArtGobblersTest is DSTestPlus {
         string memory expectedURI = string(
             abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
         );
-        string memory actualURI = gobblers.tokenURI(currentLegendaryId);
+        string memory actualURI = gobblers.uri(currentLegendaryId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
@@ -269,7 +267,7 @@ contract ArtGobblersTest is DSTestPlus {
         (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
 
         uint256 legendaryId = currentLegendaryId + 1;
-        assertEq(gobblers.tokenURI(legendaryId), "");
+        assertEq(gobblers.uri(legendaryId), "");
     }
 
     function testCantSetRandomSeedWithoutRevealing() public {
@@ -284,16 +282,16 @@ contract ArtGobblersTest is DSTestPlus {
         mintGobblerToAddress(users[0], 100);
         // first 100 gobblers should be unrevealed
         for (uint256 i = 1; i <= 100; i++) {
-            assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
+            assertEq(gobblers.uri(i), gobblers.UNREVEALED_URI());
         }
         setRandomnessAndReveal(50, "seed");
         // first 50 gobblers should now be revealed
         for (uint256 i = 1; i <= 50; i++) {
-            assertTrue(!stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
+            assertTrue(!stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
         // and next 50 should remain unrevealed
         for (uint256 i = 51; i <= 100; i++) {
-            assertTrue(stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
+            assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
     }
 
@@ -308,7 +306,7 @@ contract ArtGobblersTest is DSTestPlus {
     //     setRandomnessAndReveal(mintCount, "seed");
     //     // count ids
     //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, ) = gobblers.getAttributesForGobbler(i);
+    //         (uint256 tokenId, ) = gobblers.getGobblerData(i);
     //         counts[tokenId]++;
     //     }
     //     // check that all ids are unique
@@ -415,7 +413,7 @@ contract ArtGobblersTest is DSTestPlus {
         assertEq(gobblers.getUserStakingMultiple(users[1]), 0);
 
         vm.prank(users[0]);
-        gobblers.transferFrom(users[0], users[1], 1);
+        gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
 
         assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
         assertEq(gobblers.getUserStakingMultiple(users[1]), initialUserMultiple);

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
@@ -11,6 +10,7 @@ import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
@@ -19,7 +19,7 @@ import {Pages} from "./Pages.sol";
 // TODO: events
 
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, LogisticVRGDA {
+contract ArtGobblers is GobblersERC1155B, VRFConsumerBase, LogisticVRGDA {
     using Strings for uint256;
     using FixedPointMathLib for uint256;
 
@@ -110,21 +110,6 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
 
     /// @notice Data about the current legendary gobbler auction.
     LegendaryGobblerAuctionData public legendaryGobblerAuctionData;
-
-    /*//////////////////////////////////////////////////////////////
-                             ATTRIBUTE STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Struct holding gobbler attributes.
-    struct GobblerAttributes {
-        /// @notice Index of token after shuffle.
-        uint128 idx;
-        /// @notice Multiple on goop issuance.
-        uint128 stakingMultiple;
-    }
-
-    /// @notice Maps gobbler ids to their attributes.
-    mapping(uint256 => GobblerAttributes) public getAttributesForGobbler;
 
     /*//////////////////////////////////////////////////////////////
                          ATTRIBUTES REVEAL STATE
@@ -244,9 +229,9 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
 
         claimedWhitelist[msg.sender] = true;
 
-        mintGobbler(msg.sender);
+        _mint(msg.sender, ++currentNonLegendaryId, "");
 
-        pages.mintByAuth(msg.sender); // Whitelisted users also get a free page.
+        pages.mintByAuth(msg.sender); // Whitelisted users also get a free page. // TODO: remove
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -261,9 +246,9 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
         // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
-        mintGobbler(msg.sender); // TODO: reentrancy with 1155
+        ++numMintedFromGoop;
 
-        numMintedFromGoop++;
+        _mint(msg.sender, ++currentNonLegendaryId, "");
     }
 
     /// @notice Gobbler pricing in terms of goop.
@@ -275,16 +260,6 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
         uint256 timeSinceStart = block.timestamp - mintStart;
 
         return getPrice(timeSinceStart, numMintedFromGoop);
-    }
-
-    /// @dev Mint a standard gobbler to the given address.
-    /// @param to The address to mint the standard gobbler to.
-    function mintGobbler(address to) internal {
-        uint256 newId = ++currentNonLegendaryId;
-
-        if (newId > MAX_SUPPLY) revert NoRemainingGobblers();
-
-        _mint(to, newId); // We don't set attributes yet, that happens on reveal.
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -306,33 +281,46 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
 
         if (gobblerIds.length != cost) revert InsufficientGobblerBalance();
 
-        uint256 burnedMultipleTotal; // The legendary's stakingMultiple will be 2x the sum of the gobblers burned.
-
         unchecked {
-            uint256 id; // Storing this outside the loop saves ~7 gas per iteration.
+            uint256 burnedMultipleTotal; // The legendary's stakingMultiple will be 2x the sum of the gobblers burned.
 
-            // Burn the gobblers provided as tribute.
-            for (uint256 i = 0; i < gobblerIds.length; i++) {
-                id = gobblerIds[i]; // Cache the current id.
+            /*//////////////////////////////////////////////////////////////
+                                    BATCH BURN LOGIC
+            //////////////////////////////////////////////////////////////*/
 
-                // TODO: off by one here? does start include all 10?
+            // Generate an amounts array locally to use in the event below.
+            uint256[] memory amounts = new uint256[](gobblerIds.length);
+
+            uint256 id; // Storing outside the loop saves ~7 gas per iteration.
+
+            for (uint256 i = 0; i < gobblerIds.length; ++i) {
+                id = gobblerIds[i];
+
                 if (id >= LEGENDARY_GOBBLER_ID_START) revert CannotBurnLegendary();
 
-                if (msg.sender != _ownerOf[id]) revert Unauthorized();
+                require(getGobblerData[id].owner == msg.sender, "WRONG_FROM");
 
-                burnedMultipleTotal += getAttributesForGobbler[id].stakingMultiple;
+                burnedMultipleTotal += getGobblerData[id].stakingMultiple;
 
-                // TODO: do we clear each's attributes or no?
-                _burn(id); // TODO: batch transfer with 1155.
+                // TODO: SHOULD we clear attributes as well or just owner? even cheaper to clear attributes i think
+                getGobblerData[id].owner = address(0);
+
+                amounts[i] = 1;
             }
 
+            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
+
+            /*//////////////////////////////////////////////////////////////
+                                LEGENDARY MINTING LOGIC
+            //////////////////////////////////////////////////////////////*/
+
             // Supply caps are properly checked above, so overflow should be impossible here.
-            uint256 newId = (legendaryGobblerAuctionData.currentLegendaryId = uint16(lastLegendaryId + 1));
+            uint256 newLegendaryId = ++lastLegendaryId;
 
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the legendary's stakingMultiple 2x the sum of the multiples of the gobblers burned.
             // Must be done before minting as the transfer hook will update the user's stakingMultiple.
-            getAttributesForGobbler[newId].stakingMultiple = uint64(burnedMultipleTotal << 1);
+            getGobblerData[newLegendaryId].stakingMultiple = uint48(burnedMultipleTotal << 1);
 
             // Update the user's staking data in one big batch. We add burnedMultipleTotal to their
             // staking multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -341,17 +329,17 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
             getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getStakingDataForUser[msg.sender].stakingMultiple += uint64(burnedMultipleTotal);
 
-            // Mint the legendary gobbler.
-            _mint(msg.sender, newId); // TODO: 1155 reentrancy?
+            // Start a new auction, 30 days after the previous start, and update the current legendary id.
+            // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
+            legendaryGobblerAuctionData.currentLegendaryId = uint16(newLegendaryId);
+            legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
+            legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // It gets a special event.
-            emit LegendaryGobblerMint(newId);
+            emit LegendaryGobblerMint(newLegendaryId);
 
-            // Start a new auction, 30 days after the previous start.
-            legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart += 30 days;
-
-            // New start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
-            legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
+            // Mint the legendary gobbler.
+            _mint(msg.sender, newLegendaryId, "");
         }
     }
 
@@ -417,29 +405,27 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
             uint256 swapSlot = currentLastRevealedIndex + 1 + distance;
 
             // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-            uint128 swapIndex = getAttributesForGobbler[swapSlot].idx == 0
-                ? uint128(swapSlot)
-                : getAttributesForGobbler[swapSlot].idx;
+            uint48 swapIndex = getGobblerData[swapSlot].idx == 0 ? uint48(swapSlot) : getGobblerData[swapSlot].idx;
 
             // Current slot is consecutive to last reveal.
             uint256 currentSlot = currentLastRevealedIndex + 1;
 
             // Again, we derive index based on value:
-            uint128 currentIndex = getAttributesForGobbler[currentSlot].idx == 0
-                ? uint128(currentSlot)
-                : getAttributesForGobbler[currentSlot].idx;
+            uint48 currentIndex = getGobblerData[currentSlot].idx == 0
+                ? uint48(currentSlot)
+                : getGobblerData[currentSlot].idx;
 
             // Swap indices.
-            getAttributesForGobbler[currentSlot].idx = swapIndex;
-            getAttributesForGobbler[swapSlot].idx = currentIndex;
+            getGobblerData[currentSlot].idx = swapIndex;
+            getGobblerData[swapSlot].idx = currentIndex;
 
             // Select random attributes for current slot.
             currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-            uint64 stakingMultiple = uint64(currentRandomSeed % 128) + 1; // todo: determine off-chain
+            uint48 stakingMultiple = uint48(currentRandomSeed % 128) + 1; // todo: determine off-chain
 
-            getAttributesForGobbler[currentSlot].stakingMultiple = stakingMultiple;
+            getGobblerData[currentSlot].stakingMultiple = stakingMultiple;
 
-            address slotOwner = _ownerOf[currentSlot];
+            address slotOwner = getGobblerData[currentSlot].owner;
             getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
             getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
             getStakingDataForUser[slotOwner].stakingMultiple += stakingMultiple;
@@ -460,13 +446,13 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
 
     /// @notice Returns a token's URI if it has been minted.
     /// @param gobblerId The id of the token to get the URI for.
-    function tokenURI(uint256 gobblerId) public view virtual override returns (string memory) {
+    function uri(uint256 gobblerId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealedIndex are revealed normal gobblers.
         if (gobblerId <= lastRevealedIndex) {
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(getAttributesForGobbler[gobblerId].idx).toString()));
+            return string(abi.encodePacked(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString()));
         }
         // Between lastRevealedIndex + 1 and currentNonLegendaryId are minted but not revealed.
         if (gobblerId <= currentNonLegendaryId) return UNREVEALED_URI;
@@ -490,13 +476,13 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
     /// @param pageId The page id to feed to the gobbler.
     function feedArt(uint256 gobblerId, uint256 pageId) public {
         // The page must be drawn on and the caller must own this gobbler:
-        if (!pages.isDrawn(pageId) || _ownerOf[gobblerId] != msg.sender) revert Unauthorized();
-
-        // This will revert if the caller does not own the page.
-        pages.transferFrom(msg.sender, address(this), pageId);
+        if (!pages.isDrawn(pageId) || getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
         // Map the page to the gobbler that ate it.
         pageIdToGobblerId[pageId] = gobblerId;
+
+        // This will revert if the caller does not own the page.
+        pages.safeTransferFrom(msg.sender, address(this), pageId, 1, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -555,7 +541,7 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
     /// @notice Convenience function to get staking stakingMultiple for a gobbler.
     /// @param gobblerId The gobbler to get stakingMultiple for.
     function getGobblerStakingMultiple(uint256 gobblerId) public view returns (uint256) {
-        return getAttributesForGobbler[gobblerId].stakingMultiple;
+        return getGobblerData[gobblerId].stakingMultiple;
     }
 
     /// @notice Convenience function to get staking stakingMultiple for a user.
@@ -565,17 +551,16 @@ contract ArtGobblers is ERC721("Art Gobblers", "GBLR"), VRFConsumerBase, Logisti
     }
 
     /*//////////////////////////////////////////////////////////////
-                          ERC721 TRANSFER LOGIC
+                          ERC1155 TRANSFER HOOK
     //////////////////////////////////////////////////////////////*/
 
-    function transferFrom(
+    /// @dev Only called on actual transfers, not mints and burns.
+    function afterTransfer(
         address from,
         address to,
         uint256 id
-    ) public override {
-        super.transferFrom(from, to, id);
-
-        uint128 idStakingMultiple = getAttributesForGobbler[id].stakingMultiple;
+    ) internal override {
+        uint128 idStakingMultiple = getGobblerData[id].stakingMultiple;
 
         unchecked {
             // Decrease the from user's stakingMultiple by the gobbler's stakingMultiple.
