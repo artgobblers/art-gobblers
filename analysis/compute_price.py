@@ -23,7 +23,20 @@ def calculate_gobblers_price(args):
     encode_and_print(price)
 
 def calculate_pages_price(args): 
-    print("todo")
+    pricer = Pricer()
+    price = pricer.compute_page_price(
+        args.time_since_start / (60 * 60 * 24), ## convert to seconds 
+        args.num_sold, 
+        args.initial_price / (10 ** 18), ## scale decimals 
+        args.per_period_price_decrease / (10 ** 18), ## scale decimals 
+        args.logistic_scale / (10 ** 18), ## scale decimals 
+        args.time_scale / (10 ** 18), ## scale decimals 
+        args.time_shift / (10 ** 18), ## scale decimals 
+        args.per_period_post_switchover / (10 ** 18), ## scale decimals 
+        args.switchover_time / (10 ** 18)
+    )
+    price *= (10 ** 18)
+    encode_and_print(price)
 
 def encode_and_print(price):
     enc = encode_single('uint256', int(price))
@@ -40,6 +53,8 @@ def parse_args():
     parser.add_argument("--logistic_scale", type=int)
     parser.add_argument("--time_scale", type=int)
     parser.add_argument("--time_shift", type=int)
+    parser.add_argument("--per_period_post_switchover", type=int)
+    parser.add_argument("--switchover_time", type=int)
     return parser.parse_args()
 
 if __name__ == '__main__':

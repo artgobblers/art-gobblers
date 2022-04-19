@@ -1,43 +1,50 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {Vm} from "forge-std/Vm.sol";
-import {MockLogisticVRGDA} from "./utils/mocks/MockLogisticVRGDA.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
+import {console} from "../utils/Console.sol";
+import {Pages} from "../../Pages.sol";
 
-contract CorrectnessTest is DSTestPlus {
+contract PageCorrectnessTest is DSTestPlus {
     using Strings for uint256;
-
-    uint256 internal immutable FIVE_YEARS = 365 days * 5;
-
-    uint256 internal immutable MAX_GOOP_MINT = 7990;
-
-    int256 internal immutable LOGISTIC_SCALE = 7990 * 2e18;
-
-    int256 internal immutable INITIAL_PRICE = 6.9e18;
-
-    int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
-
-    int256 internal immutable TIME_SCALE = 0.014e18;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    MockLogisticVRGDA internal vrgda;
+    uint256 internal immutable MAX_PAGE_MINT = 1000;
+
+    uint256 internal immutable FIVE_YEARS = 5 * 365 days;
+
+    int256 internal immutable INITIAL_PRICE = 4.20e18;
+
+    int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
+
+    int256 internal immutable LOGISTIC_SCALE = (9999 + 1) * 2e18;
+
+    int256 internal immutable TIME_SCALE = 0.023e18;
+
+    int256 internal immutable TIME_SHIFT = 0;
+
+    int256 internal immutable PER_PERIOD_POST_SWITCHOVER = 10e18;
+
+    int256 internal immutable SWITCHOVER_TIME = 207e18;
+
+    Pages internal pages;
 
     function setUp() public {
-        vrgda = new MockLogisticVRGDA(INITIAL_PRICE, PER_PERIOD_PRICE_DECREASE, LOGISTIC_SCALE, TIME_SCALE);
+        pages = new Pages(block.timestamp, address(this), address(this));
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {
         // Limit num sold to max mint.
-        numSold = bound(numSold, 0, MAX_GOOP_MINT);
+        numSold = bound(numSold, 0, 10000);
 
         // Limit mint time to 5 years.
         timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
 
         // Calculate actual price from VRGDA.
-        try vrgda.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
+        try pages.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,
@@ -45,7 +52,10 @@ contract CorrectnessTest is DSTestPlus {
                 INITIAL_PRICE,
                 PER_PERIOD_PRICE_DECREASE,
                 LOGISTIC_SCALE,
-                TIME_SCALE
+                TIME_SCALE,
+                TIME_SHIFT,
+                PER_PERIOD_POST_SWITCHOVER,
+                SWITCHOVER_TIME
             );
 
             if (expectedPrice < 10) return; // For really small prices we can't expect them to be equal.
@@ -61,14 +71,17 @@ contract CorrectnessTest is DSTestPlus {
         uint256 _timeSinceStart,
         uint256 _numSold,
         int256 _initialPrice,
-        int256 _perPeriodPriceDecrease,
+        int256 _PER_PERIOD_PRICE_DECREASE,
         int256 _logisticScale,
-        int256 _timeScale
+        int256 _timeScale,
+        int256 _timeShift,
+        int256 _perPeriodPostSwitchover,
+        int256 _switchoverTime
     ) private returns (uint256) {
-        string[] memory inputs = new string[](17);
+        string[] memory inputs = new string[](21);
         inputs[0] = "python3";
         inputs[1] = "analysis/compute_price.py";
-        inputs[2] = "gobblers";
+        inputs[2] = "pages";
         inputs[3] = "--time_since_start";
         inputs[4] = _timeSinceStart.toString();
         inputs[5] = "--num_sold";
@@ -76,13 +89,17 @@ contract CorrectnessTest is DSTestPlus {
         inputs[7] = "--initial_price";
         inputs[8] = uint256(_initialPrice).toString();
         inputs[9] = "--per_period_price_decrease";
-        inputs[10] = uint256(_perPeriodPriceDecrease).toString();
+        inputs[10] = uint256(_PER_PERIOD_PRICE_DECREASE).toString();
         inputs[11] = "--logistic_scale";
         inputs[12] = uint256(_logisticScale).toString();
         inputs[13] = "--time_scale";
         inputs[14] = uint256(_timeScale).toString();
         inputs[15] = "--time_shift";
-        inputs[16] = uint256(0).toString();
+        inputs[16] = uint256(_timeShift).toString();
+        inputs[17] = "--per_period_post_switchover";
+        inputs[18] = uint256(_perPeriodPostSwitchover).toString();
+        inputs[19] = "--switchover_time";
+        inputs[20] = uint256(_switchoverTime).toString();
 
         return abi.decode(vm.ffi(inputs), (uint256));
     }
