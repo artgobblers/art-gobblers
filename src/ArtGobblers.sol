@@ -287,8 +287,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint128 mintTotal = currentNonLegendaryId + 1;
         uint128 mintByAuthority = numMintedByAuthority + 1;
 
-        // number minted by authority should never exceed 15% of total mint
-        if ((mintByAuthority * 100) / mintTotal > 15) {
+        // number minted by authority should never reach 15% of total mint
+        if ((mintByAuthority * 100) / mintTotal >= 15) {
             revert Unauthorized();
         }
         ++numMintedByAuthority;
