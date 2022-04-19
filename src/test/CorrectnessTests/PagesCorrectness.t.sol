@@ -14,21 +14,21 @@ contract PageCorrectnessTest is DSTestPlus {
 
     uint256 internal immutable MAX_PAGE_MINT = 1000;
 
-    uint256 internal immutable FIVE_YEARS = 365 days;
+    uint256 internal immutable FIVE_YEARS = 5 * 365 days;
 
-    uint256 internal immutable initialPrice = 4.20e18;
+    int256 internal immutable INITIAL_PRICE = 4.20e18;
 
-    int256 internal immutable perPeriodPriceDecrease = 0.31e18;
+    int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
 
-    int256 internal immutable logisticScale = (9999 + 1) * 2e18;
+    int256 internal immutable LOGISTIC_SCALE = (9999 + 1) * 2e18;
 
-    int256 internal immutable timeScale = 0.023e18;
+    int256 internal immutable TIME_SCALE = 0.023e18;
 
-    int256 internal immutable timeShift = 0;
+    int256 internal immutable TIME_SHIFT = 0;
 
-    int256 internal immutable perPeriodPostSwitchover = 0.3e18;
+    int256 internal immutable PER_PERIOD_POST_SWITCHOVER = 10e18;
 
-    int256 internal immutable switchoverTime = 360e18;
+    int256 internal immutable SWITCHOVER_TIME = 207e18;
 
     Pages internal pages;
 
@@ -49,19 +49,19 @@ contract PageCorrectnessTest is DSTestPlus {
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,
                 numSold,
-                pages.initialPrice(),
-                perPeriodPriceDecrease,
-                logisticScale,
-                timeScale,
-                timeShift,
-                perPeriodPostSwitchover,
-                switchoverTime
+                INITIAL_PRICE,
+                PER_PERIOD_PRICE_DECREASE,
+                LOGISTIC_SCALE,
+                TIME_SCALE,
+                TIME_SHIFT,
+                PER_PERIOD_POST_SWITCHOVER,
+                SWITCHOVER_TIME
             );
 
             if (expectedPrice < 10) return; // For really small prices we can't expect them to be equal.
 
             // Equal within 1 percent.
-            assertRelApproxEq(actualPrice, expectedPrice, 0.05e18);
+            assertRelApproxEq(actualPrice, expectedPrice, 0.01e18);
         } catch {
             // If it reverts that's fine, there are some bounds on the function, they are tested in VRGDAs.t.sol
         }
@@ -71,7 +71,7 @@ contract PageCorrectnessTest is DSTestPlus {
         uint256 _timeSinceStart,
         uint256 _numSold,
         int256 _initialPrice,
-        int256 _perPeriodPriceDecrease,
+        int256 _PER_PERIOD_PRICE_DECREASE,
         int256 _logisticScale,
         int256 _timeScale,
         int256 _timeShift,
@@ -89,7 +89,7 @@ contract PageCorrectnessTest is DSTestPlus {
         inputs[7] = "--initial_price";
         inputs[8] = uint256(_initialPrice).toString();
         inputs[9] = "--per_period_price_decrease";
-        inputs[10] = uint256(_perPeriodPriceDecrease).toString();
+        inputs[10] = uint256(_PER_PERIOD_PRICE_DECREASE).toString();
         inputs[11] = "--logistic_scale";
         inputs[12] = uint256(_logisticScale).toString();
         inputs[13] = "--time_scale";
