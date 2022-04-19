@@ -94,6 +94,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Id of last minted non legendary token.
     uint128 internal currentNonLegendaryId; // TODO: public?
 
+    /*//////////////////////////////////////////////////////////////
+                         MINT BY AUTHORITY STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Number of gobblers minted by authority.
+    uint128 internal numMintedByAuthority;
+
     /*///////////////////////////////////////////////////////////////
                     LEGENDARY GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
@@ -273,10 +280,21 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                         MINT FOR AUTHORITY LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice allows authority to mint up to 15% of minted supply into 
-    /// lockup vault 
+    /// @notice allows authority to mint up to 15% of minted supply into lockup vault
+    /// TODO: BATCH MINT
     function mintForAuthority() public {
-        
+        //numbers if we allowed mint
+        uint128 mintTotal = currentNonLegendaryId + 1;
+        uint128 mintByAuthority = numMintedByAuthority + 1;
+
+        // number minted by authority should never exceed 15% of total mint
+        if ((mintByAuthority * 100) / mintTotal > 15) {
+            revert Unauthorized();
+        }
+        ++numMintedByAuthority;
+
+        //mint directly to vault
+        _mint(address(vault), ++currentNonLegendaryId, "");
     }
 
     /*//////////////////////////////////////////////////////////////
