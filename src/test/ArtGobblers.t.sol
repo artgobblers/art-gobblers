@@ -386,7 +386,25 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     ///@notice Test that gobbler balances are accurate after transfer.
     function testGobblerBalancesAfterTransfer() public {
-        assertTrue(true);
+        mintGobblerToAddress(users[0], 1);
+        setRandomnessAndReveal(1, "seed");
+
+        vm.warp(block.timestamp + 1000000);
+
+        uint256 userOneBalance = gobblers.goopBalance(users[0]);
+        uint256 userTwoBalance = gobblers.goopBalance(users[1]);
+        //user with gobbler should have non-zero balance
+        assertGt(userOneBalance, 0);
+        //other user should have zero balance
+        assertEq(userTwoBalance, 0);
+        console.log("Balance", userOneBalance);
+        console.log("Balance", userTwoBalance);
+        //transfer gobblers
+        vm.prank(users[0]);
+        gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
+        //balance should not change after transfer
+        assertEq(gobblers.goopBalance(users[0]), userOneBalance);
+        assertEq(gobblers.goopBalance(users[1]), userTwoBalance);
     }
 
     /*//////////////////////////////////////////////////////////////
