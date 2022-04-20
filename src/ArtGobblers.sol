@@ -580,7 +580,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             getStakingDataForUser[from].stakingMultiple -= uint64(idStakingMultiple);
 
             // Increase the to user's stakingMultiple by the gobbler's stakingMultiple.
-            getStakingDataForUser[to].lastBalance = uint128(goopBalance(from));
+            getStakingDataForUser[to].lastBalance = uint128(goopBalance(to));
             getStakingDataForUser[to].lastTimestamp = uint64(block.timestamp);
             getStakingDataForUser[to].stakingMultiple += uint64(idStakingMultiple);
         }
