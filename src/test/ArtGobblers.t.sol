@@ -112,7 +112,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     ///@notice Test that initial gobbler price is what we expect.
     function testInitialGobblerPrice() public {
         uint256 cost = gobblers.gobblerPrice();
-        assertRelApproxEq(cost, uint256(gobblers.initialPrice()), 0.01e18); //equal within 1%
+        uint256 maxDelta = 10; // 0.00000000000000001
+        assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
     /*//////////////////////////////////////////////////////////////
