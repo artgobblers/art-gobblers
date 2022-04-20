@@ -469,7 +469,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                            LONG-RUNNING TESTS
     //////////////////////////////////////////////////////////////*/
 
-    // ///@notice Check that max supply is mintable, and further mints revert
+    // ///@notice Check that max supply is mintable, and further mints revert.
     // function testMintMaxFromGoop() public {
     //     //total supply - legendary gobblers - whitelist gobblers
     //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
@@ -479,8 +479,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     //     gobblers.mintFromGoop();
     // }
 
-    // //@notice Long running test, commented out to ease development
-    // // test whether all ids are assigned after full reveal
+    // ///@notice Test whether all ids are assigned after full reveal.
     // function testAllIdsUnique() public {
     //     int256[10001] memory counts;
     //     // mint all
