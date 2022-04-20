@@ -16,7 +16,7 @@ jobs:
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
-
+fr
       - name: Install dependencies
         run: forge install
 

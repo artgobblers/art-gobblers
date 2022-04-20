@@ -1,0 +1,34 @@
+name: Gas Snapshot
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  Run-Snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run snapshot
+        run: forge snapshot
+
+      - name: commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "gas snapshot"
+            git push
+          else
+            echo "no changes to commit";
+          fi
