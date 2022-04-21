@@ -10,6 +10,7 @@ import {stdError} from "forge-std/Test.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
+import {LockupVault} from "../LockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
@@ -29,6 +30,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     LinkToken internal linkToken;
     Goop internal goop;
     Pages internal pages;
+    LockupVault internal vault;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -58,9 +60,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
+        vault = new LockupVault();
         gobblers = new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
+            address(vault),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
@@ -398,8 +402,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertGt(userOneBalance, 0);
         //other user should have zero balance
         assertEq(userTwoBalance, 0);
-        console.log("Balance", userOneBalance);
-        console.log("Balance", userTwoBalance);
         //transfer gobblers
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
