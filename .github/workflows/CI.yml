@@ -20,7 +20,6 @@ jobs:
       - name: Install dependencies
         run: forge install
 
-      # disabling for now until we figure why local and CI are different
       - name: Check gas snapshots
         run: forge snapshot --check
 
