@@ -4,8 +4,6 @@
 
 Art Gobblers scan the cosmos in search of art producing life.
 
-## State Machines
-
 ![Gobbler Lifecycle](assets/state-machines/gobbler-lifecycle.png)
 ![Legendary Gobbler Auctions](assets/state-machines/legendary-gobbler-auctions.png)
 ![Page Auctions](assets/state-machines/page-auctions.png)
