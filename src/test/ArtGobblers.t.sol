@@ -120,6 +120,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
+    ///@notice Test that 10th gobbler is minted for vault 
+    function testMintForVault() public {
+        mintGobblerToAddress(users[0], 9);
+        assertEq(gobblers.ownerOf(10), address(vault));
+    }
+
     /*//////////////////////////////////////////////////////////////
                            LEGENDARY GOBBLERS
     //////////////////////////////////////////////////////////////*/
@@ -180,10 +186,14 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         uint256 stakingMultipleSum;
-        for (uint256 i = 1; i <= cost; i++) {
-            ids.push(i);
-            assertEq(gobblers.ownerOf(i), users[0]);
-            stakingMultipleSum += gobblers.getGobblerStakingMultiple(i);
+        uint256 curId = 1;
+        while (ids.length < cost) {
+            if (curId % 10 != 0) {
+                ids.push(curId);
+                assertEq(gobblers.ownerOf(curId), users[0]);
+                stakingMultipleSum += gobblers.getGobblerStakingMultiple(curId);
+            }
+            curId++;
         }
 
         assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum);
@@ -197,7 +207,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum * 2);
         assertEq(gobblers.getGobblerStakingMultiple(currentLegendaryId), stakingMultipleSum * 2);
 
-        for (uint256 i = 1; i <= cost; i++) assertEq(gobblers.ownerOf(i), address(0));
+        for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
     ///@notice Test that Legendary Gobblers can't be burned to mint another legendary.

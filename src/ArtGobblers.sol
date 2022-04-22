@@ -260,9 +260,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
-        ++numMintedFromGoop;
-
         _mint(msg.sender, ++currentNonLegendaryId, "");
+
+        /// Every 9 goop mints, we should mint one gobbler to vault
+        if (++numMintedFromGoop % 9 == 0) {
+            _mint(address(vault), ++currentNonLegendaryId, "");
+        }
     }
 
     /// @notice Gobbler pricing in terms of goop.
@@ -274,27 +277,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 timeSinceStart = block.timestamp - mintStart;
 
         return getPrice(timeSinceStart, numMintedFromGoop);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                        MINT FOR AUTHORITY LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice allows authority to mint up to 15% of minted supply into lockup vault
-    /// TODO: BATCH MINT
-    function mintForAuthority() public {
-        //numbers if we allowed mint
-        uint128 mintTotal = currentNonLegendaryId + 1;
-        uint128 mintByAuthority = numMintedByAuthority + 1;
-
-        // number minted by authority should never reach 15% of total mint
-        if ((mintByAuthority * 100) / mintTotal >= 15) {
-            revert Unauthorized();
-        }
-        ++numMintedByAuthority;
-
-        //mint directly to vault
-        _mint(address(vault), ++currentNonLegendaryId, "");
     }
 
     /*//////////////////////////////////////////////////////////////
