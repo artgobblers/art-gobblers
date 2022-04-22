@@ -120,7 +120,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
-    ///@notice Test that 10th gobbler is minted for vault 
+    ///@notice Test that 10th gobbler is minted for vault
     function testMintForVault() public {
         mintGobblerToAddress(users[0], 9);
         assertEq(gobblers.ownerOf(10), address(vault));
