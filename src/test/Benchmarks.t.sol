@@ -9,6 +9,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
+import {LockupVault} from "../LockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
@@ -27,6 +28,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
     Goop goop;
     Pages pages;
+    LockupVault vault;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -39,9 +41,12 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
+        vault = new LockupVault();
+
         gobblers = new ArtGobblers(
             "root",
             block.timestamp,
+            address(vault),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
