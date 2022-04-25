@@ -4,6 +4,10 @@
 
 Art Gobblers scan the cosmos in search of art producing life.
 
+![Gobbler Lifecycle](assets/state-machines/gobbler-lifecycle.png)
+![Legendary Gobbler Auctions](assets/state-machines/legendary-gobbler-auctions.png)
+![Page Auctions](assets/state-machines/page-auctions.png)
+
 ## Contributing
 
 You will need a copy of [Foundry](https://github.com/gakonst/foundry) installed before proceeding. See the [installation guide](https://github.com/gakonst/foundry#installation) for details.

@@ -4,6 +4,8 @@ pragma solidity >=0.8.0;
 import {VRGDA} from "./VRGDA.sol";
 import {unsafeWadDiv} from "./SignedWadMath.sol";
 
+/// @title "Post Switch" Variable Rate Gradual Dutch Auction
+/// @notice Abstract VRGDA with a (translated) linear issuance curve.
 abstract contract PostSwitchVRGDA is VRGDA {
     /*//////////////////////////////////////////////////////////////
                            PRICING PARAMETERS
