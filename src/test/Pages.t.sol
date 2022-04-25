@@ -19,10 +19,6 @@ contract PagesTest is DSTestPlus {
     Pages internal pages;
     uint256 mintStart;
 
-    // encodings for expectRevert
-    bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
-    bytes mintNotStarted = abi.encodeWithSignature("MintNotStarted()");
-
     function setUp() public {
         // avoid starting at timestamp = 0 for ease of testing
         vm.warp(block.timestamp + 1);
@@ -86,7 +82,7 @@ contract PagesTest is DSTestPlus {
         goop.mint(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(Pages.Unauthorized.selector);
         pages.setIsDrawn(1);
     }
 
