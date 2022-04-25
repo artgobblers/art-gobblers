@@ -48,6 +48,7 @@ contract VRGDAsTest is DSTestPlus {
 
         gobblers = new ArtGobblers(
             goop,
+            address(0xBEEF),
             "root",
             block.timestamp,
             baseUri,
