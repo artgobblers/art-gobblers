@@ -38,7 +38,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                             SUPPLY CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maximum number of mintable tokens.
+    /// @notice Maximum number of mintable gobblers.
     uint256 private constant MAX_SUPPLY = 10000;
 
     /// @notice Maximum amount of gobblers mintable via whitelist.
@@ -47,9 +47,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 private constant LEGENDARY_SUPPLY = 10;
 
-    /// @notice Maximum mintable from goop. This number 90% of the supply excluding whitelist and legendaries.
-    /// The remaining 10% is minted directly to the lockup vault
-    uint256 private constant MINTABLE_FROM_GOOP = ((MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY) * 90) / 100;
+    /// @notice Maximum amount of gobblers that will go to the team.
+    /// @dev 10% of the supply of non-legendary/whitelist gobblers.
+    uint256 private constant TEAM_SUPPLY = 799;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
@@ -95,13 +95,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Id of last minted non legendary token.
     uint128 internal currentNonLegendaryId; // TODO: public?
-
-    /*//////////////////////////////////////////////////////////////
-                         MINT BY AUTHORITY STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Number of gobblers minted by authority.
-    uint128 internal numMintedByAuthority;
 
     /*///////////////////////////////////////////////////////////////
                     LEGENDARY GOBBLER AUCTION STATE
@@ -185,8 +178,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     error NoRemainingLegendaryGobblers();
 
-    error NoRemainingGobblers();
-
     constructor(
         bytes32 _merkleRoot,
         uint256 _mintStart,
@@ -203,10 +194,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
-            // Logistic scale. We multiply by 2x (as a wad)
-            // to account for the subtracted initial value,
-            // and add 1 to ensure all the tokens can be sold:
-            int256(MINTABLE_FROM_GOOP + 1) * 2e18,
+            // Logistic scale. We multiply by 2x (scaled by 1e18) to account for the
+            // subtracted initial value, and add 1 to ensure all the tokens can be sold:
+            int256((MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY - TEAM_SUPPLY) + 1) * 2e18,
             0.014e18 // Time scale.
         )
     {

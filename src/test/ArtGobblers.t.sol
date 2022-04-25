@@ -39,19 +39,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     uint256[] ids;
 
     /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
-    bytes alreadyEaten = abi.encodeWithSignature("AlreadyEaten()");
-    bytes cannotBurnLegendary = abi.encodeWithSignature("CannotBurnLegendary()");
-    bytes insufficientLinkBalance = abi.encodeWithSignature("InsufficientLinkBalance()");
-    bytes insufficientGobblerBalance = abi.encodeWithSignature("InsufficientGobblerBalance()");
-    bytes noRemainingLegendary = abi.encodeWithSignature("NoRemainingLegendaryGobblers()");
-    bytes insufficientBalance = abi.encodeWithSignature("InsufficientBalance()");
-    bytes noRemainingGobblers = abi.encodeWithSignature("NoRemainingGobblers()");
-
-    /*//////////////////////////////////////////////////////////////
                                   SETUP
     //////////////////////////////////////////////////////////////*/
 
@@ -92,7 +79,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that an invalid whitelist proof reverts.
     function testMintNotInWhitelist() public {
         bytes32[] memory proof;
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.mintFromWhitelist(proof);
     }
 
@@ -226,7 +213,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.warp(startTime); // mintGobblerToAddress warps time forward
         ids[0] = legendaryId; // the legendary we minted
         vm.prank(users[0]);
-        vm.expectRevert(cannotBurnLegendary);
+        vm.expectRevert(ArtGobblers.CannotBurnLegendary.selector);
         gobblers.mintLegendaryGobbler(ids);
     }
 
@@ -294,7 +281,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], 2);
         setRandomnessAndReveal(1, "seed");
         // should fail since there is one remaining gobbler to be revealed with seed
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
         setRandomnessAndReveal(1, "seed");
     }
 
@@ -446,7 +433,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goop.mint(user, pagePrice);
         vm.startPrank(user);
         pages.mint();
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.feedArt(1, address(pages), 1);
         vm.stopPrank();
     }
@@ -470,7 +457,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
         gobblers.feedArt(1, address(token), 1);
-        vm.expectRevert(alreadyEaten);
+        vm.expectRevert(ArtGobblers.AlreadyEaten.selector);
         gobblers.feedArt(1, address(token), 1);
         vm.stopPrank();
     }
