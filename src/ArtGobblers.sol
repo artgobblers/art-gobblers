@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
@@ -15,7 +15,6 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
-import {LockupVault} from "./LockupVault.sol";
 
 // TODO: UNCHECKED
 // TODO: events
@@ -24,7 +23,6 @@ import {LockupVault} from "./LockupVault.sol";
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
-    using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -34,7 +32,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
-    LockupVault public immutable vault;
+    address public immutable team;
 
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
@@ -192,7 +190,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     constructor(
         bytes32 _merkleRoot,
         uint256 _mintStart,
-        address _vault,
+        address _team,
         address _vrfCoordinator,
         address _linkToken,
         bytes32 _chainlinkKeyHash,
@@ -220,7 +218,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         goop = new Goop(address(this));
         pages = new Pages(_mintStart, address(goop), msg.sender);
-        vault = LockupVault(_vault);
+        team = _team;
 
         goop.setPages(address(pages));
 
@@ -266,10 +264,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         _mint(msg.sender, ++currentNonLegendaryId, "");
 
-        /// Every 9 goop mints, we should mint one gobbler to vault
-        if (++numMintedFromGoop % 9 == 0) {
-            _mint(address(vault), ++currentNonLegendaryId, "");
-        }
+        // Every 9 goop mints, we mint one gobbler for the team.
+        if (++numMintedFromGoop % 9 == 0) _mint(address(team), ++currentNonLegendaryId, ""); // TODO: uncheck
     }
 
     /// @notice Gobbler pricing in terms of goop.
@@ -537,7 +533,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 lastBalance +
                 ((stakingMultiple * (timePassed * timePassed)) >> 2) +
                 // TODO: need to scale by 1e18 before sqrt i thinks
-                (timePassed * FixedPointMathLib.sqrt(stakingMultiple * lastBalance));
+                (timePassed * Math.sqrt(stakingMultiple * lastBalance));
         }
     }
 
