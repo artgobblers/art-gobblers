@@ -535,7 +535,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(addr);
             gobblers.mintFromGoop();
         }
-        vm.stopPrank();
     }
 
     /// @notice Call back vrf with randomness and reveal gobblers.
