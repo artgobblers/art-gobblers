@@ -594,6 +594,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                           ERC1155 TRANSFER HOOK
     //////////////////////////////////////////////////////////////*/
 
+    // TODO: possible optimization is to manually override batch transfer cuz from will always be the same
+
     /// @dev Only called on actual transfers, not mints and burns.
     function afterTransfer(
         address from,
