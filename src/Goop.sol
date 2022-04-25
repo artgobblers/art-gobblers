@@ -13,7 +13,7 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
     address public immutable artGobblers;
 
-    address public pages;
+    address public immutable pages;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -21,13 +21,18 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
     error Unauthorized();
 
-    /// @notice Set addresses with authority to mint and burn.
-    constructor(address _artGobblers) {
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor(address _artGobblers, address _pages) {
         artGobblers = _artGobblers;
+
+        pages = _pages;
     }
 
     /*//////////////////////////////////////////////////////////////
-                           CONFIGURATION LOGIC
+                             MINT/BURN LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Requires caller address to match user address.
@@ -36,15 +41,6 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
         _;
     }
-
-    /// @notice Set pages address, callable only by gobblers contract.
-    function setPages(address _pages) public only(artGobblers) {
-        pages = _pages;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                             MINT/BURN LOGIC
-    //////////////////////////////////////////////////////////////*/
 
     function mintForGobblers(address to, uint256 amount) public only(artGobblers) {
         _mint(to, amount);

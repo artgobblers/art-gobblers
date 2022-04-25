@@ -3,15 +3,17 @@ pragma solidity >=0.8.0;
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-import {Goop} from "./Goop.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
 import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
+import {Goop} from "./Goop.sol";
+import {ArtGobblers} from "./ArtGobblers.sol";
+
 // todo: events?
 
-/// @title Pages NFT (PAGE)
+/// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
@@ -57,7 +59,11 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(uint256 _mintStart, Goop _goop)
+    constructor(
+        uint256 _mintStart,
+        address _artGobblers,
+        Goop _goop
+    )
         VRGDA(
             4.20e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -74,9 +80,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             207e18, // Switch day.
             10e18 // Per day.
         )
-        PagesERC1155B(
-            msg.sender // Sets artGobblers.
-        )
+        PagesERC1155B(_artGobblers)
     {
         mintStart = _mintStart;
 
