@@ -49,7 +49,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function testRegularMint() public {
-        goop.mint(user, pages.pagePrice());
+        goop.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         assertEq(user, pages.ownerOf(1));
@@ -69,7 +69,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function testSetIsDrawn() public {
-        goop.mint(user, pages.pagePrice());
+        goop.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         assertTrue(!pages.isDrawn(1));
@@ -79,7 +79,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function testRevertSetIsDrawn() public {
-        goop.mint(user, pages.pagePrice());
+        goop.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
         pages.mint();
         vm.expectRevert(Pages.Unauthorized.selector);
@@ -87,7 +87,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function mintPage(address _user) internal {
-        goop.mint(_user, pages.pagePrice());
+        goop.mintForGobblers(_user, pages.pagePrice());
         vm.prank(_user);
         pages.mint();
     }
