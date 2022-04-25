@@ -210,7 +210,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         merkleRoot = _merkleRoot;
 
         goop = new Goop(address(this));
-        pages = new Pages(_mintStart, address(goop), msg.sender);
+        pages = new Pages(_mintStart, goop);
         team = _team;
 
         goop.setPages(address(pages));

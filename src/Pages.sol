@@ -33,6 +33,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                               MINTING STATE
     //////////////////////////////////////////////////////////////*/
 
+    // TODO: pack!!!
+
     /// @notice Id of last mint.
     uint256 internal currentId; // todo: public???
 
@@ -41,13 +43,6 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice Timestamp for the start of the VRGDA mint.
     uint256 internal immutable mintStart;
-
-    /*//////////////////////////////////////////////////////////////
-                               DRAWN LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Mapping from pageId to isDrawn bool.
-    mapping(uint256 => bool) public isDrawn;
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -59,23 +54,10 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
 
     /*//////////////////////////////////////////////////////////////
-                            AUTHORIZED USERS
+                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice User allowed to set the draw state on pages.
-    address public immutable artist;
-
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error Unauthorized();
-
-    constructor(
-        uint256 _mintStart,
-        address _goop,
-        address _artist
-    )
+    constructor(uint256 _mintStart, Goop _goop)
         VRGDA(
             4.20e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -98,37 +80,15 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     {
         mintStart = _mintStart;
 
-        goop = Goop(_goop);
-
-        artist = _artist;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                           CONFIGURATION LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Requires caller address to match user address.
-    modifier only(address user) {
-        if (msg.sender != user) revert Unauthorized();
-
-        _;
-    }
-
-    /// @notice Set whether a page is drawn.
-    // TODO: do we still need this
-    function setIsDrawn(uint256 tokenId) public only(artist) {
-        isDrawn[tokenId] = true;
+        goop = _goop;
     }
 
     /*//////////////////////////////////////////////////////////////
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: do we want the ability to mint pages out of thin air for promotional reasons?
-
     /// @notice Mint a page by burning goop.
     function mint() public {
-        // TODO: we could just transferFrom dont need special burn auth
         goop.burnForPages(msg.sender, pagePrice());
 
         unchecked {
