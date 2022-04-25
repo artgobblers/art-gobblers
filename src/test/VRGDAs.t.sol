@@ -63,27 +63,27 @@ contract VRGDAsTest is DSTestPlus {
     //     uint256 time = 999 days;
     //     while (true) {
     //         emit log_uint((time -= 1 days) / 1 days);
-    //         gobblers.getPrice(time, 7990);
+    //         gobblers.getPrice(time, 7191);
     //     }
     // }
 
     function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7507));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6757));
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 444 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7507));
+        gobblers.getPrice(bound(timeSinceStart, 437 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7191));
     }
 
     function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 7991, type(uint128).max));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 7192, type(uint128).max));
     }
 
     function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 7507) {
+        while (sold <= 6757) {
             uint256 price = gobblers.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
