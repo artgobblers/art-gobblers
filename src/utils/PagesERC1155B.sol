@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
@@ -91,10 +91,7 @@ abstract contract PagesERC1155B {
         uint256 amount,
         bytes calldata data
     ) public virtual {
-        require(
-            msg.sender == from || msg.sender == artGobblers || _isApprovedForAll[from][msg.sender],
-            "NOT_AUTHORIZED"
-        );
+        require(msg.sender == from || isApprovedForAll(from, msg.sender), "NOT_AUTHORIZED");
 
         require(from == ownerOf[id], "WRONG_FROM"); // Can only transfer from the owner.
 
@@ -123,10 +120,7 @@ abstract contract PagesERC1155B {
     ) public virtual {
         require(ids.length == amounts.length, "LENGTH_MISMATCH");
 
-        require(
-            msg.sender == from || msg.sender == artGobblers || _isApprovedForAll[from][msg.sender],
-            "NOT_AUTHORIZED"
-        );
+        require(msg.sender == from || isApprovedForAll(from, msg.sender), "NOT_AUTHORIZED");
 
         // Storing these outside the loop saves ~15 gas per iteration.
         uint256 id;

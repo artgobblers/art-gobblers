@@ -14,7 +14,6 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
-import {Pages} from "./Pages.sol";
 
 // TODO: UNCHECKED
 // TODO: events
@@ -29,9 +28,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice The address of the Goop token.
     Goop public immutable goop;
-
-    Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
@@ -60,9 +58,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                               VRF CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 internal immutable chainlinkKeyHash;
-
+    /// @dev The amount of LINK to send with each VRF request.
     uint256 internal immutable chainlinkFee;
+
+    /// @dev The id of public key against which randomness is generated.
+    bytes32 internal immutable chainlinkKeyHash;
 
     /*//////////////////////////////////////////////////////////////
                              WHITELIST STATE
@@ -169,20 +169,30 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     error CannotBurnLegendary();
 
+    error NoRemainingGobblers();
+
     error InsufficientGobblerBalance();
 
     error NoRemainingLegendaryGobblers();
 
-    error NoRemainingGobblers();
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     constructor(
+        // Addresses:
+        Goop _goop,
+        // Whitelist parameters:
         bytes32 _merkleRoot,
         uint256 _mintStart,
+        // Metadata parameters:
+        string memory _baseUri,
+        // Chainlink parameters:
         address _vrfCoordinator,
         address _linkToken,
+        // VRF parameters:
         bytes32 _chainlinkKeyHash,
-        uint256 _chainlinkFee,
-        string memory _baseUri
+        uint256 _chainlinkFee
     )
         VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
@@ -197,18 +207,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             0.014e18 // Time scale.
         )
     {
-        chainlinkKeyHash = _chainlinkKeyHash;
-        chainlinkFee = _chainlinkFee;
+        goop = _goop;
 
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
 
-        goop = new Goop(address(this));
-        pages = new Pages(_mintStart, address(goop), msg.sender);
-
-        goop.setPages(address(pages));
-
         BASE_URI = _baseUri;
+
+        chainlinkKeyHash = _chainlinkKeyHash;
+        chainlinkFee = _chainlinkFee;
 
         // Start price for legendary gobblers is 100 gobblers.
         legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice = 100;
@@ -283,7 +290,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         if (gobblerIds.length != cost) revert InsufficientGobblerBalance();
 
-        // Overflow in here should not occur, as most math is on staking multiples, which are inherently small.
         unchecked {
             uint256 burnedMultipleTotal; // The legendary's stakingMultiple will be 2x the sum of the gobblers burned.
 
@@ -353,14 +359,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 daysSinceStart = (block.timestamp - legendaryGobblerAuctionData.currentLegendaryGobblerAuctionStart) /
             1 days;
 
-        // TODO: do we want it after 30 or on the 30th day.
-        // If 30 or more days have passed, legendary gobbler is free.
-        if (daysSinceStart >= 30) return 0;
-
-        unchecked {
-            // If we're less than 30 days into the auction, the price simply decays linearly until the 30th day.
-            return (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
-        }
+        // If more than 30 days have passed, legendary gobbler is free, else, decay linearly over 30 days.
+        // TODO: can we uncheck?
+        return
+            daysSinceStart >= 30
+                ? 0 // TODO: why divide
+                : (legendaryGobblerAuctionData.currentLegendaryGobblerStartPrice * (30 - daysSinceStart)) / 30;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -399,54 +403,51 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         uint256 currentLastRevealedIndex = lastRevealedIndex;
 
-        // Implements a Knuth shuffle. If something in
-        // here can overflow we've got bigger problems.
-        unchecked {
-            for (uint256 i = 0; i < numGobblers; i++) {
-                // Number of slots that have not been assigned.
-                uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
+        // Implements a Knuth shuffle:
+        for (uint256 i = 0; i < numGobblers; i++) {
+            // Number of slots that have not been assigned.
+            uint256 remainingSlots = LEGENDARY_GOBBLER_ID_START - lastRevealedIndex;
 
-                // Randomly pick distance for swap.
-                uint256 distance = currentRandomSeed % remainingSlots;
+            // Randomly pick distance for swap.
+            uint256 distance = currentRandomSeed % remainingSlots;
 
-                // Select swap slot, adding distance to next reveal slot.
-                uint256 swapSlot = currentLastRevealedIndex + 1 + distance;
+            // Select swap slot, adding distance to next reveal slot.
+            uint256 swapSlot = currentLastRevealedIndex + 1 + distance;
 
-                // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-                uint48 swapIndex = getGobblerData[swapSlot].idx == 0 ? uint48(swapSlot) : getGobblerData[swapSlot].idx;
+            // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
+            uint48 swapIndex = getGobblerData[swapSlot].idx == 0 ? uint48(swapSlot) : getGobblerData[swapSlot].idx;
 
-                // Current slot is consecutive to last reveal.
-                uint256 currentSlot = currentLastRevealedIndex + 1;
+            // Current slot is consecutive to last reveal.
+            uint256 currentSlot = currentLastRevealedIndex + 1;
 
-                // Again, we derive index based on value:
-                uint48 currentIndex = getGobblerData[currentSlot].idx == 0
-                    ? uint48(currentSlot)
-                    : getGobblerData[currentSlot].idx;
+            // Again, we derive index based on value:
+            uint48 currentIndex = getGobblerData[currentSlot].idx == 0
+                ? uint48(currentSlot)
+                : getGobblerData[currentSlot].idx;
 
-                // Swap indices.
-                getGobblerData[currentSlot].idx = swapIndex;
-                getGobblerData[swapSlot].idx = currentIndex;
+            // Swap indices.
+            getGobblerData[currentSlot].idx = swapIndex;
+            getGobblerData[swapSlot].idx = currentIndex;
 
-                // Select random attributes for current slot.
-                currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-                uint48 stakingMultiple = uint48(currentRandomSeed % 128) + 1; // todo: determine off-chain
+            // Select random attributes for current slot.
+            currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
+            uint48 stakingMultiple = uint48(currentRandomSeed % 128) + 1; // todo: determine off-chain
 
-                getGobblerData[currentSlot].stakingMultiple = stakingMultiple;
+            getGobblerData[currentSlot].stakingMultiple = stakingMultiple;
 
-                address slotOwner = getGobblerData[currentSlot].owner;
-                getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
-                getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
-                getStakingDataForUser[slotOwner].stakingMultiple += stakingMultiple;
+            address slotOwner = getGobblerData[currentSlot].owner;
+            getStakingDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
+            getStakingDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
+            getStakingDataForUser[slotOwner].stakingMultiple += stakingMultiple;
 
-                // Increment last reveal index.
-                currentLastRevealedIndex++;
-            }
-
-            // Update state all at once.
-            randomSeed = currentRandomSeed;
-            lastRevealedIndex = uint128(currentLastRevealedIndex);
-            gobblersToBeAssigned -= uint128(numGobblers);
+            // Increment last reveal index.
+            currentLastRevealedIndex++;
         }
+
+        // Update state all at once.
+        randomSeed = currentRandomSeed;
+        lastRevealedIndex = uint128(currentLastRevealedIndex);
+        gobblersToBeAssigned -= uint128(numGobblers);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -481,7 +482,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Feed a gobbler a work of art.
-    /// @param gobblerId The gobbler to feed the page.
+    /// @param gobblerId The gobbler to feed the art.
     /// @param nft The contract of the work of art.
     /// @param id The id of the work of art.
     /// @dev NFTs should be ERC1155s, ideally ERC1155Bs.
@@ -549,7 +550,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         getStakingDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) - goopAmount);
         getStakingDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        goop.mint(msg.sender, goopAmount);
+        goop.mintForGobblers(msg.sender, goopAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -571,8 +572,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /*//////////////////////////////////////////////////////////////
                           ERC1155 TRANSFER HOOK
     //////////////////////////////////////////////////////////////*/
-
-    // TODO: possible optimization is to manually override batch transfer cuz from will always be the same
 
     /// @dev Only called on actual transfers, not mints and burns.
     function afterTransfer(

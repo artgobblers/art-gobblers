@@ -40,24 +40,31 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
+
+        goop = new Goop(
+            // Gobblers:
+            utils.predictContractAddress(address(this), 1),
+            // Pages:
+            utils.predictContractAddress(address(this), 2)
+        );
+
         gobblers = new ArtGobblers(
+            goop,
             "root",
             block.timestamp,
+            baseUri,
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            baseUri
+            fee
         );
-        goop = gobblers.goop();
-        pages = gobblers.pages();
+
+        pages = new Pages(block.timestamp, goop, address(gobblers));
 
         vm.prank(address(gobblers));
-        goop.mint(address(this), type(uint128).max);
+        goop.mintForGobblers(address(this), type(uint128).max);
 
         pages.mint();
-
-        pages.setIsDrawn(1);
 
         gobblers.addGoop(1e18);
 
@@ -100,14 +107,6 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
     function testFeedArt() public {
         gobblers.feedArt(1, address(pages), 1);
-    }
-
-    function testSetIsDrawnClose() public {
-        pages.setIsDrawn(2);
-    }
-
-    function testSetIsDrawnFar() public {
-        pages.setIsDrawn(99999);
     }
 
     function testMintLegendaryGobbler() public {

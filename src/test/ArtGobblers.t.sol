@@ -52,17 +52,25 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
+        goop = new Goop(
+            // Gobblers:
+            utils.predictContractAddress(address(this), 1),
+            // Pages:
+            utils.predictContractAddress(address(this), 2)
+        );
+
         gobblers = new ArtGobblers(
+            goop,
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
+            baseUri,
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            baseUri
+            fee
         );
-        goop = gobblers.goop();
-        pages = gobblers.pages();
+
+        pages = new Pages(block.timestamp, goop, address(gobblers));
     }
 
     function testMintFromWhitelist() public {
@@ -83,7 +91,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintFromGoop() public {
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mint(users[0], cost);
+        goop.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         assertEq(gobblers.ownerOf(1), users[0]);
@@ -155,7 +163,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     function testMintLegendaryGobbler() public {
-        vm.warp(block.timestamp + 30 days);
+        uint256 startTime = block.timestamp + 30 days;
+
+        vm.warp(startTime);
 
         uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 100);
@@ -174,6 +184,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
 
         assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum);
+
+        vm.warp(startTime); // mintGobblerToAddress warps time forward
 
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
@@ -197,6 +209,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
         assertEq(legendaryId, 9991);
 
+        uint256 startTime = block.timestamp;
+
         uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 66);
 
@@ -204,6 +218,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(cost, "seed");
 
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
+
+        vm.warp(startTime); // mintGobblerToAddress warps time forward
 
         ids[0] = legendaryId; // the legendary we minted
 
@@ -219,7 +235,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testUnrevealedUri() public {
         uint256 gobblerCost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mint(users[0], gobblerCost);
+        goop.mintForGobblers(users[0], gobblerCost);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         // assert gobbler not revealed after mint
@@ -307,10 +323,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     //     }
     // }
 
-    function testFeedArt() public {
-        assertTrue(true);
-    }
-
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
 
@@ -387,7 +399,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         uint256 additionAmount = 1000;
 
-        goop.mint(users[0], additionAmount);
+        goop.mintForGobblers(users[0], additionAmount);
 
         vm.prank(users[0]);
 
@@ -419,11 +431,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 pagePrice = pages.pagePrice();
 
         vm.prank(address(gobblers));
-        goop.mint(user, pagePrice);
+        goop.mintForGobblers(user, pagePrice);
 
         vm.startPrank(user);
 
         pages.mint();
+
+        pages.setApprovalForAll(address(gobblers), true);
 
         gobblers.feedArt(1, address(pages), 1);
 
@@ -438,7 +452,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 pagePrice = pages.pagePrice();
 
         vm.prank(address(gobblers));
-        goop.mint(user, pagePrice);
+        goop.mintForGobblers(user, pagePrice);
 
         vm.startPrank(user);
 
@@ -490,20 +504,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     // convenience function to mint single gobbler from goop
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        uint256 startTime = block.timestamp;
+        uint256 timeDelta = 10 hours;
 
         for (uint256 i = 0; i < num; i++) {
-            vm.warp(block.timestamp + 24 hours);
-
+            vm.warp(block.timestamp + timeDelta);
             vm.startPrank(address(gobblers));
-            goop.mint(addr, gobblers.gobblerPrice());
+            goop.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
-
             vm.prank(addr);
             gobblers.mintFromGoop();
         }
-
-        vm.warp(startTime); // return to start time.
+        vm.stopPrank();
     }
 
     // convenience function to call back vrf with randomness and reveal gobblers

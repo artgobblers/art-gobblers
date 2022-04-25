@@ -5,7 +5,6 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 
 import {Goop} from "./Goop.sol";
 import {VRGDA} from "./utils/VRGDA.sol";
-import {BitmapLib} from "./utils/Bitmap.sol";
 import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
@@ -16,7 +15,6 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     using Strings for uint256;
-    using BitmapLib for BitmapLib.Bitmap;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -45,20 +43,6 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     uint256 internal immutable mintStart;
 
     /*//////////////////////////////////////////////////////////////
-                               DRAWN LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Bitmap from pageId to isDrawn bool.
-    BitmapLib.Bitmap internal isDrawnBitmap; // TODO: do we need this at all
-
-    /// @notice Gets whether a page is drawn.
-    /// @param pageId The page id.
-    /// @return Whether the page is drawn.
-    function isDrawn(uint256 pageId) public view returns (bool) {
-        return isDrawnBitmap.get(pageId);
-    }
-
-    /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
@@ -68,22 +52,13 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
 
     /*//////////////////////////////////////////////////////////////
-                            AUTHORIZED USERS
+                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice User allowed to set the draw state on pages.
-    address public immutable artist;
-
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error Unauthorized();
 
     constructor(
         uint256 _mintStart,
-        address _goop,
-        address _artist
+        Goop _goop,
+        address artGobblers
     )
         VRGDA(
             4.20e18, // Initial price.
@@ -101,49 +76,25 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             207e18, // Switch day.
             10e18 // Per day.
         )
-        PagesERC1155B(
-            msg.sender // Sets artGobblers.
-        )
+        PagesERC1155B(artGobblers)
     {
         mintStart = _mintStart;
 
-        goop = Goop(_goop);
-
-        artist = _artist;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                           CONFIGURATION LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Requires caller address to match user address.
-    modifier only(address user) {
-        if (msg.sender != user) revert Unauthorized();
-
-        _;
-    }
-
-    /// @notice Set whether a page is drawn.
-    // TODO: do we still need this
-    function setIsDrawn(uint256 tokenId) public only(artist) {
-        isDrawnBitmap.set(tokenId);
+        goop = _goop;
     }
 
     /*//////////////////////////////////////////////////////////////
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: do we want the ability to mint pages out of thin air for promotional reasons?
-
     /// @notice Mint a page by burning goop.
     function mint() public {
-        // TODO: we could just transferFrom dont need special burn auth
         goop.burnForPages(msg.sender, pagePrice());
 
         unchecked {
             _mint(msg.sender, ++currentId, "");
 
-            ++numMintedFromGoop;
+            numMintedFromGoop++;
         }
     }
 

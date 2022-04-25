@@ -38,17 +38,26 @@ contract VRGDAsTest is DSTestPlus {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
+
+        goop = new Goop(
+            // Gobblers:
+            utils.predictContractAddress(address(this), 1),
+            // Pages:
+            utils.predictContractAddress(address(this), 2)
+        );
+
         gobblers = new ArtGobblers(
+            goop,
             "root",
-            uint128(block.timestamp),
+            block.timestamp,
+            baseUri,
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            baseUri
+            fee
         );
-        goop = gobblers.goop();
-        pages = gobblers.pages();
+
+        pages = new Pages(block.timestamp, goop, address(gobblers));
     }
 
     // function testFindGobblerOverflowPoint() public view {
