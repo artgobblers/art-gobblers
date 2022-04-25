@@ -3,10 +3,10 @@ pragma solidity >=0.8.0;
 
 import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
-// prettier-ignore
 library LibRLP {
     using Bytes32AddressLib for bytes32;
 
+    // prettier-ignore
     function computeAddress(address deployer, uint256 nonce) public pure returns (address) {
         // The integer zero is treated as an empty byte string, and as a result it only has a length prefix, 0x80, computed via 0x80 + 0.
         // A one byte integer uses its own value as its length prefix, there is no additional "0x80 + length" prefix that comes before it.
@@ -25,5 +25,4 @@ library LibRLP {
         // We assume nobody can have a nonce large enough to require more than 32 bytes.
         return keccak256(abi.encodePacked(bytes1(0xda), bytes1(0x94), deployer, bytes1(0x84), uint32(nonce))).fromLast20Bytes();
     }
-    
 }
