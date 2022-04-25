@@ -133,6 +133,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Remaining gobblers to be assigned from seed.
     uint128 public gobblersToBeAssigned;
 
+    /// @notice Next reveal cannot happen before this timestamp
+    uint256 public nextRevealTimestamp;
+
     /*//////////////////////////////////////////////////////////////
                               STAKING STATE
     //////////////////////////////////////////////////////////////*/
@@ -222,6 +225,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         // Current legendary id starts at beginning of legendary id space.
         legendaryGobblerAuctionData.currentLegendaryId = uint16(LEGENDARY_GOBBLER_ID_START);
+
+        // Reveal for initial mint must wait 24 hours
+        nextRevealTimestamp = _mintStart + 1 days;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -372,7 +378,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     function getRandomSeed() public returns (bytes32) {
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (gobblersToBeAssigned != 0) revert Unauthorized();
+        // Additionally, a random seed cannot be requested before the next reveal timestap
+        if (gobblersToBeAssigned != 0 || block.timestamp < nextRevealTimestamp) revert Unauthorized();
+
+        // We want at most one batch of reveals every 24 hours
+        nextRevealTimestamp += 1 days;
 
         // Fix number of gobblers to be revealed from seed.
         gobblersToBeAssigned = uint128(currentNonLegendaryId - lastRevealedIndex);
