@@ -255,6 +255,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], 1);
         // unrevealed gobblers have 0 value attributes
         assertEq(gobblers.getGobblerStakingMultiple(1), 0);
+        vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
@@ -289,9 +290,29 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                  REVEALS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice cannot request random seed before 24 hours have passed from initial mint
+    function testRevealDelayInitialMint() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.expectRevert(unauthorized);
+        gobblers.getRandomSeed();
+    }
+
+    /// @notice cannot request random seed before 24 hours have passed from last reveal
+    function testRevealDelayRecurring() public {
+        // Mint and reveal first gobbler
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        // Attempt reveal before 24 hours have passed
+        mintGobblerToAddress(users[0], 1);
+        vm.expectRevert(unauthorized);
+        gobblers.getRandomSeed();
+    }
+
     /// @notice Test that seed can't be set without first revealing pending gobblers
     function testCantSetRandomSeedWithoutRevealing() public {
         mintGobblerToAddress(users[0], 2);
+        vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         // should fail since there is one remaining gobbler to be revealed with seed
         vm.expectRevert(unauthorized);
@@ -339,6 +360,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that goop removal works as expected.
     function testGoopRemoval() public {
         mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         vm.warp(block.timestamp + 100000);
         uint256 initialBalance = gobblers.goopBalance(users[0]);
@@ -386,6 +408,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that staking multiplier changes as expected after transfer.
     function testStakingMultiplierUpdatesAfterTransfer() public {
         mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
 
         uint256 initialUserMultiple = gobblers.getUserStakingMultiple(users[0]);
@@ -402,6 +425,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that gobbler balances are accurate after transfer.
     function testGobblerBalancesAfterTransfer() public {
         mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
 
         vm.warp(block.timestamp + 1000000);
