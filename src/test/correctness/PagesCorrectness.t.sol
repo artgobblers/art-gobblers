@@ -6,6 +6,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../Pages.sol";
+import {Goop} from "../../Goop.sol";
 
 contract PageCorrectnessTest is DSTestPlus {
     using Strings for uint256;
@@ -33,7 +34,7 @@ contract PageCorrectnessTest is DSTestPlus {
     Pages internal pages;
 
     function setUp() public {
-        pages = new Pages(block.timestamp, address(this), address(this));
+        pages = new Pages(block.timestamp, Goop(address(0)));
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {

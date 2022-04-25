@@ -13,7 +13,7 @@ contract PagesTest is DSTestPlus {
     Utilities internal utils;
     address payable[] internal users;
     address internal mintAuth;
-    address internal drawAuth;
+
     address internal user;
     Goop internal goop;
     Pages internal pages;
@@ -25,9 +25,9 @@ contract PagesTest is DSTestPlus {
 
         utils = new Utilities();
         users = utils.createUsers(5);
-        drawAuth = users[0];
+
         goop = new Goop(address(this));
-        pages = new Pages(block.timestamp, address(goop), drawAuth);
+        pages = new Pages(block.timestamp, goop);
         // Deploying contract is mint authority
         mintAuth = address(this);
         goop.setPages(address(pages));
@@ -66,24 +66,6 @@ contract PagesTest is DSTestPlus {
         vm.prank(user);
         vm.expectRevert(stdError.arithmeticError);
         pages.mint();
-    }
-
-    function testSetIsDrawn() public {
-        goop.mintForGobblers(user, pages.pagePrice());
-        vm.prank(user);
-        pages.mint();
-        assertTrue(!pages.isDrawn(1));
-        vm.prank(drawAuth);
-        pages.setIsDrawn(1);
-        assertTrue(pages.isDrawn(1));
-    }
-
-    function testRevertSetIsDrawn() public {
-        goop.mintForGobblers(user, pages.pagePrice());
-        vm.prank(user);
-        pages.mint();
-        vm.expectRevert(Pages.Unauthorized.selector);
-        pages.setIsDrawn(1);
     }
 
     function mintPage(address _user) internal {
