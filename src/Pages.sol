@@ -134,7 +134,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             _mint(msg.sender, ++currentId, "");
 
-            numMintedFromGoop++;
+            ++numMintedFromGoop;
         }
     }
 

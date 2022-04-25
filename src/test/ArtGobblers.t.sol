@@ -87,7 +87,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintFromGoop() public {
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mint(users[0], cost);
+        goop.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         assertEq(gobblers.ownerOf(1), users[0]);
@@ -230,7 +230,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testUnrevealedUri() public {
         uint256 gobblerCost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mint(users[0], gobblerCost);
+        goop.mintForGobblers(users[0], gobblerCost);
         vm.prank(users[0]);
         gobblers.mintFromGoop();
         // assert gobbler not revealed after mint
@@ -386,7 +386,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserStakingMultiple(users[0]), gobblerMultiple);
         vm.prank(address(gobblers));
         uint256 additionAmount = 1000;
-        goop.mint(users[0], additionAmount);
+        goop.mintForGobblers(users[0], additionAmount);
         vm.prank(users[0]);
         gobblers.addGoop(additionAmount);
         assertEq(gobblers.goopBalance(users[0]), additionAmount);
@@ -441,7 +441,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
-        goop.mint(user, pagePrice);
+        goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mint();
         gobblers.feedArt(1, address(pages), 1);
@@ -454,7 +454,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         address user = users[0];
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
-        goop.mint(user, pagePrice);
+        goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mint();
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
@@ -530,7 +530,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < num; i++) {
             vm.warp(block.timestamp + timeDelta);
             vm.startPrank(address(gobblers));
-            goop.mint(addr, gobblers.gobblerPrice());
+            goop.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
             vm.prank(addr);
             gobblers.mintFromGoop();
