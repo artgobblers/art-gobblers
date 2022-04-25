@@ -392,7 +392,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         if (gobblersToBeAssigned != 0 || block.timestamp < nextRevealTimestamp) revert Unauthorized();
 
         // We want at most one batch of reveals every 24 hours
-        nextRevealTimestamp = block.timestamp + 1 days;
+        nextRevealTimestamp += 1 days;
 
         // Fix number of gobblers to be revealed from seed.
         gobblersToBeAssigned = uint128(currentNonLegendaryId - lastRevealedIndex);
