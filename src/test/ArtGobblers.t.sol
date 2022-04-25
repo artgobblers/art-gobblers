@@ -280,7 +280,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice cannot request random seed before 24 hours have passed from initial mint
     function testRevealDelayInitialMint() public {
         mintGobblerToAddress(users[0], 1);
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.getRandomSeed();
     }
 
@@ -292,7 +292,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(1, "seed");
         // Attempt reveal before 24 hours have passed
         mintGobblerToAddress(users[0], 1);
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.getRandomSeed();
     }
 
