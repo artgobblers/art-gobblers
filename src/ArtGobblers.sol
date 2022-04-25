@@ -15,6 +15,7 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
+import {LockupVault} from "./LockupVault.sol";
 
 // TODO: UNCHECKED
 // TODO: events
@@ -33,6 +34,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
+    LockupVault public immutable vault;
+
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -45,6 +48,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 private constant LEGENDARY_SUPPLY = 10;
+
+    /// @notice Maximum mintable from goop. This number 90% of the supply excluding whitelist and legendaries.
+    /// The remaining 10% is minted directly to the lockup vault
+    uint256 private constant MINTABLE_FROM_GOOP = ((MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY) * 90) / 100;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
@@ -90,6 +97,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Id of last minted non legendary token.
     uint128 internal currentNonLegendaryId; // TODO: public?
+
+    /*//////////////////////////////////////////////////////////////
+                         MINT BY AUTHORITY STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Number of gobblers minted by authority.
+    uint128 internal numMintedByAuthority;
 
     /*///////////////////////////////////////////////////////////////
                     LEGENDARY GOBBLER AUCTION STATE
@@ -178,6 +192,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     constructor(
         bytes32 _merkleRoot,
         uint256 _mintStart,
+        address _vault,
         address _vrfCoordinator,
         address _linkToken,
         bytes32 _chainlinkKeyHash,
@@ -193,7 +208,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value,
             // and add 1 to ensure all the tokens can be sold:
-            int256(MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY + 1) * 2e18,
+            int256(MINTABLE_FROM_GOOP + 1) * 2e18,
             0.014e18 // Time scale.
         )
     {
@@ -205,6 +220,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         goop = new Goop(address(this));
         pages = new Pages(_mintStart, address(goop), msg.sender);
+        vault = LockupVault(_vault);
 
         goop.setPages(address(pages));
 
@@ -248,9 +264,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
-        ++numMintedFromGoop;
-
         _mint(msg.sender, ++currentNonLegendaryId, "");
+
+        /// Every 9 goop mints, we should mint one gobbler to vault
+        if (++numMintedFromGoop % 9 == 0) {
+            _mint(address(vault), ++currentNonLegendaryId, "");
+        }
     }
 
     /// @notice Gobbler pricing in terms of goop.
