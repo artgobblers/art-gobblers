@@ -13,9 +13,6 @@ contract GoopTest is DSTest {
     address payable[] internal users;
     Goop internal goop;
 
-    // encodings for expectRevert
-    bytes unauthorized = abi.encodeWithSignature("Unauthorized()");
-
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
@@ -33,7 +30,7 @@ contract GoopTest is DSTest {
     function testMintByNonAuthority() public {
         uint256 mintAmount = 100000;
         vm.prank(users[0]);
-        vm.expectRevert(unauthorized);
+        vm.expectRevert(Goop.Unauthorized.selector);
         goop.mint(address(this), mintAmount);
     }
 
