@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
@@ -22,14 +22,14 @@ import {Goop} from "./Goop.sol";
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
-    using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The address of the Goop token.
     Goop public immutable goop;
+
+    address public immutable team;
 
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
@@ -43,6 +43,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 private constant LEGENDARY_SUPPLY = 10;
+
+    /// @notice Maximum mintable from goop. This number 90% of the supply excluding whitelist and legendaries.
+    /// The remaining 10% is minted directly to the lockup vault
+    uint256 private constant MINTABLE_FROM_GOOP = ((MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY) * 90) / 100;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
@@ -90,6 +94,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Id of last minted non legendary token.
     uint128 internal currentNonLegendaryId; // TODO: public?
+
+    /*//////////////////////////////////////////////////////////////
+                         MINT BY AUTHORITY STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Number of gobblers minted by authority.
+    uint128 internal numMintedByAuthority;
 
     /*///////////////////////////////////////////////////////////////
                     LEGENDARY GOBBLER AUCTION STATE
@@ -182,6 +193,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     constructor(
         // Addresses:
         Goop _goop,
+        address _team,
         // Whitelist parameters:
         bytes32 _merkleRoot,
         uint256 _mintStart,
@@ -203,11 +215,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Logistic scale. We multiply by 2x (as a wad)
             // to account for the subtracted initial value,
             // and add 1 to ensure all the tokens can be sold:
-            int256(MAX_SUPPLY - WHITELIST_SUPPLY - LEGENDARY_SUPPLY + 1) * 2e18,
+            int256(MINTABLE_FROM_GOOP + 1) * 2e18,
             0.014e18 // Time scale.
         )
     {
         goop = _goop;
+        team = _team;
 
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
@@ -255,9 +268,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // It will also revert prior to the mint start.
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
-        ++numMintedFromGoop;
-
         _mint(msg.sender, ++currentNonLegendaryId, "");
+
+        // Every 9 goop mints, we mint one gobbler for the team.
+        if (++numMintedFromGoop % 9 == 0) _mint(address(team), ++currentNonLegendaryId, ""); // TODO: uncheck
     }
 
     /// @notice Gobbler pricing in terms of goop.
@@ -526,7 +540,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 lastBalance +
                 ((stakingMultiple * (timePassed * timePassed)) >> 2) +
                 // TODO: need to scale by 1e18 before sqrt i thinks
-                (timePassed * FixedPointMathLib.sqrt(stakingMultiple * lastBalance));
+                (timePassed * Math.sqrt(stakingMultiple * lastBalance));
         }
     }
 
@@ -588,7 +602,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             getStakingDataForUser[from].stakingMultiple -= uint64(idStakingMultiple);
 
             // Increase the to user's stakingMultiple by the gobbler's stakingMultiple.
-            getStakingDataForUser[to].lastBalance = uint128(goopBalance(from));
+            getStakingDataForUser[to].lastBalance = uint128(goopBalance(to));
             getStakingDataForUser[to].lastTimestamp = uint64(block.timestamp);
             getStakingDataForUser[to].stakingMultiple += uint64(idStakingMultiple);
         }

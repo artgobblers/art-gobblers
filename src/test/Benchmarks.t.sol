@@ -50,6 +50,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
         gobblers = new ArtGobblers(
             goop,
+            address(0xBEEF),
             "root",
             block.timestamp,
             baseUri,

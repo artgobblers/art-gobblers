@@ -27,7 +27,7 @@ jobs:
         run: npm run lint:check
 
       - name: Run tests
-        run: forge test
+        run: forge test --no-match-test FFI
         env:
           # Only fuzz intensely if we're running this action on a push to master or for a PR going into master:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/master' || github.base_ref == 'master') && 'intense' }}
