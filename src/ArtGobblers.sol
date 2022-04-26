@@ -443,16 +443,16 @@ contract ArtGobblers is ERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenRe
                 //////////////////////////////////////////////////////////////*/
 
                 // Number of slots that have not been assigned.
-                uint256 remainingSlots = LEADER_GOBBLER_ID_START - lastRevealedIndex;
+                uint256 remainingIds = LEADER_GOBBLER_ID_START - lastRevealedIndex;
 
                 // Randomly pick distance for swap.
-                uint256 distance = currentRandomSeed % remainingSlots;
+                uint256 distance = currentRandomSeed % remainingIds;
 
                 // Current slot is consecutive to last reveal.
-                uint256 currentSlot = currentLastRevealedIndex + 1;
+                uint256 currentId = currentLastRevealedIndex + 1;
 
                 // Select swap slot, adding distance to next reveal slot.
-                uint256 swapSlot = currentSlot + distance;
+                uint256 swapId = currentId + distance;
 
                 /*//////////////////////////////////////////////////////////////
                                         RETRIEVE INDEXES
@@ -460,40 +460,40 @@ contract ArtGobblers is ERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenRe
 
                 // TODO: can probably use storage pointers to cheapen things
                 // TODO: i still don't understand why this isnt cheaper:
-                // uint48 storedSwapIndex = getGobblerData[swapSlot].idx;
-                // uint48 storedCurrentIndex = getGobblerData[currentSlot].idx;
+                // uint48 storedSwapIndex = getGobblerData[swapId].idx;
+                // uint48 storedCurrentIndex = getGobblerData[currentId].idx;
 
-                // uint48 swapIndex = storedSwapIndex == 0 ? uint48(swapSlot) : storedSwapIndex;
-                // uint48 currentIndex = storedCurrentIndex == 0 ? uint48(currentSlot) : storedCurrentIndex;
+                // uint48 swapIndex = storedSwapIndex == 0 ? uint48(swapId) : storedSwapIndex;
+                // uint48 currentIndex = storedCurrentIndex == 0 ? uint48(currentId) : storedCurrentIndex;
 
                 // Get the index of the swap slot.
-                uint48 swapIndex = getVirtualIdFromTokenId[swapSlot] == 0
-                    ? uint48(swapSlot) // Slot is untouched.
-                    : uint48(getVirtualIdFromTokenId[swapSlot]);
+                uint256 swapIndex = getVirtualIdFromTokenId[swapId] == 0
+                    ? swapId // Slot is untouched.
+                    : getVirtualIdFromTokenId[swapId];
 
                 // Get the index of the current slot.
-                uint48 currentIndex = getVirtualIdFromTokenId[currentSlot] == 0
-                    ? uint48(currentSlot) // Slot is untouched.
-                    : uint48(getVirtualIdFromTokenId[currentSlot]);
+                uint256 currentIndex = getVirtualIdFromTokenId[currentId] == 0
+                    ? currentId // Slot is untouched.
+                    : getVirtualIdFromTokenId[currentId];
 
                 /*//////////////////////////////////////////////////////////////
                                             SWAP SLOTS
                 //////////////////////////////////////////////////////////////*/
 
-                getVirtualIdFromTokenId[currentSlot] = swapIndex;
-                getVirtualIdFromTokenId[swapSlot] = currentIndex;
+                getVirtualIdFromTokenId[currentId] = swapIndex;
+                getVirtualIdFromTokenId[swapId] = currentIndex;
 
                 /*//////////////////////////////////////////////////////////////
                                       UPDATE OWNER EMISSIONS
                 //////////////////////////////////////////////////////////////*/
 
-                address currentSlotOwner = ownerOf[currentSlot];
-                // console.log("KNUTH OWNER", currentSlotOwner);
+                address currentIdOwner = ownerOf[currentId];
+                // console.log("KNUTH OWNER", currentIdOwner);
 
-                uint256 currentSlotMultiple = getEmissionMultipleFromVirtualId(swapIndex);
-                getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
-                getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(currentSlotMultiple);
+                uint256 currentIdMultiple = getEmissionMultipleFromVirtualId(swapIndex);
+                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(goopBalance(currentIdOwner));
+                getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
+                getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(currentIdMultiple);
 
                 /*//////////////////////////////////////////////////////////////
                                             CLEANUP
