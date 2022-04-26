@@ -26,11 +26,15 @@ contract PagesTest is DSTestPlus {
         utils = new Utilities();
         users = utils.createUsers(5);
 
-        goop = new Goop(address(this));
-        pages = new Pages(block.timestamp, goop);
-        // Deploying contract is mint authority
-        mintAuth = address(this);
-        goop.setPages(address(pages));
+        goop = new Goop(
+            // Gobblers:
+            address(this),
+            // Pages:
+            utils.predictContractAddress(address(this), 1)
+        );
+
+        pages = new Pages(block.timestamp, address(this), goop);
+
         user = users[1];
     }
 

@@ -4,6 +4,8 @@ pragma solidity >=0.8.0;
 import {DSTest} from "ds-test/test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
+import {LibRLP} from "./LibRLP.sol";
+
 // common utilities for forge tests
 contract Utilities is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -31,5 +33,9 @@ contract Utilities is DSTest {
     function mineBlocks(uint256 numBlocks) external {
         uint256 targetBlock = block.number + numBlocks;
         vm.roll(targetBlock);
+    }
+
+    function predictContractAddress(address user, uint256 distanceFromCurrentNonce) external returns (address) {
+        return LibRLP.computeAddress(user, vm.getNonce(user) + distanceFromCurrentNonce);
     }
 }
