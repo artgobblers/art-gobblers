@@ -418,10 +418,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) public {
-        // TODO; cache gobblersToBeAssigned for use at the botttom
+        uint256 currentGobblersToBeAssigned = gobblersToBeAssigned;
 
         // Can't reveal more gobblers than were available when seed was generated.
-        if (numGobblers > gobblersToBeAssigned) revert Unauthorized();
+        if (numGobblers > currentGobblersToBeAssigned) revert Unauthorized();
 
         uint256 currentRandomSeed = randomSeed;
 
@@ -507,8 +507,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Update state all at once.
             randomSeed = currentRandomSeed;
-            gobblersToBeAssigned -= uint128(numGobblers);
             lastRevealedIndex = uint128(currentLastRevealedIndex);
+            gobblersToBeAssigned = uint128(currentGobblersToBeAssigned - numGobblers);
         }
     }
 
