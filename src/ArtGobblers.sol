@@ -93,8 +93,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Id of last minted non leader token.
     uint128 internal currentNonLeaderId; // TODO: public?
 
-    /*///////////////////////////////////////////////////////////////
-                    LEADER GOBBLER AUCTION STATE
+    /*//////////////////////////////////////////////////////////////
+                      LEADER GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Last 10 ids are reserved for leader gobblers.
@@ -174,7 +174,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     error CannotBurnLeader();
 
-    error IncorrectGobblerBalance();
+    error IncorrectGobblerAmount();
 
     error NoRemainingLeaderGobblers();
 
@@ -283,7 +283,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /*//////////////////////////////////////////////////////////////
-                     LEADER GOBBLER AUCTION LOGIC
+                      LEADER GOBBLER AUCTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a leader gobbler by burning emissionMultiple standard gobblers.
@@ -299,7 +299,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = leaderGobblerPrice();
 
-        if (gobblerIds.length != cost) revert IncorrectGobblerBalance();
+        if (gobblerIds.length != cost) revert IncorrectGobblerAmount();
 
         // Overflow in here should not occur, as most math is on emission multiples, which are inherently small.
         unchecked {
@@ -528,7 +528,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /*//////////////////////////////////////////////////////////////
-                              EMISSION LOGIC
+                             EMISSION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate a user's staked goop balance.
