@@ -490,7 +490,7 @@ contract ArtGobblers is ERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenRe
                 address currentIdOwner = ownerOf[currentId];
                 // console.log("KNUTH OWNER", currentIdOwner);
 
-                uint256 currentIdMultiple = getEmissionMultipleFromVirtualId(swapIndex);
+                uint256 currentIdMultiple = getEmissionMultipleFromVirtualId(getVirtualIdFromTokenId[currentId]);
                 getEmissionDataForUser[currentIdOwner].lastBalance = uint128(goopBalance(currentIdOwner));
                 getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
                 getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(currentIdMultiple);
