@@ -194,7 +194,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
-        vm.warp(startTime); // mintGobblerToAddress warps time forward
+
         vm.prank(users[0]);
         gobblers.mintLeaderGobbler(ids);
         (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
@@ -220,7 +220,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
-        vm.warp(startTime); // mintGobblerToAddress warps time forward
+
         ids[0] = leaderId; // the leader we minted
         vm.prank(users[0]);
         vm.expectRevert(ArtGobblers.CannotBurnLeader.selector);
@@ -321,6 +321,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 1; i <= 100; i++) {
             assertEq(gobblers.uri(i), gobblers.UNREVEALED_URI());
         }
+
+        vm.warp(block.timestamp + 1 days); // can only reveal every 24 hours
+
         setRandomnessAndReveal(50, "seed");
         // first 50 gobblers should now be revealed
         for (uint256 i = 1; i <= 50; i++) {
@@ -533,13 +536,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice  Mint a number of gobblers to the given address
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        uint256 timeDelta = 10 hours;
-
         for (uint256 i = 0; i < num; i++) {
-            vm.warp(block.timestamp + timeDelta);
             vm.startPrank(address(gobblers));
             goop.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
+
             vm.prank(addr);
             gobblers.mintFromGoop();
         }
