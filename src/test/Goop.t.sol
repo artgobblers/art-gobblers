@@ -16,7 +16,7 @@ contract GoopTest is DSTest {
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
-        goop = new Goop(address(this));
+        goop = new Goop(address(this), users[0]);
     }
 
     function testMintByAuthority() public {
@@ -38,7 +38,6 @@ contract GoopTest is DSTest {
         goop.mintForGobblers(address(this), 1000000);
         uint256 initialSupply = goop.totalSupply();
         uint256 burnAmount = 100000;
-        goop.setPages(users[0]);
         vm.prank(users[0]);
         goop.burnForPages(address(this), burnAmount);
         uint256 finalSupply = goop.totalSupply();

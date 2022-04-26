@@ -16,10 +16,9 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
-// TODO: UNCHECKED
 // TODO: events
 
-/// @title Art Gobblers NFT (GBLR)
+/// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
@@ -29,8 +28,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     Goop public immutable goop;
-
-    Pages public immutable pages; // TODO: do we still wanna deploy and maintain from here? we dont interact with pages in this contract at all.
 
     address public immutable team;
 
@@ -181,14 +178,23 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     error NoRemainingLegendaryGobblers();
 
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
     constructor(
+        // Whitelist:
         bytes32 _merkleRoot,
         uint256 _mintStart,
+        // Addresses:
+        Goop _goop,
         address _team,
+        // Chainlink:
         address _vrfCoordinator,
         address _linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
+        // URI:
         string memory _baseUri
     )
         VRFConsumerBase(_vrfCoordinator, _linkToken)
@@ -203,17 +209,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             0.014e18 // Time scale.
         )
     {
-        chainlinkKeyHash = _chainlinkKeyHash;
-        chainlinkFee = _chainlinkFee;
-
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
 
-        goop = new Goop(address(this));
-        pages = new Pages(_mintStart, goop);
+        goop = _goop;
         team = _team;
 
-        goop.setPages(address(pages));
+        chainlinkKeyHash = _chainlinkKeyHash;
+        chainlinkFee = _chainlinkFee;
 
         BASE_URI = _baseUri;
 
