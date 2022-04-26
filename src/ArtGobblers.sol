@@ -537,11 +537,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // If a user's goop balance is greater than
         // 2**256 - 1 we've got much bigger problems.
         unchecked {
-            uint256 emissionsMultiple = getEmissionsDataForUser[user].emissionsMultiple;
-            uint256 lastBalance = getEmissionsDataForUser[user].lastBalance;
+            uint256 emissionMultiple = getEmissionDataForUser[user].emissionMultiple;
+            uint256 lastBalance = getEmissionDataForUser[user].lastBalance;
 
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
-            uint256 daysElapsedWad = ((block.timestamp - getEmissionsDataForUser[user].lastTimestamp) * 1e18) / 1 days;
+            uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
 
             uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
 
@@ -551,14 +551,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Don't need to do wad multiplication since we're
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
-            ((emissionsMultiple * daysElapsedSquaredWad) >> 2) +
+            ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
 
             Math.mulWadDown(
                 daysElapsedWad, // Must mulWad because both terms are wads.
-                // No wad multiplication for emissionsMultiple * lastBalance
-                // because emissionsMultiple is a plain integer with no decimals.
+                // No wad multiplication for emissionMultiple * lastBalance
+                // because emissionMultiple is a plain integer with no decimals.
                 // We multiply the sqrt's radicand by 1e18 because it expects ints.
-                Math.sqrt(emissionsMultiple * lastBalance * 1e18)
+                Math.sqrt(emissionMultiple * lastBalance * 1e18)
             );
         }
     }
