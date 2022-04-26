@@ -102,13 +102,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Struct holding info required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
-        /// @notice Start price of current legendary gobbler auction.
+        // Start price of current legendary gobbler auction.
         uint120 currentLegendaryGobblerStartPrice;
-        /// @notice Start timestamp of current legendary gobbler auction.
+        // Start timestamp of current legendary gobbler auction.
         uint120 currentLegendaryGobblerAuctionStart;
-        /// @notice Id of last minted legendary gobbler.
-        /// @dev 16 bits has a max value of ~60,000,
-        /// which is safely within our limits here.
+        // Id of last minted legendary gobbler.
+        // 16 bits has a max value of ~60,000,
+        // which is safely within our limits here.
         uint16 currentLegendaryId; // TODO: current legendary id is kinda confusing cuz the first id isnt actually legendary
     }
 
@@ -139,11 +139,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Struct holding info required for goop staking reward calculations.
     struct StakingData {
-        /// @notice The sum of the multiples of all gobblers the user holds.
+        // The sum of the multiples of all gobblers the user holds.
         uint64 stakingMultiple;
-        /// @notice Balance at time of last deposit or withdrawal.
+        // Balance at time of last deposit or withdrawal.
         uint128 lastBalance;
-        /// @notice Timestamp of last deposit or withdrawal.
+        // Timestamp of last deposit or withdrawal.
         uint64 lastTimestamp;
     }
 
@@ -535,22 +535,32 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Calculate a user's staked goop balance.
     /// @param user The user to query balance for.
     function goopBalance(address user) public view returns (uint256) {
-        // TODO: idt this accounts for wads
-        // TODO: check i got the new formula without baserate right
-
+        // If a user's goop balance is greater than
+        // 2**256 - 1 we've got much bigger problems.
         unchecked {
             uint256 stakingMultiple = getStakingDataForUser[user].stakingMultiple;
             uint256 lastBalance = getStakingDataForUser[user].lastBalance;
-            uint256 timePassed = block.timestamp - getStakingDataForUser[user].lastTimestamp;
 
-            // If a user's goop balance is greater than
-            // 2**256 - 1 we've got much bigger problems.
+            // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
+            uint256 daysElapsedWad = ((block.timestamp - getStakingDataForUser[user].lastTimestamp) * 1e18) / 1 days;
+
+            uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
+
+            // prettier-ignore
+            return lastBalance + // The last recorded balance.
+                
+            // Don't need to do wad multiplication since we're
+            // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
-            return
-                lastBalance +
-                ((stakingMultiple * (timePassed * timePassed)) >> 2) +
-                // TODO: need to scale by 1e18 before sqrt i thinks
-                (timePassed * Math.sqrt(stakingMultiple * lastBalance));
+            ((stakingMultiple * daysElapsedSquaredWad) >> 2) +
+
+            Math.mulWadDown(
+                daysElapsedWad, // Wad mul because both terms are wads.
+                // No wad multiplication for stakingMultiple * lastBalance
+                // because stakingMultiple is a plain integer with no decimals.
+                // We multiply the sqrt's radicand by 1e18 because it expects ints.
+                Math.sqrt(stakingMultiple * lastBalance * 1e18)
+            );
         }
     }
 
