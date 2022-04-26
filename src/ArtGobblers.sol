@@ -286,7 +286,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                       LEADER GOBBLER AUCTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a leader gobbler by burning emissionMultiple standard gobblers.
+    /// @notice Mint a leader gobbler by burning multiple standard gobblers.
     /// @param gobblerIds The ids of the standard gobblers to burn.
     // TODO: could this hit the gas limit?
     function mintLeaderGobbler(uint256[] calldata gobblerIds) public {
