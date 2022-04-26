@@ -451,7 +451,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                                         RETRIEVE INDEXES
                 //////////////////////////////////////////////////////////////*/
 
-                // TODO; these can def be optimized
+                // TODO: can probably use storage pointers to cheapen things
+                // TODO: i still don't understand why this isnt cheaper:
+                // uint48 storedSwapIndex = getGobblerData[swapSlot].idx;
+                // uint48 storedCurrentIndex = getGobblerData[currentSlot].idx;
+
+                // uint48 swapIndex = storedSwapIndex == 0 ? uint48(swapSlot) : storedSwapIndex;
+                // uint48 currentIndex = storedCurrentIndex == 0 ? uint48(currentSlot) : storedCurrentIndex;
 
                 // Get the index of the swap slot.
                 uint48 swapIndex = getGobblerData[swapSlot].idx == 0
