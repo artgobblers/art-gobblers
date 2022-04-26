@@ -385,14 +385,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Get the random seed for revealing gobblers.
     function getRandomSeed() public returns (bytes32) {
-        // TODO: wait r we sure we want to enforce the delay in get seed? we probably want to force in reveal no?
-
         uint256 nextReveal = nextRevealTimestamp;
+
+        // A new random seed cannot be requested before the next reveal timestamp.
+        if (block.timestamp < nextReveal) revert Unauthorized();
 
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        // Additionally, a random seed cannot be requested before the next reveal timestamp.
-        if (gobblersToBeAssigned != 0 || block.timestamp < nextReveal) revert Unauthorized();
+        if (gobblersToBeAssigned != 0) revert Unauthorized();
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
