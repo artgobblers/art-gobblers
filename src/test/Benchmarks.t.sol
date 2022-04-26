@@ -71,6 +71,10 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         vm.warp(block.timestamp + 30 days);
 
         for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoop();
+
+        bytes32 requestId = gobblers.getRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
     }
 
     function testPagePrice() public view {
@@ -103,6 +107,10 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
     function testRemoveGoop() public {
         gobblers.removeGoop(1e18);
+    }
+
+    function testRevealGobblers() public {
+        gobblers.revealGobblers(100);
     }
 
     function testMintLeaderGobbler() public {
