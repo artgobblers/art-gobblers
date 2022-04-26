@@ -47,7 +47,7 @@ abstract contract GobblersERC1155B {
         /// @notice Index of token after shuffle.
         uint48 idx;
         /// @notice Multiple on goop issuance.
-        uint48 stakingMultiple;
+        uint48 emissionMultiple;
     }
 
     mapping(uint256 => GobblerData) public getGobblerData;
