@@ -102,13 +102,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Struct holding info required for leader gobbler auctions.
     struct LeaderGobblerAuctionData {
-        /// @notice Start price of current leader gobbler auction.
+        // Start price of current leader gobbler auction.
         uint120 currentLeaderGobblerStartPrice;
-        /// @notice Start timestamp of current leader gobbler auction.
+        // Start timestamp of current leader gobbler auction.
         uint120 currentLeaderGobblerAuctionStart;
-        /// @notice Id of last minted leader gobbler.
-        /// @dev 16 bits has a max value of ~60,000,
-        /// which is safely within our limits here.
+        // Id of last minted leader gobbler.
+        // 16 bits has a max value of ~60,000,
+        // which is safely within our limits here.
         uint16 currentLeaderId; // TODO: current leader id is kinda confusing cuz the first id isnt actually leader
     }
 
@@ -139,11 +139,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Struct holding info required for goop emission reward calculations.
     struct EmissionData {
-        /// @notice The sum of the multiples of all gobblers the user holds.
+        // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
-        /// @notice Balance at time of last deposit or withdrawal.
+        // Balance at time of last deposit or withdrawal.
         uint128 lastBalance;
-        /// @notice Timestamp of last deposit or withdrawal.
+        // Timestamp of last deposit or withdrawal.
         uint64 lastTimestamp;
     }
 
@@ -286,7 +286,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                       LEADER GOBBLER AUCTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a leader gobbler by burning emissionMultiple standard gobblers.
+    /// @notice Mint a leader gobbler by burning multiple standard gobblers.
     /// @param gobblerIds The ids of the standard gobblers to burn.
     // TODO: could this hit the gas limit?
     function mintLeaderGobbler(uint256[] calldata gobblerIds) public {
@@ -534,22 +534,32 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Calculate a user's staked goop balance.
     /// @param user The user to query balance for.
     function goopBalance(address user) public view returns (uint256) {
-        // TODO: idt this accounts for wads
-        // TODO: check i got the new formula without baserate right
-
+        // If a user's goop balance is greater than
+        // 2**256 - 1 we've got much bigger problems.
         unchecked {
             uint256 emissionMultiple = getEmissionDataForUser[user].emissionMultiple;
-            uint256 lastBalance = getEmissionDataForUser[user].lastBalance;
-            uint256 timePassed = block.timestamp - getEmissionDataForUser[user].lastTimestamp;
+            uint256 lastBalanceWad = getEmissionDataForUser[user].lastBalance;
 
-            // If a user's goop balance is greater than
-            // 2**256 - 1 we've got much bigger problems.
+            // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
+            uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
+
+            uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
+
+            // prettier-ignore
+            return lastBalanceWad + // The last recorded balance.
+                
+            // Don't need to do wad multiplication since we're
+            // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
-            return
-                lastBalance +
-                ((emissionMultiple * (timePassed * timePassed)) >> 2) +
-                // TODO: need to scale by 1e18 before sqrt i thinks
-                (timePassed * Math.sqrt(emissionMultiple * lastBalance));
+            ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
+
+            Math.mulWadDown(
+                daysElapsedWad, // Must mulWad because both terms are wads.
+                // No wad multiplication for emissionMultiple * lastBalance
+                // because emissionMultiple is a plain integer with no decimals.
+                // We multiply the sqrt's radicand by 1e18 because it expects ints.
+                Math.sqrt(emissionMultiple * lastBalanceWad * 1e18)
+            );
         }
     }
 

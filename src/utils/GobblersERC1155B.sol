@@ -42,11 +42,11 @@ abstract contract GobblersERC1155B {
 
     /// @notice Struct holding gobbler data.
     struct GobblerData {
-        /// @notice The current owner of the gobbler.
+        // The current owner of the gobbler.
         address owner;
-        /// @notice Index of token after shuffle.
+        // Index of token after shuffle.
         uint48 idx;
-        /// @notice Multiple on goop issuance.
+        // Multiple on goop issuance.
         uint48 emissionMultiple;
     }
 
