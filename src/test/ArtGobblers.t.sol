@@ -66,21 +66,21 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                MINT TESTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Test that you can mint from whitelist successfully.
-    function testMintFromWhitelist() public {
+    /// @notice Test that you can mint from mintlist successfully.
+    function testMintFromMintlist() public {
         address user = users[0];
         bytes32[] memory proof;
         vm.prank(user);
-        gobblers.mintFromWhitelist(proof);
+        gobblers.mintFromMintlist(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
     }
 
-    /// @notice Test that an invalid whitelist proof reverts.
-    function testMintNotInWhitelist() public {
+    /// @notice Test that an invalid mintlist proof reverts.
+    function testMintNotInMintlist() public {
         bytes32[] memory proof;
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.mintFromWhitelist(proof);
+        gobblers.mintFromMintlist(proof);
     }
 
     /// @notice Test that you can successfully mint from goop.
@@ -114,107 +114,107 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                           LEGENDARY GOBBLERS
+                           LEADER GOBBLERS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Test that attempting to mint before start time reverts.
-    function testLegendaryGobblerMintBeforeStart() public {
+    function testLeaderGobblerMintBeforeStart() public {
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(users[0]);
-        gobblers.mintLegendaryGobbler(ids);
+        gobblers.mintLeaderGobbler(ids);
     }
 
-    /// @notice Test that Legendary Gobbler initial price is what we expect.
-    function testLegendaryGobblerInitialPrice() public {
+    /// @notice Test that Leader Gobbler initial price is what we expect.
+    function testLeaderGobblerInitialPrice() public {
         // start of initial auction
         vm.warp(block.timestamp + 30 days);
-        uint256 cost = gobblers.legendaryGobblerPrice();
+        uint256 cost = gobblers.leaderGobblerPrice();
         // initial auction should start at a cost of 100
         assertEq(cost, 100);
     }
 
     /// @notice Test that auction ends at a price of 0.
-    function testLegendaryGobblerFinalPrice() public {
+    function testLeaderGobblerFinalPrice() public {
         //30 days for initial auction start, 40 days after initial auction
         vm.warp(block.timestamp + 70 days);
-        uint256 cost = gobblers.legendaryGobblerPrice();
+        uint256 cost = gobblers.leaderGobblerPrice();
         // auction price should be 0 after more than 30 days have passed
         assertEq(cost, 0);
     }
 
     /// @notice Test that mid price happens when we expect.
-    function testLegendaryGobblerMidPrice() public {
+    function testLeaderGobblerMidPrice() public {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 45 days);
-        uint256 cost = gobblers.legendaryGobblerPrice();
+        uint256 cost = gobblers.leaderGobblerPrice();
         // auction price should be 50 mid way through auction
         assertEq(cost, 50);
     }
 
     /// @notice Test that initial price doens't fall below what we expect.
-    function testLegendaryGobblerMinStartPrice() public {
+    function testLeaderGobblerMinStartPrice() public {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 60 days);
         vm.prank(users[0]);
         //empty id list
         uint256[] memory _ids;
-        gobblers.mintLegendaryGobbler(_ids);
-        uint256 startCost = gobblers.legendaryGobblerPrice();
+        gobblers.mintLeaderGobbler(_ids);
+        uint256 startCost = gobblers.leaderGobblerPrice();
         // next gobbler should start at a price of 100
         assertEq(startCost, 100);
     }
 
-    /// @notice Test that Legendary Gobblers can be minted.
-    function testMintLegendaryGobbler() public {
+    /// @notice Test that Leader Gobblers can be minted.
+    function testMintLeaderGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
-        uint256 cost = gobblers.legendaryGobblerPrice();
+        uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 100);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
-        uint256 stakingMultipleSum;
+        uint256 emissionMultipleSum;
         uint256 curId = 1;
         while (ids.length < cost) {
             if (curId % 10 != 0) {
                 ids.push(curId);
                 assertEq(gobblers.ownerOf(curId), users[0]);
-                stakingMultipleSum += gobblers.getGobblerStakingMultiple(curId);
+                emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
             }
             curId++;
         }
 
-        assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum);
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
         vm.warp(startTime); // mintGobblerToAddress warps time forward
         vm.prank(users[0]);
-        gobblers.mintLegendaryGobbler(ids);
-        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        gobblers.mintLeaderGobbler(ids);
+        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
 
-        // Legendary is owned by user.
-        assertEq(gobblers.ownerOf(currentLegendaryId), users[0]);
-        assertEq(gobblers.getUserStakingMultiple(users[0]), stakingMultipleSum * 2);
-        assertEq(gobblers.getGobblerStakingMultiple(currentLegendaryId), stakingMultipleSum * 2);
+        // Leader is owned by user.
+        assertEq(gobblers.ownerOf(currentLeaderId), users[0]);
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum * 2);
+        assertEq(gobblers.getGobblerEmissionMultiple(currentLeaderId), emissionMultipleSum * 2);
 
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
-    /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
-    function testCannotMintLegendaryWithLegendary() public {
+    /// @notice Test that Leader Gobblers can't be burned to mint another leader.
+    function testCannotMintLeaderWithLeader() public {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
-        gobblers.mintLegendaryGobbler(ids);
-        (, , uint16 legendaryId) = gobblers.legendaryGobblerAuctionData();
-        assertEq(legendaryId, 9991);
+        gobblers.mintLeaderGobbler(ids);
+        (, , uint16 leaderId) = gobblers.leaderGobblerAuctionData();
+        assertEq(leaderId, 9991);
         uint256 startTime = block.timestamp;
-        uint256 cost = gobblers.legendaryGobblerPrice();
+        uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
         vm.warp(startTime); // mintGobblerToAddress warps time forward
-        ids[0] = legendaryId; // the legendary we minted
+        ids[0] = leaderId; // the leader we minted
         vm.prank(users[0]);
-        vm.expectRevert(ArtGobblers.CannotBurnLegendary.selector);
-        gobblers.mintLegendaryGobbler(ids);
+        vm.expectRevert(ArtGobblers.CannotBurnLeader.selector);
+        gobblers.mintLeaderGobbler(ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -241,7 +241,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testRevealedUri() public {
         mintGobblerToAddress(users[0], 1);
         // unrevealed gobblers have 0 value attributes
-        assertEq(gobblers.getGobblerStakingMultiple(1), 0);
+        assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
@@ -249,28 +249,26 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
 
-    /// @notice Test that legendary gobbler URI is correct.
-    function testMintedLegendaryURI() public {
-        //mint legendary
+    /// @notice Test that leader gobbler URI is correct.
+    function testMintedLeaderURI() public {
+        //mint leader
         vm.warp(block.timestamp + 70 days);
         uint256[] memory _ids; // gobbler should be free at this point
-        gobblers.mintLegendaryGobbler(_ids);
-        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        gobblers.mintLeaderGobbler(_ids);
+        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
 
         //expected URI should not be shuffled
-        string memory expectedURI = string(
-            abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
-        );
-        string memory actualURI = gobblers.uri(currentLegendaryId);
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(currentLeaderId).toString()));
+        string memory actualURI = gobblers.uri(currentLeaderId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
-    /// @notice Test that un-minted legendary gobbler URI is correct
-    function testUnmintedLegendaryUri() public {
-        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+    /// @notice Test that un-minted leader gobbler URI is correct
+    function testUnmintedLeaderUri() public {
+        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
 
-        uint256 legendaryId = currentLegendaryId + 1;
-        assertEq(gobblers.uri(legendaryId), "");
+        uint256 leaderId = currentLeaderId + 1;
+        assertEq(gobblers.uri(leaderId), "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -375,15 +373,15 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that adding goop is reflected in balance.
     function testGoopAddition() public {
         mintGobblerToAddress(users[0], 1);
-        assertEq(gobblers.getGobblerStakingMultiple(1), 0);
-        assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
+        assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         // waiting after mint to reveal shouldn't affect balance
         vm.warp(block.timestamp + 100000);
         assertEq(gobblers.goopBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
-        uint256 gobblerMultiple = gobblers.getGobblerStakingMultiple(1);
+        uint256 gobblerMultiple = gobblers.getGobblerEmissionMultiple(1);
         assertGt(gobblerMultiple, 0);
-        assertEq(gobblers.getUserStakingMultiple(users[0]), gobblerMultiple);
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), gobblerMultiple);
         vm.prank(address(gobblers));
         uint256 additionAmount = 1000;
         goop.mintForGobblers(users[0], additionAmount);
@@ -392,21 +390,21 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.goopBalance(users[0]), additionAmount);
     }
 
-    /// @notice Test that staking multiplier changes as expected after transfer.
-    function testStakingMultiplierUpdatesAfterTransfer() public {
+    /// @notice Test that emission multiplier changes as expected after transfer.
+    function testEmissionMultiplierUpdatesAfterTransfer() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
 
-        uint256 initialUserMultiple = gobblers.getUserStakingMultiple(users[0]);
+        uint256 initialUserMultiple = gobblers.getUserEmissionMultiple(users[0]);
         assertGt(initialUserMultiple, 0);
-        assertEq(gobblers.getUserStakingMultiple(users[1]), 0);
+        assertEq(gobblers.getUserEmissionMultiple(users[1]), 0);
 
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
 
-        assertEq(gobblers.getUserStakingMultiple(users[0]), 0);
-        assertEq(gobblers.getUserStakingMultiple(users[1]), initialUserMultiple);
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
+        assertEq(gobblers.getUserEmissionMultiple(users[1]), initialUserMultiple);
     }
 
     /// @notice Test that gobbler balances are accurate after transfer.
@@ -492,7 +490,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     // /// @notice Check that max supply is mintable, and further mints revert.
     // function testMintMaxFromGoop() public {
-    //     //total supply - legendary gobblers - whitelist gobblers
+    //     //total supply - leader gobblers - mintlist gobblers
     //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - 10 - 2000;
     //     mintGobblerToAddress(users[0], maxMintableWithGoop);
     //     vm.expectRevert(noRemainingGobblers);
