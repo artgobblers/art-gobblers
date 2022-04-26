@@ -11,16 +11,18 @@ import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
-import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
+import {ERC1155B} from "./utils/ERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
+
+import {console} from "./test/utils/Console.sol";
 
 // TODO: events
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
+contract ArtGobblers is ERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
 
     /*//////////////////////////////////////////////////////////////
@@ -133,6 +135,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Next reveal cannot happen before this timestamp
     uint256 public nextRevealTimestamp;
 
+    /// @notice mapping from token ids to virtual ids
+    mapping(uint256 => uint256) public getVirtualIdFromTokenId;
+
     /*//////////////////////////////////////////////////////////////
                               EMISSION STATE
     //////////////////////////////////////////////////////////////*/
@@ -149,6 +154,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Maps user addresses to their emission data.
     mapping(address => EmissionData) public getEmissionDataForUser;
+
+    /// @notice Maps leader gobbler ids to their emission multiples.
+    mapping(uint256 => uint256) public getEmissionMultipleForLeader;
 
     /*//////////////////////////////////////////////////////////////
                             ART FEEDING STATE
@@ -319,12 +327,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 if (id >= LEADER_GOBBLER_ID_START) revert CannotBurnLeader();
 
-                require(getGobblerData[id].owner == msg.sender, "WRONG_FROM");
+                require(ownerOf[id] == msg.sender, "WRONG_FROM");
 
-                burnedMultipleTotal += getGobblerData[id].emissionMultiple;
+                burnedMultipleTotal += getGobblerEmissionMultipleFromTokenId(id);
 
-                // TODO: SHOULD we clear attributes as well or just owner? even cheaper to clear attributes i think
-                getGobblerData[id].owner = address(0);
+                ownerOf[id] = address(0);
 
                 amounts[i] = 1;
             }
@@ -341,7 +348,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the leader's emissionMultiple 2x the sum of the multiples of the gobblers burned.
             // Must be done before minting as the transfer hook will update the user's emissionMultiple.
-            getGobblerData[newLeaderId].emissionMultiple = uint48(burnedMultipleTotal << 1);
+            getEmissionMultipleForLeader[newLeaderId] = uint48(burnedMultipleTotal << 1);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -460,48 +467,33 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 // uint48 currentIndex = storedCurrentIndex == 0 ? uint48(currentSlot) : storedCurrentIndex;
 
                 // Get the index of the swap slot.
-                uint48 swapIndex = getGobblerData[swapSlot].idx == 0
+                uint48 swapIndex = getVirtualIdFromTokenId[swapSlot] == 0
                     ? uint48(swapSlot) // Slot is untouched.
-                    : getGobblerData[swapSlot].idx;
+                    : uint48(getVirtualIdFromTokenId[swapSlot]);
 
                 // Get the index of the current slot.
-                uint48 currentIndex = getGobblerData[currentSlot].idx == 0
+                uint48 currentIndex = getVirtualIdFromTokenId[currentSlot] == 0
                     ? uint48(currentSlot) // Slot is untouched.
-                    : getGobblerData[currentSlot].idx;
+                    : uint48(getVirtualIdFromTokenId[currentSlot]);
 
                 /*//////////////////////////////////////////////////////////////
-                                       UPDATE CURRENT SLOT
+                                            SWAP SLOTS
                 //////////////////////////////////////////////////////////////*/
 
-                // Get the emissions multiple for the swap index.
-                uint256 swapIndexMultiple = getEmissionsMultipleForIdx(swapIndex);
+                getVirtualIdFromTokenId[currentSlot] = swapIndex;
+                getVirtualIdFromTokenId[swapSlot] = currentIndex;
 
-                // Swap the currentSlot's idx and multiple.
-                getGobblerData[currentSlot].idx = swapIndex; // Update idx and multiple.
-                getGobblerData[currentSlot].emissionMultiple = uint48(swapIndexMultiple);
+                /*//////////////////////////////////////////////////////////////
+                                      UPDATE OWNER EMISSIONS
+                //////////////////////////////////////////////////////////////*/
 
-                // Update the emission data for the owner of the current slot.
-                address currentSlotOwner = getGobblerData[currentSlot].owner;
+                address currentSlotOwner = ownerOf[currentSlot];
+                // console.log("KNUTH OWNER", currentSlotOwner);
+
+                uint256 currentSlotMultiple = getEmissionMultipleFromVirtualId(swapIndex);
                 getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
                 getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(swapIndexMultiple);
-
-                /*//////////////////////////////////////////////////////////////
-                                        UPDATE SWAP SLOT
-                //////////////////////////////////////////////////////////////*/
-
-                // Get the emissions multiple for the current index.
-                uint256 currentIndexMultiple = getEmissionsMultipleForIdx(currentIndex);
-
-                // Swap the swapSlot's idx and multiple.
-                getGobblerData[swapSlot].idx = currentIndex;
-                getGobblerData[swapSlot].emissionMultiple = uint48(currentIndexMultiple);
-
-                // Update the emission data for the owner of the swap slot.
-                address swapSlotOwner = getGobblerData[swapSlot].owner;
-                getEmissionDataForUser[swapSlotOwner].lastBalance = uint128(goopBalance(swapSlotOwner));
-                getEmissionDataForUser[swapSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[swapSlotOwner].emissionMultiple += uint64(currentIndexMultiple);
+                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(currentSlotMultiple);
 
                 /*//////////////////////////////////////////////////////////////
                                             CLEANUP
@@ -519,20 +511,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /*//////////////////////////////////////////////////////////////
-                   EMISSION MULTIPLE ASSIGNMENT LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Maps a shuffled idx to an emission multiple.
-    /// @param idx The idx to get the emission multiple for.
-    function getEmissionsMultipleForIdx(uint256 idx) public pure returns (uint256) {
-        if (idx <= 3054) return 6;
-        if (idx <= 5672) return 7;
-        if (idx <= 7963) return 8;
-
-        return 9; // 7,963 to 10,000.
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 URI LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -544,7 +522,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString()));
+            return string(abi.encodePacked(BASE_URI, uint256(getVirtualIdFromTokenId[gobblerId]).toString()));
         }
 
         // Between lastRevealedIndex + 1 and currentNonLeaderId are minted but not revealed.
@@ -575,7 +553,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 id
     ) public {
         // The caller must own the gobbler they're feeding.
-        if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
+        if (ownerOf[id] != msg.sender) revert Unauthorized();
 
         // In case the NFT is not an 1155B, prevent eating it twice.
         if (getGobblerFromFedArt[nft][id] != 0) revert AlreadyEaten();
@@ -652,8 +630,25 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Convenience function to get emission emissionMultiple for a gobbler.
     /// @param gobblerId The gobbler to get emissionMultiple for.
-    function getGobblerEmissionMultiple(uint256 gobblerId) public view returns (uint256) {
-        return getGobblerData[gobblerId].emissionMultiple;
+    function getGobblerEmissionMultipleFromTokenId(uint256 gobblerId) public view returns (uint256) {
+        // Leader gobblers have specially accounted for emissions.
+        if (gobblerId > LEADER_GOBBLER_ID_START) {
+            return getEmissionMultipleForLeader[gobblerId];
+        }
+        // Unrevealed gobblers have 0 multiple.
+        if (gobblerId > lastRevealedIndex) return 0;
+        // Else, the multiple depends on virtual id.
+
+        uint256 virtualId = getVirtualIdFromTokenId[gobblerId];
+        return getEmissionMultipleFromVirtualId(virtualId);
+    }
+
+    /// @notice Virtual ids map directly to emission multiples
+    function getEmissionMultipleFromVirtualId(uint256 virtualId) private pure returns (uint256) {
+        if (virtualId <= 3054) return 6;
+        if (virtualId <= 5672) return 7;
+        if (virtualId <= 7963) return 8;
+        return 9; // 7,963 to 9990.
     }
 
     /// @notice Convenience function to get emission emissionMultiple for a user.
@@ -674,7 +669,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         address to,
         uint256 id
     ) internal override {
-        uint128 idEmissionMultiple = getGobblerData[id].emissionMultiple;
+        uint256 idEmissionMultiple = getGobblerEmissionMultipleFromTokenId(id);
 
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.

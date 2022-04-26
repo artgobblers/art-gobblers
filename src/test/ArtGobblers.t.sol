@@ -188,7 +188,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             if (curId % 10 != 0) {
                 ids.push(curId);
                 assertEq(gobblers.ownerOf(curId), users[0]);
-                emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
+                emissionMultipleSum += gobblers.getGobblerEmissionMultipleFromTokenId(curId);
             }
             curId++;
         }
@@ -202,7 +202,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // Leader is owned by user.
         assertEq(gobblers.ownerOf(currentLeaderId), users[0]);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum * 2);
-        assertEq(gobblers.getGobblerEmissionMultiple(currentLeaderId), emissionMultipleSum * 2);
+        assertEq(gobblers.getGobblerEmissionMultipleFromTokenId(currentLeaderId), emissionMultipleSum * 2);
 
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
@@ -250,12 +250,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that revealed URI is correct.
     function testRevealedUri() public {
         mintGobblerToAddress(users[0], 1);
-        // unrevealed gobblers have 0 value attributes
-        assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
+        // unrevealed gobblers
+        assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
-        (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
-        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
+        uint256 expectedIndex = gobblers.getVirtualIdFromTokenId(1);
+        string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), expectedIndex.toString()));
         assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
 
@@ -342,6 +342,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice test that goop balance grows as expected.
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
+        console.log("USER", users[0]);
+        console.log("OWNER", gobblers.ownerOf(1));
         // balance should initially be zero
         assertEq(gobblers.goopBalance(users[0]), 0);
         vm.warp(block.timestamp + 100000);
@@ -386,13 +388,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that adding goop is reflected in balance.
     function testGoopAddition() public {
         mintGobblerToAddress(users[0], 1);
-        assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
+        assertEq(gobblers.getGobblerEmissionMultipleFromTokenId(1), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         // waiting after mint to reveal shouldn't affect balance
         vm.warp(block.timestamp + 100000);
         assertEq(gobblers.goopBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
-        uint256 gobblerMultiple = gobblers.getGobblerEmissionMultiple(1);
+        uint256 gobblerMultiple = gobblers.getGobblerEmissionMultipleFromTokenId(1);
         assertGt(gobblerMultiple, 0);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), gobblerMultiple);
         vm.prank(address(gobblers));
