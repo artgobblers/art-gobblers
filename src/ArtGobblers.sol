@@ -538,7 +538,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // 2**256 - 1 we've got much bigger problems.
         unchecked {
             uint256 emissionMultiple = getEmissionDataForUser[user].emissionMultiple;
-            uint256 lastBalance = getEmissionDataForUser[user].lastBalance;
+            uint256 lastBalanceWad = getEmissionDataForUser[user].lastBalance;
 
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
             uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
@@ -546,7 +546,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
 
             // prettier-ignore
-            return lastBalance + // The last recorded balance.
+            return lastBalanceWad + // The last recorded balance.
                 
             // Don't need to do wad multiplication since we're
             // multiplying by a plain integer with no decimals.
@@ -558,7 +558,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 // No wad multiplication for emissionMultiple * lastBalance
                 // because emissionMultiple is a plain integer with no decimals.
                 // We multiply the sqrt's radicand by 1e18 because it expects ints.
-                Math.sqrt(emissionMultiple * lastBalance * 1e18)
+                Math.sqrt(emissionMultiple * lastBalanceWad * 1e18)
             );
         }
     }
