@@ -403,8 +403,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.goopBalance(users[0]), additionAmount);
     }
 
-    /// @notice Test that emission multiplier changes as expected after transfer.
-    function testEmissionMultiplierUpdatesAfterTransfer() public {
+    /// @notice Test that emission multiple changes as expected after transfer.
+    function testEmissionMultipleUpdatesAfterTransfer() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
