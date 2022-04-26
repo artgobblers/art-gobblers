@@ -47,10 +47,20 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         users = utils.createUsers(5);
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
+
         team = new ERC1155BLockupVault(address(this), 730 days);
+
+        goop = new Goop(
+            // Gobblers:
+            utils.predictContractAddress(address(this), 1),
+            // Pages:
+            utils.predictContractAddress(address(this), 2)
+        );
+
         gobblers = new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
+            goop,
             address(team),
             address(vrfCoordinator),
             address(linkToken),
@@ -58,8 +68,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             fee,
             baseUri
         );
-        goop = gobblers.goop();
-        pages = gobblers.pages();
+
+        pages = new Pages(block.timestamp, address(gobblers), goop);
     }
 
     /*//////////////////////////////////////////////////////////////

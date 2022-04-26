@@ -40,9 +40,17 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
+        goop = new Goop(
+            // Gobblers:
+            utils.predictContractAddress(address(this), 1),
+            // Pages:
+            utils.predictContractAddress(address(this), 2)
+        );
+
         gobblers = new ArtGobblers(
-            "root",
+            keccak256(abi.encodePacked(users[0])),
             block.timestamp,
+            goop,
             address(0xBEEF),
             address(vrfCoordinator),
             address(linkToken),
@@ -50,8 +58,8 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             fee,
             baseUri
         );
-        goop = gobblers.goop();
-        pages = gobblers.pages();
+
+        pages = new Pages(block.timestamp, address(gobblers), goop);
 
         vm.prank(address(gobblers));
         goop.mintForGobblers(address(this), type(uint128).max);
