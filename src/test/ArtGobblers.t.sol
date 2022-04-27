@@ -501,10 +501,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                            LONG-RUNNING TESTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Check that max supply is mintable, and further mints revert.
-     function testMintMaxFromGoop() public {
+    /// @notice Check that max supply is mintable
+    function testMintMaxFromGoop() public {
         //max_supply - leaders - mintlist - team
-        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - gobblers.MINTLIST_SUPPLY() - gobblers.LEADER_SUPPLY() - gobblers.TEAM_SUPPLY();
+        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() -
+            gobblers.MINTLIST_SUPPLY() -
+            gobblers.LEADER_SUPPLY() -
+            gobblers.TEAM_SUPPLY();
         for (uint256 i = 0; i < maxMintableWithGoop; i++) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
@@ -515,8 +518,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    // TODO: THIS TEST SHOULD REVERT 
-    // /// @notice Check that max supply is mintable, and further mints revert.
+    // TODO: THIS TEST SHOULD REVERT
+    // /// @notice Check that minting beyond max supply should revert .
     //  function testMintMaxFromGoopRevert() public {
     //     //max_supply - leaders - mintlist - team
     //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - gobblers.MINTLIST_SUPPLY() - gobblers.LEADER_SUPPLY() - gobblers.TEAM_SUPPLY();
