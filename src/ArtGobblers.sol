@@ -323,7 +323,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 burnedMultipleTotal += getGobblerData[id].emissionMultiple;
 
-                // TODO: SHOULD we clear attributes as well or just owner? even cheaper to clear attributes i think
                 getGobblerData[id].owner = address(0);
 
                 amounts[i] = 1;
@@ -526,11 +525,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Between currentNonLeaderId and LEADER_GOBBLER_ID_START are unminted.
         if (gobblerId <= LEADER_GOBBLER_ID_START) return "";
 
-        // Between LEADER_GOBBLER_ID_START and currentLeaderId are minted legendaries.
+        // Between LEADER_GOBBLER_ID_START and currentLeaderId are minted leaders.
         if (gobblerId <= leaderGobblerAuctionData.currentLeaderId)
             return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
 
-        return ""; // Unminted legendaries and invalid token ids.
+        return ""; // Unminted leaders and invalid token ids.
     }
 
     /*//////////////////////////////////////////////////////////////
