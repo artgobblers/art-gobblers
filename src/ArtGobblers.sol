@@ -410,8 +410,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             leaderGobblerAuctionData.currentLeaderGobblerAuctionStart += 30 days;
             leaderGobblerAuctionData.currentLeaderGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
-            // Will costs more the larger gobblerIds is. At around
-            // 5,000 elements it would will close to ~1,400,000 gas.
+            // If gobblerIds has 1,000 elements this should cost around ~262,828 gas.
             emit LeaderGobblerMinted(msg.sender, gobblerId, gobblerIds);
 
             _mint(msg.sender, gobblerId, "");
