@@ -575,17 +575,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
             uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
 
-            return computeGoopBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
-        }
-    }
-
-    /// @notice Compute goop balance based on emission multiple, last balance, and days
-    function computeGoopBalance(
-        uint256 emissionMultiple,
-        uint256 lastBalanceWad,
-        uint256 daysElapsedWad
-    ) public pure returns (uint256) {
-        unchecked {
             uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
 
             // prettier-ignore
