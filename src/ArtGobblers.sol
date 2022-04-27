@@ -273,19 +273,19 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         unchecked {
-            _mint(msg.sender, ++currentNonLeaderId, "");   
-            ++numMintedFromGoop;        
+            _mint(msg.sender, ++currentNonLeaderId, "");
+            ++numMintedFromGoop;
         }
     }
 
-    /// @notice Mint Gobbler for team. Number of gobblers 
-    /// minted for team should never exceed 10% of number 
-    /// that has been minted with goop. 
-    function mintForTeam() public { 
-        //10% of minted from goop 
+    /// @notice Mint Gobbler for team. Number of gobblers
+    /// minted for team should never exceed 10% of number
+    /// that has been minted with goop.
+    function mintForTeam() public {
+        //10% of minted from goop
         uint256 currentMintLimit = numMintedFromGoop / 10;
         //check that we don't go over limit after mint
-        if(++numMintedForTeam > currentMintLimit) {
+        if (++numMintedForTeam > currentMintLimit) {
             revert Unauthorized();
         }
         _mint(address(team), ++currentNonLeaderId, "");
