@@ -410,7 +410,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Callback from chainlink VRF. sets active attributes and seed.
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
-        revealState.randomSeed = uint64(randomness); // Equivalent to modulo by 2**64.
+        // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
+        revealState.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -497,7 +498,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             }
 
             // Update relevant reveal state state all at once.
-            // Cast to uint64 is equivalent to modulo by 2**64.
             revealState.randomSeed = uint64(currentRandomSeed);
             revealState.lastRevealedIndex = uint64(currentLastRevealedIndex);
             revealState.gobblersToBeAssigned = uint64(currentGobblersToBeAssigned - numGobblers);
