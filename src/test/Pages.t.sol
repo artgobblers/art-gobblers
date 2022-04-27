@@ -33,7 +33,7 @@ contract PagesTest is DSTestPlus {
             utils.predictContractAddress(address(this), 1)
         );
 
-        pages = new Pages(block.timestamp, address(this), goop);
+        pages = new Pages(block.timestamp, address(this), goop, "");
 
         user = users[1];
     }
