@@ -447,18 +447,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (revealState.gobblersToBeAssigned != 0) revert Unauthorized();
 
-        // Set gobblersToBeAssigned to the number of unassigned gobblers since the last reveal.
-        uint256 gobblersToBeAssigned = currentNonLeaderId - revealState.lastRevealedIndex; // TODO: do we need this or is reading from state twice cheaper
-
         unchecked {
             // We want at most one batch of reveals every 24 hours.
             revealState.nextRevealTimestamp = uint64(nextReveal + 1 days);
 
             // Fix number of gobblers to be revealed from seed.
-            revealState.gobblersToBeAssigned = uint64(gobblersToBeAssigned);
+            revealState.gobblersToBeAssigned = uint64(currentNonLeaderId - revealState.lastRevealedIndex);
         }
 
-        emit RandomnessRequested(msg.sender, gobblersToBeAssigned);
+        emit RandomnessRequested(msg.sender, revealState.gobblersToBeAssigned);
 
         // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
