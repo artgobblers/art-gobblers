@@ -3,8 +3,9 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  forge-tests:
+  tests:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -17,17 +18,20 @@ jobs:
         with:
           version: nightly
 
+      - name: Run lint check
+        run: npm run lint:check
+
       - name: Install dependencies
         run: forge install
+
+      - name: Check contract sizes
+        run: forge build --sizes
 
       - name: Check gas snapshots
         run: forge snapshot --check
 
-      - name: Run lint check
-        run: npm run lint:check
-
       - name: Run tests
-        run: forge test --no-match-test FFI
+        run: forge test
         env:
           # Only fuzz intensely if we're running this action on a push to master or for a PR going into master:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/master' || github.base_ref == 'master') && 'intense' }}
