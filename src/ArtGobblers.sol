@@ -323,7 +323,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 burnedMultipleTotal += getGobblerData[id].emissionMultiple;
 
-                // TODO: SHOULD we clear attributes as well or just owner? even cheaper to clear attributes i think
                 getGobblerData[id].owner = address(0);
 
                 amounts[i] = 1;
@@ -387,10 +386,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     function getRandomSeed() public returns (bytes32) {
         uint256 nextReveal = nextRevealTimestamp;
 
+        // A new random seed cannot be requested before the next reveal timestamp.
+        if (block.timestamp < nextReveal) revert Unauthorized();
+
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        // Additionally, a random seed cannot be requested before the next reveal timestamp.
-        if (gobblersToBeAssigned != 0 || block.timestamp < nextReveal) revert Unauthorized();
+        if (gobblersToBeAssigned != 0) revert Unauthorized();
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
@@ -416,8 +417,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) public {
+        uint256 currentGobblersToBeAssigned = gobblersToBeAssigned;
+
         // Can't reveal more gobblers than were available when seed was generated.
-        if (numGobblers > gobblersToBeAssigned) revert Unauthorized();
+        if (numGobblers > currentGobblersToBeAssigned) revert Unauthorized();
 
         uint256 currentRandomSeed = randomSeed;
 
@@ -427,49 +430,77 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // here can overflow we've got bigger problems.
         unchecked {
             for (uint256 i = 0; i < numGobblers; i++) {
+                /*//////////////////////////////////////////////////////////////
+                                          CHOOSE SLOTS
+                //////////////////////////////////////////////////////////////*/
+
                 // Number of slots that have not been assigned.
                 uint256 remainingSlots = LEADER_GOBBLER_ID_START - lastRevealedIndex;
 
                 // Randomly pick distance for swap.
                 uint256 distance = currentRandomSeed % remainingSlots;
 
-                // Select swap slot, adding distance to next reveal slot.
-                uint256 swapSlot = currentLastRevealedIndex + 1 + distance;
-
-                // If index in swap slot is 0, that means slot has never been touched, thus, it has the default value, which is the slot index.
-                uint48 swapIndex = getGobblerData[swapSlot].idx == 0 ? uint48(swapSlot) : getGobblerData[swapSlot].idx;
-
                 // Current slot is consecutive to last reveal.
                 uint256 currentSlot = currentLastRevealedIndex + 1;
 
-                // Again, we derive index based on value:
+                // Select swap slot, adding distance to next reveal slot.
+                uint256 swapSlot = currentSlot + distance;
+
+                /*//////////////////////////////////////////////////////////////
+                                       RETRIEVE SLOT DATA
+                //////////////////////////////////////////////////////////////*/
+
+                // Get the index of the swap slot.
+                uint48 swapIndex = getGobblerData[swapSlot].idx == 0
+                    ? uint48(swapSlot) // Hasn't been shuffled before.
+                    : getGobblerData[swapSlot].idx;
+
+                // Get the owner of the current slot.
+                address currentSlotOwner = getGobblerData[currentSlot].owner;
+
+                // Get the index of the current slot.
                 uint48 currentIndex = getGobblerData[currentSlot].idx == 0
-                    ? uint48(currentSlot)
+                    ? uint48(currentSlot) // Hasn't been shuffled before.
                     : getGobblerData[currentSlot].idx;
 
-                // Swap indices.
+                /*//////////////////////////////////////////////////////////////
+                                  SWAP INDEXES AND SET MULTIPLE
+                //////////////////////////////////////////////////////////////*/
+
+                // Determine the current slot's new emission multiple.
+                uint256 newCurrentSlotMultiple = 9; // For beyond 7963.
+                if (swapIndex <= 3054) newCurrentSlotMultiple = 6;
+                else if (swapIndex <= 5672) newCurrentSlotMultiple = 7;
+                else if (swapIndex <= 7963) newCurrentSlotMultiple = 8;
+
+                // Swap the index and multiple of the current slot.
                 getGobblerData[currentSlot].idx = swapIndex;
+                getGobblerData[currentSlot].emissionMultiple = uint48(newCurrentSlotMultiple);
+
+                // Swap the index of the swap slot.
                 getGobblerData[swapSlot].idx = currentIndex;
 
-                // Select random attributes for current slot.
+                /*//////////////////////////////////////////////////////////////
+                                  UPDATE CURRENT SLOT MULTIPLE
+                //////////////////////////////////////////////////////////////*/
+
+                // Update the emission data for the owner of the current slot.
+                getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
+                getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
+                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(newCurrentSlotMultiple);
+
+                /*//////////////////////////////////////////////////////////////
+                                             CLEANUP
+                //////////////////////////////////////////////////////////////*/
+
+                ++currentLastRevealedIndex; // Update the last reveal index and random seed.
                 currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
-                uint48 emissionMultiple = uint48(currentRandomSeed % 128) + 1; // todo: determine off-chain
-
-                getGobblerData[currentSlot].emissionMultiple = emissionMultiple;
-
-                address slotOwner = getGobblerData[currentSlot].owner;
-                getEmissionDataForUser[slotOwner].lastBalance = uint128(goopBalance(slotOwner));
-                getEmissionDataForUser[slotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[slotOwner].emissionMultiple += emissionMultiple;
-
-                // Increment last reveal index.
-                ++currentLastRevealedIndex;
             }
 
             // Update state all at once.
             randomSeed = currentRandomSeed;
             lastRevealedIndex = uint128(currentLastRevealedIndex);
-            gobblersToBeAssigned -= uint128(numGobblers);
+            gobblersToBeAssigned = uint128(currentGobblersToBeAssigned - numGobblers);
         }
     }
 
@@ -487,17 +518,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             return string(abi.encodePacked(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString()));
         }
+
         // Between lastRevealedIndex + 1 and currentNonLeaderId are minted but not revealed.
         if (gobblerId <= currentNonLeaderId) return UNREVEALED_URI;
 
-        // Between currentNonLeaderId and  LEADER_GOBBLER_ID_START are unminted.
+        // Between currentNonLeaderId and LEADER_GOBBLER_ID_START are unminted.
         if (gobblerId <= LEADER_GOBBLER_ID_START) return "";
 
-        // Between LEADER_GOBBLER_ID_START and currentLeaderId are minted legendaries.
+        // Between LEADER_GOBBLER_ID_START and currentLeaderId are minted leaders.
         if (gobblerId <= leaderGobblerAuctionData.currentLeaderId)
             return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
 
-        return ""; // Unminted legendaries and invalid token ids.
+        return ""; // Unminted leaders and invalid token ids.
     }
 
     /*//////////////////////////////////////////////////////////////
