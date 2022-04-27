@@ -214,7 +214,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintLeaderGobbler(ids);
         (, , uint16 leaderId) = gobblers.leaderGobblerAuctionData();
         assertEq(leaderId, 9991);
-        uint256 startTime = block.timestamp;
         uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
