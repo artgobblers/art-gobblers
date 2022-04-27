@@ -130,31 +130,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            PRICING TESTS
-    //////////////////////////////////////////////////////////////*/
-
-    function testPricingBasic() public {
-        uint256 timeDelta = 120 days;
-        uint256 numMint = 4932;
-
-        vm.warp(block.timestamp + timeDelta);
-
-        console.log("initialPrice");
-        console.logInt(gobblers.initialPrice());
-
-        for (uint256 i = 0; i < numMint; i++) {
-            vm.startPrank(address(gobblers));
-            goop.mintForGobblers(users[0], gobblers.gobblerPrice());
-            vm.stopPrank();
-            vm.prank(users[0]);
-            gobblers.mintFromGoop();
-        }
-
-        console.log("final price");
-        console.log(gobblers.gobblerPrice());
-    }
-
-    /*//////////////////////////////////////////////////////////////
                            LEGENDARY GOBBLERS
     //////////////////////////////////////////////////////////////*/
 
