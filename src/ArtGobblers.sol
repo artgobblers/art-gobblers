@@ -469,10 +469,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 //////////////////////////////////////////////////////////////*/
 
                 // Determine the current slot's new emission multiple.
-                uint256 newCurrentSlotMultiple = 9; // For 7964-10000.
+                uint256 newCurrentSlotMultiple = 9; // For beyond 7963.
                 if (swapIndex <= 3054) newCurrentSlotMultiple = 6;
-                if (swapIndex <= 5672) newCurrentSlotMultiple = 7;
-                if (swapIndex <= 7963) newCurrentSlotMultiple = 8;
+                else if (swapIndex <= 5672) newCurrentSlotMultiple = 7;
+                else if (swapIndex <= 7963) newCurrentSlotMultiple = 8;
 
                 // Swap the index and multiple of the current slot.
                 getGobblerData[currentSlot].idx = swapIndex;
