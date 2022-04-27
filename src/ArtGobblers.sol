@@ -36,17 +36,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Maximum number of mintable gobblers.
-    uint256 private constant MAX_SUPPLY = 10000;
+    uint256 public constant MAX_SUPPLY = 10000;
 
     /// @notice Maximum amount of gobblers mintable via mintlist.
-    uint256 private constant MINTLIST_SUPPLY = 2000;
+    uint256 public constant MINTLIST_SUPPLY = 2000;
 
     /// @notice Maximum amount of mintable leader gobblers.
-    uint256 private constant LEADER_SUPPLY = 10;
+    uint256 public constant LEADER_SUPPLY = 10;
 
     /// @notice Maximum amount of gobblers that will go to the team.
     /// @dev 10% of the supply of non-leader/mintlist gobblers.
-    uint256 private constant TEAM_SUPPLY = 799;
+    uint256 public constant TEAM_SUPPLY = 799;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
