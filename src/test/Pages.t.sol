@@ -7,7 +7,6 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
-import {console} from "./utils/Console.sol";
 
 contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -77,28 +76,5 @@ contract PagesTest is DSTestPlus {
         goop.mintForGobblers(_user, pages.pagePrice());
         vm.prank(_user);
         pages.mint();
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            PRICING TESTS
-    //////////////////////////////////////////////////////////////*/
-
-    function testPagePricingBasic() public {
-        uint256 timeDelta = 360 days;
-        uint256 numMint = 11486;
-
-        vm.warp(block.timestamp + timeDelta);
-
-        console.log("initialPrice");
-        console.logInt(pages.initialPrice());
-
-        for (uint256 i = 0; i < numMint; i++) {
-            goop.mintForGobblers(user, pages.pagePrice());
-            vm.prank(user);
-            pages.mint();
-        }
-
-        console.log("final price");
-        console.log(pages.pagePrice());
     }
 }
