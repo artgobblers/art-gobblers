@@ -518,20 +518,23 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    // TODO: THIS TEST SHOULD REVERT
-    // /// @notice Check that minting beyond max supply should revert .
-    //  function testLongRunningMintMaxFromGoopRevert() public {
-    //     //max_supply - leaders - mintlist - team
-    //     uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() - gobblers.MINTLIST_SUPPLY() - gobblers.LEADER_SUPPLY() - gobblers.TEAM_SUPPLY();
-    //     for (uint256 i = 0; i < maxMintableWithGoop + 1; i++) {
-    //         vm.warp(block.timestamp + 1 days);
-    //         uint256 cost = gobblers.gobblerPrice();
-    //         vm.prank(address(gobblers));
-    //         goop.mintForGobblers(users[0], cost);
-    //         vm.prank(users[0]);
-    //         gobblers.mintFromGoop();
-    //     }
-    // }
+    /// @notice Check that minting beyond max supply should revert.
+    function testLongRunningMintMaxFromGoopRevert() public {
+        //max_supply - leaders - mintlist - team
+        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() -
+            gobblers.MINTLIST_SUPPLY() -
+            gobblers.LEADER_SUPPLY() -
+            gobblers.TEAM_SUPPLY();
+
+        for (uint256 i = 0; i < maxMintableWithGoop + 1; i++) {
+            vm.warp(block.timestamp + 1 days);
+            uint256 cost = gobblers.gobblerPrice();
+            vm.prank(address(gobblers));
+            goop.mintForGobblers(users[0], cost);
+            vm.prank(users[0]);
+            gobblers.mintFromGoop();
+        }
+    }
 
     // /// @notice Test whether all ids are assigned after full reveal.
     // function testLongRunningAllIdsUnique() public {
