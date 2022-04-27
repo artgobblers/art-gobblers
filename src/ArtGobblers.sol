@@ -473,8 +473,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                                           SWAP INDEXES
                 //////////////////////////////////////////////////////////////*/
 
+                uint256 newCurrentSlotMultiple = getEmissionsMultipleForIdx(swapIndex);
+
                 // Swap the current and swap slots.
                 getGobblerData[currentSlot].idx = swapIndex;
+                getGobblerData[currentSlot].emissionMultiple = uint48(newCurrentSlotMultiple);
                 getGobblerData[swapSlot].idx = currentIndex;
 
                 /*//////////////////////////////////////////////////////////////
@@ -482,11 +485,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 //////////////////////////////////////////////////////////////*/
 
                 // Get the new emissions multiple for the current slot from the swap index.
-                uint256 newCurrentSlotMultiple = getEmissionsMultipleForIdx(swapIndex);
 
                 // Update the gobbler's emissions multiple.
                 // TODO: does batching this with the above idx update save things
-                getGobblerData[currentSlot].emissionMultiple = uint48(newCurrentSlotMultiple);
 
                 // Update the emission data for the owner of the current slot.
                 // TODO: does batching this with the above idx update save things
