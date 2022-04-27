@@ -83,7 +83,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                             VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Timestamp for the start of the mintlist & VRGDA mint.
+    /// @notice Timestamp for the start of minting.
     uint256 public immutable mintStart;
 
     /// @notice Number of gobblers minted from goop.
@@ -93,8 +93,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                          STANDARD GOBBLER STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Id of last minted non leader token.
-    uint128 internal currentNonLeaderId; // TODO: public?
+    /// @notice Id of the current non leader gobbler.
+    uint128 public currentNonLeaderId;
+
+    /// @notice The number of gobblers minted to the team.
+    uint256 public numMintedForTeam;
 
     /*//////////////////////////////////////////////////////////////
                       LEADER GOBBLER AUCTION STATE
@@ -109,10 +112,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint120 currentLeaderGobblerStartPrice;
         // Start timestamp of current leader gobbler auction.
         uint120 currentLeaderGobblerAuctionStart;
-        // Id of last minted leader gobbler.
+        // Id of the current leader gobbler.
         // 16 bits has a max value of ~60,000,
         // which is safely within our limits here.
-        uint16 currentLeaderId; // TODO: current leader id is kinda confusing cuz the first id isnt actually leader
+        uint16 currentLeaderId;
     }
 
     /// @notice Data about the current leader gobbler auction.
@@ -267,10 +270,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         unchecked {
-            _mint(msg.sender, ++currentNonLeaderId, "");
+            ++numMintedFromGoop;
 
-            // Every 9 goop mints, we mint one gobbler for the team.
-            if (++numMintedFromGoop % 9 == 0) _mint(address(team), ++currentNonLeaderId, "");
+            _mint(msg.sender, ++currentNonLeaderId, "");
         }
     }
 
@@ -283,6 +285,26 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 timeSinceStart = block.timestamp - mintStart;
 
         return getPrice(timeSinceStart, numMintedFromGoop);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           TEAM MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Mint a gobbler to the team.
+    /// @dev Team cannot never mint more than 10% of
+    /// the circulating supply of auctioned gobblers.
+    function mintForTeam() public {
+        unchecked {
+            // Can mint up to 10% of the current auctioned gobblers.
+            uint256 currentMintLimit = numMintedFromGoop / 10;
+
+            // Check that we wouldn't go over the limit after minting.
+            if (++numMintedForTeam > currentMintLimit) revert Unauthorized();
+
+            // Mint a new gobbler directly to the team.
+            _mint(address(team), ++currentNonLeaderId, "");
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
