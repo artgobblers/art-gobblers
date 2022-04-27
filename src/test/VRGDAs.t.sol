@@ -9,7 +9,7 @@ import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
-import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract VRGDAsTest is DSTestPlus {
