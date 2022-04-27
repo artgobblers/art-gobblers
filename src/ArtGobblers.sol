@@ -431,7 +431,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         unchecked {
             for (uint256 i = 0; i < numGobblers; i++) {
                 /*//////////////////////////////////////////////////////////////
-                                        CHOOSE SLOTS
+                                          CHOOSE SLOTS
                 //////////////////////////////////////////////////////////////*/
 
                 // Number of slots that have not been assigned.
@@ -464,7 +464,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     : getGobblerData[currentSlot].idx;
 
                 /*//////////////////////////////////////////////////////////////
-                                 SWAP INDEXES AND SET MULTIPLE
+                                  SWAP INDEXES AND SET MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
                 // Determine the current slot's new emission multiple.
@@ -490,7 +490,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(newCurrentSlotMultiple);
 
                 /*//////////////////////////////////////////////////////////////
-                                            CLEANUP
+                                             CLEANUP
                 //////////////////////////////////////////////////////////////*/
 
                 ++currentLastRevealedIndex; // Update the last reveal index and random seed.
