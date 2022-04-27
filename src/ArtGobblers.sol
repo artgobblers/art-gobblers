@@ -448,7 +448,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 uint256 swapSlot = currentSlot + distance;
 
                 /*//////////////////////////////////////////////////////////////
-                                        RETRIEVE INDEXES
+                                       RETRIEVE SLOT DATA
                 //////////////////////////////////////////////////////////////*/
 
                 // Get the index of the swap slot.
@@ -456,14 +456,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     ? uint48(swapSlot) // Slot is untouched.
                     : getGobblerData[swapSlot].idx;
 
-                // Get the index of the current slot.
+                // Get the owner of the current slot.
                 address currentSlotOwner = getGobblerData[currentSlot].owner;
+
+                // Get the index of the current slot.
                 uint48 currentIndex = getGobblerData[currentSlot].idx == 0
                     ? uint48(currentSlot) // Slot is untouched.
                     : getGobblerData[currentSlot].idx;
 
                 /*//////////////////////////////////////////////////////////////
-                                          SWAP INDEXES
+                                    SWAP INDEXES AND MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
                 // Get the new emission multiple for the current slot, from the swap index.
