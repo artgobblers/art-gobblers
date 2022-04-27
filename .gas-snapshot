@@ -1,4 +1,4 @@
-ArtGobblersTest:testCannotMintLeaderWithLeader() (gas: 6978121)
+ArtGobblersTest:testCannotMintLeaderWithLeader() (gas: 6978108)
 ArtGobblersTest:testCantFeedArtToUnownedGobbler() (gas: 115088)
 ArtGobblersTest:testCantFeedArtTwice() (gas: 1756134)
 ArtGobblersTest:testCantFeedUnownedArt() (gas: 101813)
