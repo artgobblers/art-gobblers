@@ -534,7 +534,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     // }
 
     // /// @notice Test whether all ids are assigned after full reveal.
-    // function testAllIdsUnique() public {
+    // function testLongRunningAllIdsUnique() public {
     //     int256[10001] memory counts;
     //     // mint all
     //     uint256 mintCount = gobblers.MAX_GOOP_MINT();
