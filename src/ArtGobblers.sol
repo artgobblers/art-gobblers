@@ -16,8 +16,6 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
-// TODO: external
-
 // TODO: events
 // TODO: can save gas wherever we use goopBalance and already know the user multiple and such
 
@@ -262,7 +260,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Claim from mintlist, using a merkle proof.
     /// @param proof Merkle proof to verify the sender is mintlisted.
     /// @return gobblerId The id of the gobbler that was claimed.
-    function claimGobbler(bytes32[] calldata proof) public returns (uint256 gobblerId) {
+    function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
         // If minting has not yet begun or the user has already claimed, revert.
         if (mintStart > block.timestamp || claimedMintlist[msg.sender]) revert Unauthorized();
 
@@ -285,7 +283,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Mint a gobbler with goop, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return gobblerId The id of the gobbler that was minted.
-    function mintFromGoop(uint256 maxPrice) public returns (uint256 gobblerId) {
+    function mintFromGoop(uint256 maxPrice) external returns (uint256 gobblerId) {
         // No need to check mint cap, gobblerPrice()
         // will revert due to overflow if we reach it.
         // It will also revert prior to the mint start.
@@ -324,7 +322,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @dev Team cannot never mint more than 10% of
     /// the circulating supply of auctioned gobblers.
     /// @return gobblerId The id of the gobbler that was minted.
-    function mintForTeam() public returns (uint256 gobblerId) {
+    function mintForTeam() external returns (uint256 gobblerId) {
         unchecked {
             // Can mint up to 10% of the current auctioned gobblers.
             uint256 currentMintLimit = numMintedFromGoop / 10;
@@ -345,7 +343,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Mint a leader gobbler by burning multiple standard gobblers.
     /// @param gobblerIds The ids of the standard gobblers to burn.
     /// @return gobblerId The id of the leader gobbler that was minted.
-    function mintLeaderGobbler(uint256[] calldata gobblerIds) public returns (uint256 gobblerId) {
+    function mintLeaderGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
         uint256 lastLeaderId = leaderGobblerAuctionData.currentLeaderId;
 
         // When leader id equals max supply, we've minted all 10 leader gobblers.
@@ -437,7 +435,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get the random seed for revealing gobblers.
-    function getRandomSeed() public returns (bytes32) {
+    function getRandomSeed() external returns (bytes32) {
         uint256 nextReveal = revealState.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
@@ -478,7 +476,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
-    function revealGobblers(uint256 numGobblers) public {
+    function revealGobblers(uint256 numGobblers) external {
         uint256 currentGobblersToBeAssigned = revealState.gobblersToBeAssigned;
 
         // Can't reveal more gobblers than were available when seed was generated.
@@ -605,7 +603,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 gobblerId,
         address nft,
         uint256 id
-    ) public {
+    ) external {
         // The caller must own the gobbler they're feeding.
         if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
@@ -659,7 +657,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Add goop to your emission balance.
     /// @param goopAmount The amount of goop to add.
-    function addGoop(uint256 goopAmount) public {
+    function addGoop(uint256 goopAmount) external {
         // Burn goop being added to gobbler.
         goop.burnForGobblers(msg.sender, goopAmount);
 
@@ -674,7 +672,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Remove goop from your emission balance.
     /// @param goopAmount The amount of goop to remove.
-    function removeGoop(uint256 goopAmount) public {
+    function removeGoop(uint256 goopAmount) external {
         // Will revert due to underflow if removed amount is larger than the user's current goop balance.
         getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) - goopAmount);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
@@ -690,13 +688,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Convenience function to get emission emissionMultiple for a gobbler.
     /// @param gobblerId The gobbler to get emissionMultiple for.
-    function getGobblerEmissionMultiple(uint256 gobblerId) public view returns (uint256) {
+    function getGobblerEmissionMultiple(uint256 gobblerId) external view returns (uint256) {
         return getGobblerData[gobblerId].emissionMultiple;
     }
 
     /// @notice Convenience function to get emission emissionMultiple for a user.
     /// @param user The user to get emissionMultiple for.
-    function getUserEmissionMultiple(address user) public view returns (uint256) {
+    function getUserEmissionMultiple(address user) external view returns (uint256) {
         return getEmissionDataForUser[user].emissionMultiple;
     }
 
