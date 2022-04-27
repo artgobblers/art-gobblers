@@ -4,8 +4,7 @@ pragma solidity >=0.8.0;
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 contract MockGoopCalculator {
-
-      /// @notice Compute goop balance based on emission multiple, last balance, and days
+    /// @notice Compute goop balance based on emission multiple, last balance, and days
     function computeGoopBalance(
         uint256 emissionMultiple,
         uint256 lastBalanceWad,
