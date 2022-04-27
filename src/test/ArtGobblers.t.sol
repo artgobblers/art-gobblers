@@ -503,11 +503,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Check that max supply is mintable
     function testLongRunningMintMaxFromGoop() public {
-        //max_supply - leaders - mintlist - team
-        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() -
-            gobblers.MINTLIST_SUPPLY() -
-            gobblers.LEADER_SUPPLY() -
-            gobblers.TEAM_SUPPLY();
+        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+
         for (uint256 i = 0; i < maxMintableWithGoop; i++) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
@@ -520,18 +517,19 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Check that minting beyond max supply should revert.
     function testLongRunningMintMaxFromGoopRevert() public {
-        //max_supply - leaders - mintlist - team
-        uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() -
-            gobblers.MINTLIST_SUPPLY() -
-            gobblers.LEADER_SUPPLY() -
-            gobblers.TEAM_SUPPLY();
+        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
 
         for (uint256 i = 0; i < maxMintableWithGoop + 1; i++) {
             vm.warp(block.timestamp + 1 days);
+
+            if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
             uint256 cost = gobblers.gobblerPrice();
+
             vm.prank(address(gobblers));
             goop.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
+
+            if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
             gobblers.mintFromGoop();
         }
     }

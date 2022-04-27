@@ -48,7 +48,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     uint256 public constant TEAM_SUPPLY = 799;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
-    uint256 public constant MINTABLE_SUPPLY = MAX_SUPPLY - MINTLIST_SUPPLY - LEADER_SUPPLY - TEAM_SUPPLY;
+    uint256 public constant MAX_MINTABLE = MAX_SUPPLY - MINTLIST_SUPPLY - LEADER_SUPPLY - TEAM_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
                             URI CONFIGURATION
@@ -205,8 +205,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
-            // Max # of mintable gobblers.
-            int256(MINTABLE_SUPPLY * 1e18),
+            // Max mintable gobblers.
+            int256(MAX_MINTABLE * 1e18),
             0.014e18 // Time scale.
         )
     {
