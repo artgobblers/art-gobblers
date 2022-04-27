@@ -31,29 +31,37 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Base token URI.
     string internal constant BASE_URI = "";
 
+    // TODO ^^ take this via a constructor arg
+
+    /*//////////////////////////////////////////////////////////////
+                            VRGDA INPUT STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Timestamp for the start of the VRGDA mint.
+    uint256 internal immutable mintStart;
+
+    /// @notice The number of pages minted from goop.
+    uint128 internal numMintedFromGoop;
+
     /*//////////////////////////////////////////////////////////////
                               MINTING STATE
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: pack!!!
-
     /// @notice Id of last mint.
-    uint256 internal currentId; // todo: public???
-
-    /// @notice The number of pages minted from goop.
-    uint256 internal numMintedFromGoop;
-
-    /// @notice Timestamp for the start of the VRGDA mint.
-    uint256 internal immutable mintStart;
+    uint128 internal currentId; // todo: public???
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev The day the switch from a logistic to translated linear VRGDA is targeted to occur.
+    /// @dev Represented as an 18 decimal fixed point number.
+    int256 internal constant SWITCH_DAY_WAD = 207e18;
+
     /// @notice The id of the first page to be priced using the post switch VRGDA.
     /// @dev Computed by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
+    int256 internal constant SWITCH_ID_WAD = 9829.328043791893798338e18;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -69,16 +77,13 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
-            // Logistic scale. We multiply by 2x (as a wad)
-            // to account for the subtracted initial value,
-            // and add 1 to ensure all the tokens can be sold:
-            (9999 + 1) * 2e18,
+            9999e18, // Asymptote.
             0.023e18 // Time scale.
         )
         PostSwitchVRGDA(
             SWITCH_ID_WAD, // Switch id.
-            207e18, // Switch day.
-            10e18 // Per day.
+            SWITCH_DAY_WAD, // Switch day.
+            10e18 // Pages to target per day.
         )
         PagesERC1155B(_artGobblers)
     {

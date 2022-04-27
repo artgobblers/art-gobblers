@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {VRGDA} from "./VRGDA.sol";
-import {wadExp, wadLn, unsafeDiv, unsafeWadDiv, toWad} from "./SignedWadMath.sol";
+import {wadExp, wadLn, unsafeDiv, unsafeWadDiv} from "./SignedWadMath.sol";
 
 /// @title Logistic Variable Rate Gradual Dutch Auction
 /// @notice Abstract VRGDA with a logistic issuance curve.
@@ -25,15 +25,14 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 private immutable initialLogisticValue;
 
-    constructor(int256 _logisticScale, int256 _timeScale) {
-        // Because _logisticScale already comes in with 18
-        // decimals, toWad will increase its decimals to 36.
-        logisticScale = toWad(_logisticScale);
+    constructor(int256 _maxMintable, int256 _timeScale) {
+        // We need to double _maxMintable to account for initialLogisticValue
+        // and use 18 decimals to avoid wad multiplication in getTargetSaleDay.
+        logisticScale = _maxMintable * 2e18;
+
+        initialLogisticValue = _maxMintable;
 
         timeScale = _timeScale;
-
-        // Right shift by 1 is like dividing by 2.
-        initialLogisticValue = _logisticScale >> 1;
     }
 
     /*//////////////////////////////////////////////////////////////
