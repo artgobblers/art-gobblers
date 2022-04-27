@@ -117,10 +117,16 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
-    /// @notice Test that 10th gobbler is minted for vault
-    function testMintForVault() public {
-        mintGobblerToAddress(users[0], 9);
-        assertEq(gobblers.ownerOf(10), address(team));
+    ///@notice Tests that team should not be able to mint more than 10%.
+    function testMintForTeamReverts() public {
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintForTeam();
+    }
+
+    function testCanMintForTeam() public {
+        mintGobblerToAddress(users[0], 10);
+        gobblers.mintForTeam();
+        assertEq(gobblers.ownerOf(11), address(team));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -208,14 +214,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         uint256 emissionMultipleSum;
-        uint256 curId = 1;
-        while (ids.length < cost) {
-            if (curId % 10 != 0) {
-                ids.push(curId);
-                assertEq(gobblers.ownerOf(curId), users[0]);
-                emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
-            }
-            curId++;
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+            emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
         }
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);

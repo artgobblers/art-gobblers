@@ -80,6 +80,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     mapping(address => bool) public claimedMintlist;
 
     /*//////////////////////////////////////////////////////////////
+                             TEAM MINT STATE
+    //////////////////////////////////////////////////////////////*/
+
+    uint256 public numMintedForTeam;
+
+    /*//////////////////////////////////////////////////////////////
                             VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
 
@@ -267,11 +273,22 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         goop.burnForGobblers(msg.sender, gobblerPrice());
 
         unchecked {
-            _mint(msg.sender, ++currentNonLeaderId, "");
-
-            // Every 9 goop mints, we mint one gobbler for the team.
-            if (++numMintedFromGoop % 9 == 0) _mint(address(team), ++currentNonLeaderId, "");
+            _mint(msg.sender, ++currentNonLeaderId, "");   
+            ++numMintedFromGoop;        
         }
+    }
+
+    /// @notice Mint Gobbler for team. Number of gobblers 
+    /// minted for team should never exceed 10% of number 
+    /// that has been minted with goop. 
+    function mintForTeam() public { 
+        //10% of minted from goop 
+        uint256 currentMintLimit = numMintedFromGoop / 10;
+        //check that we don't go over limit after mint
+        if(++numMintedForTeam > currentMintLimit) {
+            revert Unauthorized();
+        }
+        _mint(address(team), ++currentNonLeaderId, "");
     }
 
     /// @notice Gobbler pricing in terms of goop.
