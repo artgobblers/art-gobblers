@@ -502,7 +502,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Check that max supply is mintable
-    function testMintMaxFromGoop() public {
+    function testLongRunningMintMaxFromGoop() public {
         //max_supply - leaders - mintlist - team
         uint256 maxMintableWithGoop = gobblers.MAX_SUPPLY() -
             gobblers.MINTLIST_SUPPLY() -
