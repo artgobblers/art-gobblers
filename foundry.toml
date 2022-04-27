@@ -10,4 +10,4 @@ no_match_test = "FFI"
 
 [ffi]
 ffi = true
-no_match_test = " "
+no_match_test = "LongRunning"
