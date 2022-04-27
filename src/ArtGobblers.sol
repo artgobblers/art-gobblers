@@ -470,38 +470,30 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     : getGobblerData[currentSlot].idx;
 
                 /*//////////////////////////////////////////////////////////////
-                                       UPDATE CURRENT SLOT
+                                          SWAP INDEXES
                 //////////////////////////////////////////////////////////////*/
 
-                // Get the emissions multiple for the swap index.
-                uint256 swapIndexMultiple = getEmissionsMultipleForIdx(swapIndex);
+                // Swap the current and swap slots.
+                getGobblerData[currentSlot].idx = swapIndex;
+                getGobblerData[swapSlot].idx = currentIndex;
 
-                // Swap the currentSlot's idx and multiple.
-                getGobblerData[currentSlot].idx = swapIndex; // Update idx and multiple.
-                getGobblerData[currentSlot].emissionMultiple = uint48(swapIndexMultiple);
+                /*//////////////////////////////////////////////////////////////
+                                  UPDATE CURRENT SLOT MULTIPLE
+                //////////////////////////////////////////////////////////////*/
+
+                // Get the new emissions multiple for the current slot from the swap index.
+                uint256 newCurrentSlotMultiple = getEmissionsMultipleForIdx(swapIndex);
+
+                // Update the gobbler's emissions multiple.
+                // TODO: does batching this with the above idx update save things
+                getGobblerData[currentSlot].emissionMultiple = uint48(newCurrentSlotMultiple);
 
                 // Update the emission data for the owner of the current slot.
+                // TODO: does batching this with the above idx update save things
                 address currentSlotOwner = getGobblerData[currentSlot].owner;
                 getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
                 getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(swapIndexMultiple);
-
-                /*//////////////////////////////////////////////////////////////
-                                        UPDATE SWAP SLOT
-                //////////////////////////////////////////////////////////////*/
-
-                // Get the emissions multiple for the current index.
-                uint256 currentIndexMultiple = getEmissionsMultipleForIdx(currentIndex);
-
-                // Swap the swapSlot's idx and multiple.
-                getGobblerData[swapSlot].idx = currentIndex;
-                getGobblerData[swapSlot].emissionMultiple = uint48(currentIndexMultiple);
-
-                // Update the emission data for the owner of the swap slot.
-                address swapSlotOwner = getGobblerData[swapSlot].owner;
-                getEmissionDataForUser[swapSlotOwner].lastBalance = uint128(goopBalance(swapSlotOwner));
-                getEmissionDataForUser[swapSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[swapSlotOwner].emissionMultiple += uint64(currentIndexMultiple);
+                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(newCurrentSlotMultiple);
 
                 /*//////////////////////////////////////////////////////////////
                                             CLEANUP
