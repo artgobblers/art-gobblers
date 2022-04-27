@@ -31,6 +31,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Base token URI.
     string internal constant BASE_URI = "";
 
+    // TODO ^^ take this via a constructor arg
+
     /*//////////////////////////////////////////////////////////////
                               MINTING STATE
     //////////////////////////////////////////////////////////////*/
