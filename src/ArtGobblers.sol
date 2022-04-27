@@ -16,7 +16,6 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
-// TODO: events
 // TODO: can save gas wherever we use goopBalance and already know the user multiple and such
 
 /// @title Art Gobblers NFT
