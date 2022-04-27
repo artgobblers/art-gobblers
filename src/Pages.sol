@@ -32,13 +32,6 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     string internal constant BASE_URI = "";
 
     /*//////////////////////////////////////////////////////////////
-                            SUPPLY CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Maximum amount of pages that can be minted via VRGDA.
-    uint256 public constant MAX_MINTABLE = 9999;
-
-    /*//////////////////////////////////////////////////////////////
                               MINTING STATE
     //////////////////////////////////////////////////////////////*/
 
@@ -80,8 +73,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
-            // Logistic curve asymptote.
-            int256(MAX_MINTABLE * 1e18),
+            9999e18, // Asymptote.
             0.023e18 // Time scale.
         )
         PostSwitchVRGDA(
