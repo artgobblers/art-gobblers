@@ -332,7 +332,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
 
             /*//////////////////////////////////////////////////////////////
-                                LEADER MINTING LOGIC
+                                  LEADER MINTING LOGIC
             //////////////////////////////////////////////////////////////*/
 
             // Supply caps are properly checked above, so overflow should be impossible here.
