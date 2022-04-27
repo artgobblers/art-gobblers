@@ -57,10 +57,14 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                             PRICING CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev The day the switch from a logistic to translated linear VRGDA is targeted to occur.
+    /// @dev Represented as an 18 decimal fixed point number.
+    int256 internal constant SWITCH_DAY_WAD = 207e18;
+
     /// @notice The id of the first page to be priced using the post switch VRGDA.
     /// @dev Computed by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SWITCH_ID_WAD = 9830.311074899383736712e18;
+    int256 internal constant SWITCH_ID_WAD = 9829.328043791893798338e18;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -82,8 +86,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         )
         PostSwitchVRGDA(
             SWITCH_ID_WAD, // Switch id.
-            207e18, // Switch day.
-            10e18 // Per day.
+            SWITCH_DAY_WAD, // Switch day.
+            10e18 // Pages to target per day.
         )
         PagesERC1155B(_artGobblers)
     {
