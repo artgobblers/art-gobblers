@@ -64,6 +64,12 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     int256 internal constant SWITCH_ID_WAD = 9829.328043791893798338e18;
 
     /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event PagePurchased(address indexed user, uint256 indexed pageId, uint256 price);
+
+    /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
@@ -115,9 +121,9 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         goop.burnForPages(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoop; // Before mint to prevent reentrancy.
+            emit PagePurchased(msg.sender, pageId = ++numMintedFromGoop, currentPrice);
 
-            _mint(msg.sender, pageId = ++currentId, "");
+            _mint(msg.sender, pageId, "");
         }
     }
 
