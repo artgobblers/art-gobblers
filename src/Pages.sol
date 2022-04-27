@@ -34,19 +34,23 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     // TODO ^^ take this via a constructor arg
 
     /*//////////////////////////////////////////////////////////////
-                              MINTING STATE
+                            VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
-
-    // TODO: pack!!!
-
-    /// @notice Id of last mint.
-    uint256 internal currentId; // todo: public???
-
-    /// @notice The number of pages minted from goop.
-    uint256 internal numMintedFromGoop;
 
     /// @notice Timestamp for the start of the VRGDA mint.
     uint256 internal immutable mintStart;
+
+    /// @notice The number of pages minted from goop.
+    uint128 internal numMintedFromGoop;
+
+    /*//////////////////////////////////////////////////////////////
+                              MINTING STATE
+    //////////////////////////////////////////////////////////////*/
+
+    // TODO: did packing with the above work?
+
+    /// @notice Id of last mint.
+    uint128 internal currentId; // todo: public???
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
