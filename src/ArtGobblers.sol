@@ -80,16 +80,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     mapping(address => bool) public claimedMintlist;
 
     /*//////////////////////////////////////////////////////////////
-                             TEAM MINT STATE
-    //////////////////////////////////////////////////////////////*/
-
-    uint256 public numMintedForTeam;
-
-    /*//////////////////////////////////////////////////////////////
                             VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Timestamp for the start of the mintlist & VRGDA mint.
+    /// @notice Timestamp for the start of minting.
     uint256 public immutable mintStart;
 
     /// @notice Number of gobblers minted from goop.
@@ -99,8 +93,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                          STANDARD GOBBLER STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Id of last minted non leader token.
-    uint128 internal currentNonLeaderId; // TODO: public?
+    /// @notice Id of the current non leader gobbler.
+    uint128 public currentNonLeaderId;
+
+    /// @notice The number of gobblers minted to the team.
+    uint256 public numMintedForTeam;
 
     /*//////////////////////////////////////////////////////////////
                       LEADER GOBBLER AUCTION STATE
@@ -115,10 +112,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint120 currentLeaderGobblerStartPrice;
         // Start timestamp of current leader gobbler auction.
         uint120 currentLeaderGobblerAuctionStart;
-        // Id of last minted leader gobbler.
+        // Id of the current leader gobbler.
         // 16 bits has a max value of ~60,000,
         // which is safely within our limits here.
-        uint16 currentLeaderId; // TODO: current leader id is kinda confusing cuz the first id isnt actually leader
+        uint16 currentLeaderId;
     }
 
     /// @notice Data about the current leader gobbler auction.
