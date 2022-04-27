@@ -17,6 +17,7 @@ import {Goop} from "./Goop.sol";
 import {Pages} from "./Pages.sol";
 
 // TODO: events
+// TODO: can save gas wherever we use goopBalance and already know the user multiple and such
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
