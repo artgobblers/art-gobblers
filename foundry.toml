@@ -6,6 +6,7 @@ no_match_test = "FFI|LongRunning"
 
 [intense]
 fuzz_runs = 10000
+no_match_test = "FFI"
 
 [ffi]
 ffi = true
