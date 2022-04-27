@@ -2,7 +2,7 @@
 solc = "0.8.13"
 optimizer_runs = 1000000
 bytecode_hash = "none"
-no_match_test = "FFI"
+no_match_test = "FFI|testMintMaxFromGoop"
 
 [intense]
 fuzz_runs = 10000
