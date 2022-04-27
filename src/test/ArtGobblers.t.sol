@@ -12,7 +12,7 @@ import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {ERC1155BLockupVault} from "../utils/ERC1155BLockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
-import {VRFCoordinatorMock} from "./utils/mocks/VRFCoordinatorMock.sol";
+import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
