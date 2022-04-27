@@ -214,7 +214,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintLeaderGobbler(ids);
         (, , uint16 leaderId) = gobblers.leaderGobblerAuctionData();
         assertEq(leaderId, 9991);
-        uint256 startTime = block.timestamp;
         uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
@@ -403,8 +402,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.goopBalance(users[0]), additionAmount);
     }
 
-    /// @notice Test that emission multiplier changes as expected after transfer.
-    function testEmissionMultiplierUpdatesAfterTransfer() public {
+    /// @notice Test that emission multiple changes as expected after transfer.
+    function testEmissionMultipleUpdatesAfterTransfer() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
