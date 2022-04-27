@@ -47,8 +47,6 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                               MINTING STATE
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: did packing with the above work?
-
     /// @notice Id of last mint.
     uint128 internal currentId; // todo: public???
 
