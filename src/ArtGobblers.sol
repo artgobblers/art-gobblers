@@ -176,7 +176,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
     event GobblerMintedForTeam(address indexed user, uint256 indexed gobblerId);
-    event LeaderGobblerMinted(address indexed user, uint256 indexed gobblerId); // TODO: add burnedGobblers field?
+    event LeaderGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
 
     event RandomnessRequested(address indexed user, uint256 gobblersToBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
@@ -410,9 +410,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             leaderGobblerAuctionData.currentLeaderGobblerAuctionStart += 30 days;
             leaderGobblerAuctionData.currentLeaderGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
-            emit LeaderGobblerMinted(msg.sender, gobblerId);
+            // Will costs more the larger gobblerIds is. At around
+            // 5,000 elements it would will close to ~1,400,000 gas.
+            emit LeaderGobblerMinted(msg.sender, gobblerId, gobblerIds);
 
-            // Mint the leader gobbler.
             _mint(msg.sender, gobblerId, "");
         }
     }
