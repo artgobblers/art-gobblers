@@ -33,7 +33,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     string private baseUri = "base";
 
     function setUp() public {
-        vm.warp(1); // Otherwise mintStart will be set to 0 and brick Pages.mint()
+        vm.warp(1); // Otherwise mintStart will be set to 0 and brick pages.mintFromGoop(type(uint256).max)
 
         utils = new Utilities();
         users = utils.createUsers(5);
@@ -64,13 +64,13 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goop.mintForGobblers(address(this), type(uint128).max);
 
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
 
         gobblers.addGoop(1e18);
 
         vm.warp(block.timestamp + 30 days);
 
-        for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoop();
+        for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoop(type(uint256).max);
 
         bytes32 requestId = gobblers.getRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
@@ -94,11 +94,11 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintPage() public {
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
     }
 
     function testMintGobbler() public {
-        gobblers.mintFromGoop();
+        gobblers.mintFromGoop(type(uint256).max);
     }
 
     function testAddGoop() public {

@@ -59,7 +59,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     string public BASE_URI;
 
     /// @notice URI for gobblers that have yet to be revealed.
-    string public UNREVEALED_URI;
+    string public UNREVEALED_URI; // TODO: we dont set this at al rn
 
     /*//////////////////////////////////////////////////////////////
                               VRF CONSTANTS
@@ -104,7 +104,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Last 10 ids are reserved for leader gobblers.
-    uint256 private constant LEADER_GOBBLER_ID_START = MAX_SUPPLY - 10;
+    uint256 internal constant LEADER_GOBBLER_ID_START = MAX_SUPPLY - 10;
 
     /// @notice Struct holding data required for leader gobbler auctions.
     struct LeaderGobblerAuctionData {
@@ -168,7 +168,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Leader gobbler was minted.
     event LeaderGobblerMint(uint256 gobblerId);
 
     /*//////////////////////////////////////////////////////////////
@@ -184,6 +183,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     error IncorrectGobblerAmount();
 
     error NoRemainingLeaderGobblers();
+
+    error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -245,15 +246,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Mint from mintlist, using a merkle proof.
     /// @param proof Merkle proof to verify the sender is mintlisted.
-    function mintFromMintlist(bytes32[] calldata proof) public {
+    /// @return gobblerId The id of the gobbler that was minted.
+    function mintFromMintlist(bytes32[] calldata proof) public returns (uint256 gobblerId) {
+        // If minting has not yet begun or the user has already claimed, revert.
         if (mintStart > block.timestamp || claimedMintlist[msg.sender]) revert Unauthorized();
 
+        // If the user's proof is invalid, revert.
         if (!MerkleProof.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
 
-        claimedMintlist[msg.sender] = true;
+        claimedMintlist[msg.sender] = true; // Before mint to prevent reentrancy.
 
         unchecked {
-            _mint(msg.sender, ++currentNonLeaderId, "");
+            _mint(msg.sender, gobblerId = ++currentNonLeaderId, "");
         }
     }
 
@@ -262,17 +266,23 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a gobbler with goop, burning the cost.
-    /// TODO: we might want to add a "max price arg" so ppl dont rekt on frontrun
-    function mintFromGoop() public {
+    /// @param maxPrice Maximum price to pay to mint the gobbler.
+    /// @return gobblerId The id of the gobbler that was minted.
+    function mintFromGoop(uint256 maxPrice) public returns (uint256 gobblerId) {
         // No need to check mint cap, gobblerPrice()
         // will revert due to overflow if we reach it.
         // It will also revert prior to the mint start.
-        goop.burnForGobblers(msg.sender, gobblerPrice());
+        uint256 currentPrice = gobblerPrice();
+
+        // If the current price is above the user's specified max, revert.
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
+
+        goop.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoop;
+            ++numMintedFromGoop; // Before mint to prevent reentrancy.
 
-            _mint(msg.sender, ++currentNonLeaderId, "");
+            _mint(msg.sender, gobblerId = ++currentNonLeaderId, "");
         }
     }
 
@@ -294,7 +304,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Mint a gobbler to the team.
     /// @dev Team cannot never mint more than 10% of
     /// the circulating supply of auctioned gobblers.
-    function mintForTeam() public {
+    /// @return gobblerId The id of the gobbler that was minted.
+    function mintForTeam() public returns (uint256 gobblerId) {
         unchecked {
             // Can mint up to 10% of the current auctioned gobblers.
             uint256 currentMintLimit = numMintedFromGoop / 10;
@@ -302,8 +313,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Check that we wouldn't go over the limit after minting.
             if (++numMintedForTeam > currentMintLimit) revert Unauthorized();
 
-            // Mint a new gobbler directly to the team.
-            _mint(address(team), ++currentNonLeaderId, "");
+            _mint(address(team), gobblerId = ++currentNonLeaderId, "");
         }
     }
 
@@ -313,11 +323,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Mint a leader gobbler by burning multiple standard gobblers.
     /// @param gobblerIds The ids of the standard gobblers to burn.
-    // TODO: could this hit the gas limit?
-    function mintLeaderGobbler(uint256[] calldata gobblerIds) public {
+    /// @return gobblerId The id of the leader gobbler that was minted.
+    function mintLeaderGobbler(uint256[] calldata gobblerIds) public returns (uint256 gobblerId) {
         uint256 lastLeaderId = leaderGobblerAuctionData.currentLeaderId;
 
-        // TODO: wait wouldn't this mean the last leaderId will be 9999
         // When leader id equals max supply, we've minted all 10 leader gobblers.
         if (lastLeaderId == MAX_SUPPLY) revert NoRemainingLeaderGobblers();
 
@@ -360,12 +369,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             //////////////////////////////////////////////////////////////*/
 
             // Supply caps are properly checked above, so overflow should be impossible here.
-            uint256 newLeaderId = ++lastLeaderId;
+            gobblerId = ++lastLeaderId;
 
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the leader's emissionMultiple 2x the sum of the multiples of the gobblers burned.
             // Must be done before minting as the transfer hook will update the user's emissionMultiple.
-            getGobblerData[newLeaderId].emissionMultiple = uint48(burnedMultipleTotal << 1);
+            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal << 1);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -376,15 +385,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Start a new auction, 30 days after the previous start, and update the current leader id.
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
-            leaderGobblerAuctionData.currentLeaderId = uint16(newLeaderId);
+            leaderGobblerAuctionData.currentLeaderId = uint16(gobblerId);
             leaderGobblerAuctionData.currentLeaderGobblerAuctionStart += 30 days;
             leaderGobblerAuctionData.currentLeaderGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // It gets a special event.
-            emit LeaderGobblerMint(newLeaderId);
+            emit LeaderGobblerMint(gobblerId);
 
             // Mint the leader gobbler.
-            _mint(msg.sender, newLeaderId, "");
+            _mint(msg.sender, gobblerId, "");
         }
     }
 
