@@ -59,7 +59,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     string public BASE_URI;
 
     /// @notice URI for gobblers that have yet to be revealed.
-    string public UNREVEALED_URI; // TODO: we dont set this at al rn
+    string public UNREVEALED_URI;
 
     /*//////////////////////////////////////////////////////////////
                               VRF CONSTANTS
@@ -204,7 +204,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-        // Whitelist:
+        // Mint config:
         bytes32 _merkleRoot,
         uint256 _mintStart,
         // Addresses:
@@ -215,8 +215,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         address _linkToken,
         bytes32 _chainlinkKeyHash,
         uint256 _chainlinkFee,
-        // URI:
-        string memory _baseUri
+        // URIs:
+        string memory _baseUri,
+        string memory _unrevealedUri
     )
         VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
@@ -239,6 +240,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         chainlinkFee = _chainlinkFee;
 
         BASE_URI = _baseUri;
+        UNREVEALED_URI = _unrevealedUri;
 
         // Start price for leader gobblers is 100 gobblers.
         leaderGobblerAuctionData.currentLeaderGobblerStartPrice = 100;

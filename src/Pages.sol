@@ -28,10 +28,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                               URI CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Base token URI.
-    string public BASE_URI = "";
-
-    // TODO ^^ take this via a constructor arg
+    /// @notice Base URI for minted pages.
+    string public BASE_URI;
 
     /*//////////////////////////////////////////////////////////////
                             VRGDA INPUT STATE
@@ -80,9 +78,13 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     //////////////////////////////////////////////////////////////*/
 
     constructor(
+        // Mint config:
         uint256 _mintStart,
+        // Addresses:
         address _artGobblers,
-        Goop _goop
+        Goop _goop,
+        // URIs:
+        string memory _baseUri
     )
         VRGDA(
             4.20e18, // Initial price.
@@ -102,6 +104,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         mintStart = _mintStart;
 
         goop = _goop;
+
+        BASE_URI = _baseUri;
     }
 
     /*//////////////////////////////////////////////////////////////
