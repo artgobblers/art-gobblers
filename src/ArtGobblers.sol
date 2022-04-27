@@ -465,6 +465,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     : getGobblerData[swapSlot].idx;
 
                 // Get the index of the current slot.
+                address currentSlotOwner = getGobblerData[currentSlot].owner;
                 uint48 currentIndex = getGobblerData[currentSlot].idx == 0
                     ? uint48(currentSlot) // Slot is untouched.
                     : getGobblerData[currentSlot].idx;
@@ -491,7 +492,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 // Update the emission data for the owner of the current slot.
                 // TODO: does batching this with the above idx update save things
-                address currentSlotOwner = getGobblerData[currentSlot].owner;
+
                 getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
                 getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
                 getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(newCurrentSlotMultiple);
