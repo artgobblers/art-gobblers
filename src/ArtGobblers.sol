@@ -465,11 +465,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     : getGobblerData[currentSlot].idx;
 
                 /*//////////////////////////////////////////////////////////////
-                                    SWAP INDEXES AND MULTIPLE
+                                 SWAP INDEXES AND SET MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
-                // Get the new emission multiple for the current slot, from the swap index.
-                uint256 newCurrentSlotMultiple = getEmissionsMultipleForIdx(swapIndex);
+                // Determine the current slot's new emission multiple.
+                uint256 newCurrentSlotMultiple = 9; // For 7964-10000.
+                if (swapIndex <= 3054) newCurrentSlotMultiple = 6;
+                if (swapIndex <= 5672) newCurrentSlotMultiple = 7;
+                if (swapIndex <= 7963) newCurrentSlotMultiple = 8;
 
                 // Swap the index and multiple of the current slot.
                 getGobblerData[currentSlot].idx = swapIndex;
@@ -500,20 +503,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             lastRevealedIndex = uint128(currentLastRevealedIndex);
             gobblersToBeAssigned = uint128(currentGobblersToBeAssigned - numGobblers);
         }
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                   EMISSION MULTIPLE ASSIGNMENT LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Maps a shuffled idx to an emission multiple.
-    /// @param idx The idx to get the emission multiple for.
-    function getEmissionsMultipleForIdx(uint256 idx) public pure returns (uint256) {
-        if (idx <= 3054) return 6;
-        if (idx <= 5672) return 7;
-        if (idx <= 7963) return 8;
-
-        return 9; // 7,963 to 10,000.
     }
 
     /*//////////////////////////////////////////////////////////////
