@@ -81,7 +81,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         address user = users[0];
         bytes32[] memory proof;
         vm.prank(user);
-        gobblers.mintFromMintlist(proof);
+        gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
     }
@@ -90,7 +90,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintNotInMintlist() public {
         bytes32[] memory proof;
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.mintFromMintlist(proof);
+        gobblers.claimGobbler(proof);
     }
 
     /// @notice Test that you can successfully mint from goop.
@@ -234,7 +234,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         ids[0] = leaderId; // the leader we minted
         vm.prank(users[0]);
-        vm.expectRevert(ArtGobblers.CannotBurnLeader.selector);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, leaderId));
         gobblers.mintLeaderGobbler(ids);
     }
 
@@ -502,7 +502,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
         gobblers.feedArt(1, address(token), 1);
-        vm.expectRevert(ArtGobblers.AlreadyEaten.selector);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.AlreadyEaten.selector, 1, token, 1));
         gobblers.feedArt(1, address(token), 1);
         vm.stopPrank();
     }
