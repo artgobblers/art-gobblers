@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
+import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
@@ -610,7 +610,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         emit ArtFeedToGobbler(msg.sender, gobblerId, nft, id);
 
-        // We're assuming this is an 1155B-esque NFT, so we'll only transfer 1.
+        // We're assuming this is an 1155B-like NFT, so we'll only transfer 1.
         ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
 

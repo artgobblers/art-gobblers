@@ -9,9 +9,6 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
-import {ArtGobblers} from "./ArtGobblers.sol";
-
-// todo: events?
 
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
@@ -22,7 +19,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public goop; // todo: public?
+    Goop public goop;
 
     /*//////////////////////////////////////////////////////////////
                               URI CONSTANTS
