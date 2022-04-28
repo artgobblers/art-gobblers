@@ -102,6 +102,17 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.mintFromGoop(type(uint256).max);
     }
 
+    function testBatchTransferGobblers() public {
+        uint256[] memory ids = new uint256[](100);
+        uint256[] memory amounts = new uint256[](100);
+        for (uint256 i = 0; i < 100; i++) {
+            ids[i] = i + 1;
+            amounts[i] = 1;
+        }
+
+        gobblers.safeBatchTransferFrom(address(this), address(0xBEEF), ids, amounts, "");
+    }
+
     function testAddGoop() public {
         gobblers.addGoop(1e18);
     }
