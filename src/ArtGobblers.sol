@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
-import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
@@ -14,9 +14,6 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
-import {Pages} from "./Pages.sol";
-
-// TODO: can save gas wherever we use goopBalance and already know the user multiple and such
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
