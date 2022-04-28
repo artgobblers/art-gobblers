@@ -66,10 +66,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             address(linkToken),
             keyHash,
             fee,
-            baseUri
+            baseUri,
+            ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goop);
+        pages = new Pages(block.timestamp, address(gobblers), goop, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -81,7 +82,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         address user = users[0];
         bytes32[] memory proof;
         vm.prank(user);
-        gobblers.mintFromMintlist(proof);
+        gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
     }
@@ -90,7 +91,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintNotInMintlist() public {
         bytes32[] memory proof;
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.mintFromMintlist(proof);
+        gobblers.claimGobbler(proof);
     }
 
     /// @notice Test that you can successfully mint from goop.
@@ -99,7 +100,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goop.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        gobblers.mintFromGoop();
+        gobblers.mintFromGoop(type(uint256).max);
         assertEq(gobblers.ownerOf(1), users[0]);
     }
 
@@ -107,7 +108,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintInsufficientBalance() public {
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
-        gobblers.mintFromGoop();
+        gobblers.mintFromGoop(type(uint256).max);
+    }
+
+    /// @notice Test that if mint price exceeds max it reverts.
+    function testMintPriceExceededMax() public {
+        uint256 cost = gobblers.gobblerPrice();
+        vm.prank(address(gobblers));
+        goop.mintForGobblers(users[0], cost);
+        vm.prank(users[0]);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost, cost - 1));
+        gobblers.mintFromGoop(cost - 1);
     }
 
     /// @notice Test that initial gobbler price is what we expect.
@@ -117,12 +128,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
-    ///@notice Tests that team should not be able to mint more than 10%.
+    /// @notice Tests that team should not be able to mint more than 10%.
     function testMintForTeamReverts() public {
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.mintForTeam();
     }
 
+    /// @notice Test that the team can mint under fair circumstances.
     function testCanMintForTeam() public {
         mintGobblerToAddress(users[0], 10);
         gobblers.mintForTeam();
@@ -198,8 +210,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
 
         vm.prank(users[0]);
-        gobblers.mintLeaderGobbler(ids);
-        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
+        uint256 currentLeaderId = gobblers.mintLeaderGobbler(ids);
 
         // Leader is owned by user.
         assertEq(gobblers.ownerOf(currentLeaderId), users[0]);
@@ -224,7 +235,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         ids[0] = leaderId; // the leader we minted
         vm.prank(users[0]);
-        vm.expectRevert(ArtGobblers.CannotBurnLeader.selector);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, leaderId));
         gobblers.mintLeaderGobbler(ids);
     }
 
@@ -243,7 +254,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goop.mintForGobblers(users[0], gobblerCost);
         vm.prank(users[0]);
-        gobblers.mintFromGoop();
+        gobblers.mintFromGoop(type(uint256).max);
         // assert gobbler not revealed after mint
         assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
     }
@@ -265,8 +276,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //mint leader
         vm.warp(block.timestamp + 70 days);
         uint256[] memory _ids; // gobbler should be free at this point
-        gobblers.mintLeaderGobbler(_ids);
-        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
+        uint256 currentLeaderId = gobblers.mintLeaderGobbler(_ids);
 
         //expected URI should not be shuffled
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(currentLeaderId).toString()));
@@ -274,12 +284,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
-    /// @notice Test that un-minted leader gobbler URI is correct
+    /// @notice Test that un-minted leader gobbler URI is correct.
     function testUnmintedLeaderUri() public {
         (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
 
-        uint256 leaderId = currentLeaderId + 1;
-        assertEq(gobblers.uri(leaderId), "");
+        assertEq(gobblers.uri(currentLeaderId), "");
+        assertEq(gobblers.uri(currentLeaderId + 1), "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -455,7 +465,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
         gobblers.feedArt(1, address(pages), 1);
         vm.stopPrank();
         assertEq(gobblers.getGobblerFromFedArt(address(pages), 1), 1);
@@ -468,7 +478,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.feedArt(1, address(pages), 1);
         vm.stopPrank();
@@ -493,7 +503,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
         gobblers.feedArt(1, address(token), 1);
-        vm.expectRevert(ArtGobblers.AlreadyEaten.selector);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.AlreadyEaten.selector, 1, token, 1));
         gobblers.feedArt(1, address(token), 1);
         vm.stopPrank();
     }
@@ -512,7 +522,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(address(gobblers));
             goop.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoop();
+            gobblers.mintFromGoop(type(uint256).max);
         }
     }
 
@@ -531,7 +541,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(users[0]);
 
             if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
-            gobblers.mintFromGoop();
+            gobblers.mintFromGoop(type(uint256).max);
         }
     }
 
@@ -566,7 +576,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoop();
+            gobblers.mintFromGoop(type(uint256).max);
         }
     }
 

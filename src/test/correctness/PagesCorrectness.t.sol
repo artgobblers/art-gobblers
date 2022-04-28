@@ -34,7 +34,7 @@ contract PageCorrectnessTest is DSTestPlus {
     Pages internal pages;
 
     function setUp() public {
-        pages = new Pages(block.timestamp, address(0), Goop(address(0)));
+        pages = new Pages(block.timestamp, address(0), Goop(address(0)), "");
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {

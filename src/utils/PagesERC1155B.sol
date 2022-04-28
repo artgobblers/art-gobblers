@@ -34,7 +34,7 @@ abstract contract PagesERC1155B {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    address internal immutable artGobblers; // todo: public?
+    address public immutable artGobblers;
 
     constructor(address _artGobblers) {
         artGobblers = _artGobblers;

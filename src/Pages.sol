@@ -9,9 +9,6 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
 import {Goop} from "./Goop.sol";
-import {ArtGobblers} from "./ArtGobblers.sol";
-
-// todo: events?
 
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
@@ -22,33 +19,24 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop internal goop; // todo: public?
+    Goop public goop;
 
     /*//////////////////////////////////////////////////////////////
-                              URI CONSTANTS
+                                  URIS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Base token URI.
-    string internal constant BASE_URI = "";
-
-    // TODO ^^ take this via a constructor arg
+    /// @notice Base URI for minted pages.
+    string public BASE_URI;
 
     /*//////////////////////////////////////////////////////////////
                             VRGDA INPUT STATE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Timestamp for the start of the VRGDA mint.
-    uint256 internal immutable mintStart;
+    uint256 public immutable mintStart;
 
-    /// @notice The number of pages minted from goop.
-    uint128 internal numMintedFromGoop;
-
-    /*//////////////////////////////////////////////////////////////
-                              MINTING STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Id of last mint.
-    uint128 internal currentId; // todo: public???
+    /// @notice Id of the current page.
+    uint256 public currentId;
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -64,13 +52,29 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     int256 internal constant SWITCH_ID_WAD = 9829.328043791893798338e18;
 
     /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event PagePurchased(address indexed user, uint256 indexed pageId, uint256 price);
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
+
+    /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     constructor(
+        // Mint config:
         uint256 _mintStart,
+        // Addresses:
         address _artGobblers,
-        Goop _goop
+        Goop _goop,
+        // URIs:
+        string memory _baseUri
     )
         VRGDA(
             4.20e18, // Initial price.
@@ -90,26 +94,32 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         mintStart = _mintStart;
 
         goop = _goop;
+
+        BASE_URI = _baseUri;
     }
 
     /*//////////////////////////////////////////////////////////////
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a page by burning goop.
-    function mint() public {
-        goop.burnForPages(msg.sender, pagePrice());
+    /// @notice Mint a page with goop, burning the cost.
+    /// @param maxPrice Maximum price to pay to mint the gobbler.
+    /// @return pageId The id of the page that was minted.
+    function mintFromGoop(uint256 maxPrice) external returns (uint256 pageId) {
+        // Will revert if prior to mint start.
+        uint256 currentPrice = pagePrice();
+
+        // If the current price is above the user's specified max, revert.
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
+
+        goop.burnForPages(msg.sender, currentPrice);
 
         unchecked {
-            _mint(msg.sender, ++currentId, "");
+            emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
 
-            ++numMintedFromGoop;
+            _mint(msg.sender, pageId, "");
         }
     }
-
-    /*//////////////////////////////////////////////////////////////
-                           VRGDA PRICING LOGIC
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the mint cost of a page.
     /// @dev If the number of sales is below a pre-defined threshold, we use the
@@ -120,7 +130,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, numMintedFromGoop);
+        return getPrice(timeSinceStart, currentId);
     }
 
     function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
