@@ -184,10 +184,10 @@ abstract contract GobblersERC1155B {
         uint256 id,
         bytes memory data
     ) internal virtual {
-        // Minting twice would effectively be a force transfer.
-        require(getGobblerData[id].owner == address(0), "ALREADY_MINTED");
-
         getGobblerData[id].owner = to;
+
+        // Does not check if the token was already minted because new ids in
+        // ArtGobblers.sol are set using a monotonically increasing counter.
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
