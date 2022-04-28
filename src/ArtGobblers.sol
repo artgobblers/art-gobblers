@@ -4,12 +4,12 @@ pragma solidity >=0.8.0;
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
-import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
+import {LibStrings} from "./utils/LibStrings.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
@@ -18,7 +18,7 @@ import {Goop} from "./Goop.sol";
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
-    using Strings for uint256;
+    using LibStrings for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
