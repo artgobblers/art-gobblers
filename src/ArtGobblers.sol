@@ -759,6 +759,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         getGobblerData[id].owner = to;
 
         unchecked {
+            // Get the transferred gobbler's emission multiple. Can be zero before reveal.
             uint64 emissionMultiple = getGobblerData[id].emissionMultiple;
 
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
