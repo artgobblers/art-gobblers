@@ -48,7 +48,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     uint256 public constant MAX_MINTABLE = MAX_SUPPLY - MINTLIST_SUPPLY - LEADER_SUPPLY - TEAM_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
-                            URI CONFIGURATION
+                                  URIS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Base URI for minted gobblers.
@@ -73,7 +73,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     bytes32 public immutable merkleRoot;
 
     /// @notice Mapping to keep track of which addresses have claimed from mintlist.
-    mapping(address => bool) public claimedMintlist;
+    mapping(address => bool) public hasClaimedMintlistGobbler;
 
     /*//////////////////////////////////////////////////////////////
                             VRGDA INPUT STATE
@@ -118,11 +118,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     LeaderGobblerAuctionData public leaderGobblerAuctionData;
 
     /*//////////////////////////////////////////////////////////////
-                         ATTRIBUTES REVEAL STATE
+                          GOBBLER REVEAL STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct holding data required for attribute reveals.
-    struct RevealState {
+    /// @notice Struct holding data required for gobbler reveals.
+    struct GobblerRevealsData {
         // Last random seed obtained from VRF.
         uint64 randomSeed;
         // Index of last token that has been revealed.
@@ -133,11 +133,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint64 nextRevealTimestamp;
     }
 
-    /// @notice Data about the current state of attribute reveals.
-    RevealState public revealState;
+    /// @notice Data about the current state of gobbler reveals.
+    GobblerRevealsData public gobblerRevealsData;
 
     /*//////////////////////////////////////////////////////////////
-                              EMISSION STATE
+                             EMISSION STATE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Struct data info required for goop emission reward calculations.
@@ -248,7 +248,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         leaderGobblerAuctionData.currentLeaderId = uint16(LEADER_GOBBLER_ID_START);
 
         // Reveal for initial mint must wait 24 hours
-        revealState.nextRevealTimestamp = uint64(_mintStart + 1 days);
+        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -260,12 +260,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
         // If minting has not yet begun or the user has already claimed, revert.
-        if (mintStart > block.timestamp || claimedMintlist[msg.sender]) revert Unauthorized();
+        if (mintStart > block.timestamp || hasClaimedMintlistGobbler[msg.sender]) revert Unauthorized();
 
         // If the user's proof is invalid, revert.
         if (!MerkleProof.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
 
-        claimedMintlist[msg.sender] = true; // Before mint to prevent reentrancy.
+        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
 
         unchecked {
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLeaderId);
@@ -434,52 +434,52 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Get the random seed for revealing gobblers.
     function getRandomSeed() external returns (bytes32) {
-        uint256 nextReveal = revealState.nextRevealTimestamp;
+        uint256 nextReveal = gobblerRevealsData.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
         if (block.timestamp < nextReveal) revert Unauthorized();
 
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (revealState.gobblersToBeAssigned != 0) revert Unauthorized();
+        if (gobblerRevealsData.gobblersToBeAssigned != 0) revert Unauthorized();
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
-            revealState.nextRevealTimestamp = uint64(nextReveal + 1 days);
+            gobblerRevealsData.nextRevealTimestamp = uint64(nextReveal + 1 days);
 
             // Fix number of gobblers to be revealed from seed.
-            revealState.gobblersToBeAssigned = uint64(currentNonLeaderId - revealState.lastRevealedIndex);
+            gobblerRevealsData.gobblersToBeAssigned = uint64(currentNonLeaderId - gobblerRevealsData.lastRevealedIndex);
         }
 
-        emit RandomnessRequested(msg.sender, revealState.gobblersToBeAssigned);
+        emit RandomnessRequested(msg.sender, gobblerRevealsData.gobblersToBeAssigned);
 
         // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
-    /// @notice Callback from chainlink VRF. sets active attributes and seed.
+    /// @notice Callback from chainlink VRF. sets randomSeed.
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
-        revealState.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
+        gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
 
         emit RandomnessFulfilled(randomness);
     }
 
     /*//////////////////////////////////////////////////////////////
-                         ATTRIBUTES REVEAL LOGIC
+                          GOBBLER REVEAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) external {
-        uint256 currentGobblersToBeAssigned = revealState.gobblersToBeAssigned;
+        uint256 currentGobblersToBeAssigned = gobblerRevealsData.gobblersToBeAssigned;
 
         // Can't reveal more gobblers than were available when seed was generated.
         if (numGobblers > currentGobblersToBeAssigned) revert Unauthorized();
 
-        uint256 currentRandomSeed = revealState.randomSeed;
+        uint256 currentRandomSeed = gobblerRevealsData.randomSeed;
 
-        uint256 currentLastRevealedIndex = revealState.lastRevealedIndex;
+        uint256 currentLastRevealedIndex = gobblerRevealsData.lastRevealedIndex;
 
         emit GobblersRevealed(msg.sender, numGobblers, currentLastRevealedIndex);
 
@@ -492,7 +492,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 //////////////////////////////////////////////////////////////*/
 
                 // Number of slots that have not been assigned.
-                uint256 remainingSlots = LEADER_GOBBLER_ID_START - revealState.lastRevealedIndex;
+                uint256 remainingSlots = LEADER_GOBBLER_ID_START - gobblerRevealsData.lastRevealedIndex;
 
                 // Randomly pick distance for swap.
                 uint256 distance = currentRandomSeed % remainingSlots;
@@ -551,9 +551,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             }
 
             // Update relevant reveal state state all at once.
-            revealState.randomSeed = uint64(currentRandomSeed);
-            revealState.lastRevealedIndex = uint64(currentLastRevealedIndex);
-            revealState.gobblersToBeAssigned = uint64(currentGobblersToBeAssigned - numGobblers);
+            gobblerRevealsData.randomSeed = uint64(currentRandomSeed);
+            gobblerRevealsData.lastRevealedIndex = uint64(currentLastRevealedIndex);
+            gobblerRevealsData.gobblersToBeAssigned = uint64(currentGobblersToBeAssigned - numGobblers);
         }
     }
 
@@ -565,7 +565,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerId The id of the token to get the URI for.
     function uri(uint256 gobblerId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealedIndex are revealed normal gobblers.
-        if (gobblerId <= revealState.lastRevealedIndex) {
+        if (gobblerId <= gobblerRevealsData.lastRevealedIndex) {
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 

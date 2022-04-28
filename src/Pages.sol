@@ -22,7 +22,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     Goop public goop;
 
     /*//////////////////////////////////////////////////////////////
-                              URI CONSTANTS
+                                  URIS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Base URI for minted pages.
@@ -35,15 +35,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Timestamp for the start of the VRGDA mint.
     uint256 public immutable mintStart;
 
-    /// @notice The number of pages minted from goop.
-    uint128 public numMintedFromGoop;
-
-    /*//////////////////////////////////////////////////////////////
-                              MINTING STATE
-    //////////////////////////////////////////////////////////////*/
-
     /// @notice Id of the current page.
-    uint128 public currentId;
+    uint256 public currentId;
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -122,7 +115,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         goop.burnForPages(msg.sender, currentPrice);
 
         unchecked {
-            emit PagePurchased(msg.sender, pageId = ++numMintedFromGoop, currentPrice);
+            emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
 
             _mint(msg.sender, pageId, "");
         }
@@ -137,7 +130,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, numMintedFromGoop);
+        return getPrice(timeSinceStart, currentId);
     }
 
     function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
