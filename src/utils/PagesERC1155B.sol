@@ -184,8 +184,8 @@ abstract contract PagesERC1155B {
     ) internal virtual {
         ownerOf[id] = to;
 
-        // Does not check if the token was already minted because new ids in
-        // ArtGobblers.sol are set using a monotonically increasing counter.
+        // Does not check if the token was already minted because new ids
+        // in Pages.sol are set using a monotonically increasing counter.
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
