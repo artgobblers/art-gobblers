@@ -33,7 +33,7 @@ contract PagesTest is DSTestPlus {
             utils.predictContractAddress(address(this), 1)
         );
 
-        pages = new Pages(block.timestamp, address(this), goop);
+        pages = new Pages(block.timestamp, address(this), goop, "");
 
         user = users[1];
     }
@@ -41,7 +41,7 @@ contract PagesTest is DSTestPlus {
     function testMintBeforeSetMint() public {
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
     }
 
     function testMintBeforeStart() public {
@@ -49,13 +49,13 @@ contract PagesTest is DSTestPlus {
 
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
     }
 
     function testRegularMint() public {
         goop.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
         assertEq(user, pages.ownerOf(1));
     }
 
@@ -69,12 +69,20 @@ contract PagesTest is DSTestPlus {
     function testInsufficientBalance() public {
         vm.prank(user);
         vm.expectRevert(stdError.arithmeticError);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
+    }
+
+    function testMintPriceExceededMax() public {
+        uint256 cost = pages.pagePrice();
+        goop.mintForGobblers(user, cost);
+        vm.prank(user);
+        vm.expectRevert(abi.encodeWithSelector(Pages.PriceExceededMax.selector, cost, cost - 1));
+        pages.mintFromGoop(cost - 1);
     }
 
     function mintPage(address _user) internal {
         goop.mintForGobblers(_user, pages.pagePrice());
         vm.prank(_user);
-        pages.mint();
+        pages.mintFromGoop(type(uint256).max);
     }
 }
