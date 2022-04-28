@@ -30,7 +30,6 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
     bytes32 private keyHash;
     uint256 private fee;
-    string private baseUri = "base";
 
     function setUp() public {
         vm.warp(1); // Otherwise mintStart will be set to 0 and brick pages.mintFromGoop(type(uint256).max)
@@ -56,7 +55,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             address(linkToken),
             keyHash,
             fee,
-            baseUri,
+            "base",
             ""
         );
 
