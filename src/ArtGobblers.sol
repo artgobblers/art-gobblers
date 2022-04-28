@@ -5,12 +5,12 @@ import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
-import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
+import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goop} from "./Goop.sol";
@@ -263,7 +263,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         if (mintStart > block.timestamp || hasClaimedMintlistGobbler[msg.sender]) revert Unauthorized();
 
         // If the user's proof is invalid, revert.
-        if (!MerkleProof.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
+        if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
 
         hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
 
