@@ -712,9 +712,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint256 id;
         uint256 amount;
 
-        // Unchecked because the only math done is incrementing
-        // the array index counter which cannot possibly overflow.
         unchecked {
+            uint64 emissionsMultipleTotal; // Will use to set each user's multiple.
+
             for (uint256 i = 0; i < ids.length; i++) {
                 id = ids[i];
                 amount = amounts[i];
@@ -727,19 +727,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 getGobblerData[id].owner = to;
 
-                // Get the transferred gobbler's emission multiple. Can be zero before reveal.
-                uint64 emissionMultiple = getGobblerData[id].emissionMultiple;
-
-                // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-                getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
-                getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
-
-                // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
-                getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
-                getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
+                emissionsMultipleTotal += getGobblerData[id].emissionMultiple;
             }
+
+            // Decrease the from user's emissionMultiple by emissionsMultipleTotal.
+            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[from].emissionMultiple -= emissionsMultipleTotal;
+
+            // Increase the to user's emissionMultiple by emissionsMultipleTotal.
+            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
+            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[to].emissionMultiple += emissionsMultipleTotal;
         }
 
         emit TransferBatch(msg.sender, from, to, ids, amounts);
