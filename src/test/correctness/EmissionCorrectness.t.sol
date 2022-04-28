@@ -28,11 +28,11 @@ contract EmissionCorrectnessTest is DSTestPlus {
         uint256 actualBalance = goopCalculator.computeGoopBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
 
         // Equal within 1 percent.
-        assertRelApproxEq(expectedBalance, actualBalance, 0.01e18);
+        assertRelApproxEq(actualBalance, expectedBalance, 0.01e18);
     }
 
     function calculateBalance(
-        uint256 _emmisionTime,
+        uint256 _emissionTime,
         uint256 _initialAmount,
         uint256 _emissionMultiple
     ) private returns (uint256) {
@@ -40,7 +40,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
         inputs[0] = "python3";
         inputs[1] = "analysis/compute_emissions.py";
         inputs[2] = "--time";
-        inputs[3] = _emmisionTime.toString();
+        inputs[3] = _emissionTime.toString();
         inputs[4] = "--initial_amount";
         inputs[5] = _initialAmount.toString();
         inputs[6] = "--emission_multiple";
