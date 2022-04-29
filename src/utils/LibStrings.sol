@@ -1,33 +1,29 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-// https://github.com/mzhu25/sol2string
 library LibStrings {
-    uint256 private constant MAX_UINT256_STRING_LENGTH = 78;
-    uint8 private constant ASCII_DIGIT_OFFSET = 48;
-
     function toString(uint256 n) internal pure returns (string memory str) {
-        if (n == 0) return "0"; // todo: can this be removed?
+        if (n == 0) return "0";
 
-        // Overallocate memory
-        str = new string(MAX_UINT256_STRING_LENGTH);
-        uint256 k = MAX_UINT256_STRING_LENGTH;
+        assembly {
+            let k := 78 // Over-allocate memory at first.
 
-        // Populate string from right to left (lsb to msb).
-        while (n != 0) {
-            assembly {
-                let char := add(ASCII_DIGIT_OFFSET, mod(n, 10))
-                mstore(add(str, k), char)
+            // prettier-ignore
+            // We'll populate string from right to left.
+            for {} n {} { 
+                // Write the current character into str.
+                // The ASCII digit offset for '0' is 48.
+                mstore(add(str, k), add(48, mod(n, 10)))
+
                 k := sub(k, 1)
                 n := div(n, 10)
             }
-        }
 
-        assembly {
-            // Shift pointer over to actual start of string.
+            // Shift the pointer to the start of the string.
             str := add(str, k)
-            // Store actual string length.
-            mstore(str, sub(MAX_UINT256_STRING_LENGTH, k))
+
+            // Update to the length of the string in memory.
+            mstore(str, sub(78, k))
         }
     }
 }
