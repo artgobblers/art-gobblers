@@ -12,6 +12,10 @@ import {ArtGobblers} from "../../ArtGobblers.sol";
 import {LibRLP} from "./LibRLP.sol";
 
 contract DeployTestnet {
+    // Ensures forge does not complain
+    // about the size of this contract.
+    bool public constant IS_TEST = true;
+
     ERC1155BLockupVault public immutable team;
 
     VRFCoordinatorMock public immutable vrfCoordinator;
