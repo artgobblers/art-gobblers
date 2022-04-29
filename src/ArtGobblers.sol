@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
-import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
@@ -19,6 +19,7 @@ import {Goop} from "./Goop.sol";
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using Strings for uint256;
+    using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -630,7 +631,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
             uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
 
-            uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
+            uint256 daysElapsedSquaredWad = daysElapsedWad.mulWadDown(daysElapsedWad); // Need to use wad math here.
 
             // prettier-ignore
             return lastBalanceWad + // The last recorded balance.
@@ -639,13 +640,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
             ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
-
-            Math.mulWadDown(
-                daysElapsedWad, // Must mulWad because both terms are wads.
+            
+            daysElapsedWad.mulWadDown( // Terms are wads, so must mulWad.
                 // No wad multiplication for emissionMultiple * lastBalance
                 // because emissionMultiple is a plain integer with no decimals.
                 // We multiply the sqrt's radicand by 1e18 because it expects ints.
-                Math.sqrt(emissionMultiple * lastBalanceWad * 1e18)
+                (emissionMultiple * lastBalanceWad * 1e18).sqrt()
             );
         }
     }
