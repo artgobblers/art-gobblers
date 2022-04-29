@@ -13,28 +13,28 @@ contract PageCorrectnessTest is DSTestPlus {
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    uint256 internal immutable MAX_PAGE_MINT = 1000;
-
     uint256 internal immutable FIVE_YEARS = 5 * 365 days;
+
+    uint256 internal immutable MAX_MINTABLE = 9999;
+
+    int256 internal LOGISTIC_SCALE;
 
     int256 internal immutable INITIAL_PRICE = 4.20e18;
 
     int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
 
-    int256 internal immutable LOGISTIC_SCALE = (9999 + 1) * 2e18;
-
     int256 internal immutable TIME_SCALE = 0.023e18;
 
-    int256 internal immutable TIME_SHIFT = 0;
+    int256 internal immutable SWITCHOVER_TIME = 207e18;
 
     int256 internal immutable PER_PERIOD_POST_SWITCHOVER = 10e18;
-
-    int256 internal immutable SWITCHOVER_TIME = 207e18;
 
     Pages internal pages;
 
     function setUp() public {
         pages = new Pages(block.timestamp, address(0), Goop(address(0)), "");
+
+        LOGISTIC_SCALE = int256(MAX_MINTABLE * 2e18);
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {
@@ -54,7 +54,6 @@ contract PageCorrectnessTest is DSTestPlus {
                 PER_PERIOD_PRICE_DECREASE,
                 LOGISTIC_SCALE,
                 TIME_SCALE,
-                TIME_SHIFT,
                 PER_PERIOD_POST_SWITCHOVER,
                 SWITCHOVER_TIME
             );
@@ -75,11 +74,10 @@ contract PageCorrectnessTest is DSTestPlus {
         int256 _PER_PERIOD_PRICE_DECREASE,
         int256 _logisticScale,
         int256 _timeScale,
-        int256 _timeShift,
         int256 _perPeriodPostSwitchover,
         int256 _switchoverTime
     ) private returns (uint256) {
-        string[] memory inputs = new string[](21);
+        string[] memory inputs = new string[](19);
         inputs[0] = "python3";
         inputs[1] = "analysis/compute_price.py";
         inputs[2] = "pages";
@@ -95,12 +93,10 @@ contract PageCorrectnessTest is DSTestPlus {
         inputs[12] = uint256(_logisticScale).toString();
         inputs[13] = "--time_scale";
         inputs[14] = uint256(_timeScale).toString();
-        inputs[15] = "--time_shift";
-        inputs[16] = uint256(_timeShift).toString();
-        inputs[17] = "--per_period_post_switchover";
-        inputs[18] = uint256(_perPeriodPostSwitchover).toString();
-        inputs[19] = "--switchover_time";
-        inputs[20] = uint256(_switchoverTime).toString();
+        inputs[15] = "--per_period_post_switchover";
+        inputs[16] = uint256(_perPeriodPostSwitchover).toString();
+        inputs[17] = "--switchover_time";
+        inputs[18] = uint256(_switchoverTime).toString();
 
         return abi.decode(vm.ffi(inputs), (uint256));
     }
