@@ -30,9 +30,9 @@ contract DeployTestnet {
         team = new ERC1155BLockupVault(address(this), 730 days);
 
         goop = new Goop(
-            // Gobblers:
+            // Gobblers (contract nonces start at 1):
             LibRLP.computeAddress(address(this), 4),
-            // Pages:
+            // Pages (contract nonces start at 1):
             LibRLP.computeAddress(address(this), 5)
         );
 
