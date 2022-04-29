@@ -27,7 +27,7 @@ contract DeployTestnet {
 
         goop = new Goop(
             // Gobblers:
-            LibRLP.computeAddress(address(this), 4), // TODO: THIS IS WRONG
+            LibRLP.computeAddress(address(this), 4),
             // Pages:
             LibRLP.computeAddress(address(this), 5)
         );
