@@ -31,7 +31,6 @@ contract VRGDAsTest is DSTestPlus {
 
     bytes32 private keyHash;
     uint256 private fee;
-    string private baseUri = "base";
 
     function setUp() public {
         utils = new Utilities();
@@ -55,7 +54,7 @@ contract VRGDAsTest is DSTestPlus {
             address(linkToken),
             keyHash,
             fee,
-            baseUri,
+            "base",
             ""
         );
 
