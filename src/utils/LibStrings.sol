@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+// https://github.com/mzhu25/sol2string
 library LibStrings {
     uint256 private constant MAX_UINT256_STRING_LENGTH = 78;
     uint8 private constant ASCII_DIGIT_OFFSET = 48;
