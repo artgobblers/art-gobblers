@@ -1,6 +1,6 @@
 <img align="right" width="150" height="150" top="100" src="./assets/gobbler.png">
 
-# Art Gobblers (Smart Contracts) • [![CI](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml/badge.svg)](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml)
+# Art Gobblers (Smart Contracts) • [![CI](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/tests.yml/badge.svg)](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml)
 
 Art Gobblers scan the cosmos in search of art producing life.
 

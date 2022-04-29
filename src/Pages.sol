@@ -19,7 +19,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public goop;
+    Goop public immutable goop;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS

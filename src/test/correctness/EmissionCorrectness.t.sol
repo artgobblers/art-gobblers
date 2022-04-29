@@ -10,7 +10,8 @@ contract EmissionCorrectnessTest is DSTestPlus {
     using Strings for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
-    MockGoopCalculator goopCalculator = new MockGoopCalculator();
+
+    MockGoopCalculator immutable goopCalculator = new MockGoopCalculator();
 
     function testFFIEmissionCorrectness(
         uint256 daysElapsedWad,
