@@ -88,28 +88,7 @@ abstract contract GobblersERC1155B {
         uint256 id,
         uint256 amount,
         bytes calldata data
-    ) public virtual {
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
-
-        require(from == getGobblerData[id].owner, "WRONG_FROM"); // Can only transfer from the owner.
-
-        // Can only transfer 1 with ERC1155B.
-        require(amount == 1, "INVALID_AMOUNT");
-
-        getGobblerData[id].owner = to;
-
-        afterTransfer(from, to, id);
-
-        emit TransferSingle(msg.sender, from, to, id, amount);
-
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
-                    ERC1155TokenReceiver.onERC1155Received.selector,
-            "UNSAFE_RECIPIENT"
-        );
-    }
+    ) public virtual;
 
     function safeBatchTransferFrom(
         address from,
@@ -117,44 +96,7 @@ abstract contract GobblersERC1155B {
         uint256[] calldata ids,
         uint256[] calldata amounts,
         bytes calldata data
-    ) public virtual {
-        require(ids.length == amounts.length, "LENGTH_MISMATCH");
-
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
-
-        // Storing these outside the loop saves ~15 gas per iteration.
-        uint256 id;
-        uint256 amount;
-
-        // Unchecked because the only math done is incrementing
-        // the array index counter which cannot possibly overflow.
-        unchecked {
-            for (uint256 i = 0; i < ids.length; i++) {
-                id = ids[i];
-                amount = amounts[i];
-
-                // Can only transfer from the owner.
-                require(from == getGobblerData[id].owner, "WRONG_FROM");
-
-                // Can only transfer 1 with ERC1155B.
-                require(amount == 1, "INVALID_AMOUNT");
-
-                getGobblerData[id].owner = to;
-
-                afterTransfer(from, to, id);
-            }
-        }
-
-        emit TransferBatch(msg.sender, from, to, ids, amounts);
-
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
-                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-            "UNSAFE_RECIPIENT"
-        );
-    }
+    ) public virtual;
 
     function balanceOfBatch(address[] calldata owners, uint256[] calldata ids)
         public
@@ -199,15 +141,4 @@ abstract contract GobblersERC1155B {
             "UNSAFE_RECIPIENT"
         );
     }
-
-    /*//////////////////////////////////////////////////////////////
-                          INTERNAL HOOKS LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Only called on actual transfers, not mints and burns.
-    function afterTransfer(
-        address from,
-        address to,
-        uint256 id
-    ) internal virtual {}
 }
