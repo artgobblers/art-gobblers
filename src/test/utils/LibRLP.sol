@@ -7,7 +7,7 @@ library LibRLP {
     using Bytes32AddressLib for bytes32;
 
     // prettier-ignore
-    function computeAddress(address deployer, uint256 nonce) public pure returns (address) {
+    function computeAddress(address deployer, uint256 nonce) internal pure returns (address) {
         // The integer zero is treated as an empty byte string, and as a result it only has a length prefix, 0x80, computed via 0x80 + 0.
         // A one byte integer uses its own value as its length prefix, there is no additional "0x80 + length" prefix that comes before it.
         if (nonce == 0x00)             return keccak256(abi.encodePacked(bytes1(0xd6), bytes1(0x94), deployer, bytes1(0x80))).fromLast20Bytes();

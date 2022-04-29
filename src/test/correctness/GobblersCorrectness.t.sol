@@ -2,18 +2,19 @@
 pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
-import {MockLogisticVRGDA} from "../utils/mocks/MockLogisticVRGDA.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
+import {ArtGobblers} from "../../ArtGobblers.sol";
+import {Goop} from "../../Goop.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
     using Strings for uint256;
 
     uint256 internal immutable FIVE_YEARS = 365 days * 5;
 
-    uint256 internal immutable MAX_GOOP_MINT = 7990;
+    uint256 internal MAX_MINTABLE;
 
-    int256 internal immutable LOGISTIC_SCALE = 7990 * 2e18;
+    int256 internal LOGISTIC_SCALE;
 
     int256 internal immutable INITIAL_PRICE = 6.9e18;
 
@@ -23,21 +24,35 @@ contract GobblersCorrectnessTest is DSTestPlus {
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    MockLogisticVRGDA internal vrgda;
+    ArtGobblers internal gobblers;
 
     function setUp() public {
-        vrgda = new MockLogisticVRGDA(INITIAL_PRICE, PER_PERIOD_PRICE_DECREASE, LOGISTIC_SCALE, TIME_SCALE);
+        gobblers = new ArtGobblers(
+            "root",
+            block.timestamp,
+            Goop(address(0)),
+            address(0),
+            address(0),
+            address(0),
+            0,
+            0,
+            "",
+            ""
+        );
+
+        MAX_MINTABLE = gobblers.MAX_MINTABLE();
+        LOGISTIC_SCALE = int256(MAX_MINTABLE * 2e18);
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {
         // Limit num sold to max mint.
-        numSold = bound(numSold, 0, MAX_GOOP_MINT);
+        numSold = bound(numSold, 0, MAX_MINTABLE);
 
         // Limit mint time to 5 years.
         timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
 
         // Calculate actual price from VRGDA.
-        try vrgda.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
+        try gobblers.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,
@@ -65,7 +80,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
         int256 _logisticScale,
         int256 _timeScale
     ) private returns (uint256) {
-        string[] memory inputs = new string[](17);
+        string[] memory inputs = new string[](15);
         inputs[0] = "python3";
         inputs[1] = "analysis/compute_price.py";
         inputs[2] = "gobblers";
@@ -81,8 +96,6 @@ contract GobblersCorrectnessTest is DSTestPlus {
         inputs[12] = uint256(_logisticScale).toString();
         inputs[13] = "--time_scale";
         inputs[14] = uint256(_timeScale).toString();
-        inputs[15] = "--time_shift";
-        inputs[16] = uint256(0).toString();
 
         return abi.decode(vm.ffi(inputs), (uint256));
     }

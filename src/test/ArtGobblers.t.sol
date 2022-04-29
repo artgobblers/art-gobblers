@@ -34,7 +34,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     bytes32 private keyHash;
     uint256 private fee;
-    string private baseUri = "base";
 
     uint256[] ids;
 
@@ -66,7 +65,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             address(linkToken),
             keyHash,
             fee,
-            baseUri,
+            "base",
             ""
         );
 

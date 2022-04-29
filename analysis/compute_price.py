@@ -17,7 +17,7 @@ def calculate_gobblers_price(args):
         args.per_period_price_decrease / (10 ** 18), ## scale decimals 
         args.logistic_scale / (10 ** 18), ## scale decimals 
         args.time_scale / (10 ** 18), ## scale decimals 
-        args.time_shift / (10 ** 18) ## scale decimals 
+        0
     )
     price *= (10 ** 18)
     encode_and_print(price)
@@ -31,7 +31,7 @@ def calculate_pages_price(args):
         args.per_period_price_decrease / (10 ** 18), ## scale decimals 
         args.logistic_scale / (10 ** 18), ## scale decimals 
         args.time_scale / (10 ** 18), ## scale decimals 
-        args.time_shift / (10 ** 18), ## scale decimals 
+        0,
         args.per_period_post_switchover / (10 ** 18), ## scale decimals 
         args.switchover_time / (10 ** 18)
     )
@@ -52,7 +52,6 @@ def parse_args():
     parser.add_argument("--per_period_price_decrease", type=int)
     parser.add_argument("--logistic_scale", type=int)
     parser.add_argument("--time_scale", type=int)
-    parser.add_argument("--time_shift", type=int)
     parser.add_argument("--per_period_post_switchover", type=int)
     parser.add_argument("--switchover_time", type=int)
     return parser.parse_args()
