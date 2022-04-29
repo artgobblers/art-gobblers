@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
-import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 import {MerkleProof} from "openzeppelin/utils/cryptography/MerkleProof.sol";
 
@@ -19,6 +19,7 @@ import {Goop} from "./Goop.sol";
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using LibStrings for uint256;
+    using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -630,7 +631,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
             uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
 
-            uint256 daysElapsedSquaredWad = Math.mulWadDown(daysElapsedWad, daysElapsedWad); // Need to use wad math here.
+            uint256 daysElapsedSquaredWad = daysElapsedWad.mulWadDown(daysElapsedWad); // Need to use wad math here.
 
             // prettier-ignore
             return lastBalanceWad + // The last recorded balance.
@@ -639,13 +640,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
             ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
-
-            Math.mulWadDown(
-                daysElapsedWad, // Must mulWad because both terms are wads.
+            
+            daysElapsedWad.mulWadDown( // Terms are wads, so must mulWad.
                 // No wad multiplication for emissionMultiple * lastBalance
                 // because emissionMultiple is a plain integer with no decimals.
                 // We multiply the sqrt's radicand by 1e18 because it expects ints.
-                Math.sqrt(emissionMultiple * lastBalanceWad * 1e18)
+                (emissionMultiple * lastBalanceWad * 1e18).sqrt()
             );
         }
     }
@@ -694,29 +694,103 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /*//////////////////////////////////////////////////////////////
-                          ERC1155 TRANSFER HOOK
+                             ERC1155B LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: possible optimization is to manually override batch transfer cuz from will always be the same
-
-    /// @dev Only called on actual transfers, not mints and burns.
-    function afterTransfer(
+    function safeBatchTransferFrom(
         address from,
         address to,
-        uint256 id
-    ) internal override {
-        uint128 idEmissionMultiple = getGobblerData[id].emissionMultiple;
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
+    ) public override {
+        require(ids.length == amounts.length, "LENGTH_MISMATCH");
+
+        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+
+        // Storing these outside the loop saves ~15 gas per iteration.
+        uint256 id;
+        uint256 amount;
 
         unchecked {
+            uint64 emissionsMultipleTotal; // Will use to set each user's multiple.
+
+            for (uint256 i = 0; i < ids.length; i++) {
+                id = ids[i];
+                amount = amounts[i];
+
+                // Can only transfer from the owner.
+                require(from == getGobblerData[id].owner, "WRONG_FROM");
+
+                // Can only transfer 1 with ERC1155B.
+                require(amount == 1, "INVALID_AMOUNT");
+
+                getGobblerData[id].owner = to;
+
+                emissionsMultipleTotal += getGobblerData[id].emissionMultiple;
+            }
+
+            // Decrease the from user's emissionMultiple by emissionsMultipleTotal.
+            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[from].emissionMultiple -= emissionsMultipleTotal;
+
+            // Increase the to user's emissionMultiple by emissionsMultipleTotal.
+            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
+            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[to].emissionMultiple += emissionsMultipleTotal;
+        }
+
+        emit TransferBatch(msg.sender, from, to, ids, amounts);
+
+        require(
+            to.code.length == 0
+                ? to != address(0)
+                : ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
+                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
+            "UNSAFE_RECIPIENT"
+        );
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data
+    ) public override {
+        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+
+        require(from == getGobblerData[id].owner, "WRONG_FROM"); // Can only transfer from the owner.
+
+        // Can only transfer 1 with ERC1155B.
+        require(amount == 1, "INVALID_AMOUNT");
+
+        getGobblerData[id].owner = to;
+
+        unchecked {
+            // Get the transferred gobbler's emission multiple. Can be zero before reveal.
+            uint64 emissionMultiple = getGobblerData[id].emissionMultiple;
+
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
             getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
             getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[from].emissionMultiple -= uint64(idEmissionMultiple);
+            getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
 
             // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
             getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
             getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[to].emissionMultiple += uint64(idEmissionMultiple);
+            getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
         }
+
+        emit TransferSingle(msg.sender, from, to, id, amount);
+
+        require(
+            to.code.length == 0
+                ? to != address(0)
+                : ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
+                    ERC1155TokenReceiver.onERC1155Received.selector,
+            "UNSAFE_RECIPIENT"
+        );
     }
 }
