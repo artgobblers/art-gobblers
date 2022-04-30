@@ -42,14 +42,23 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
         _;
     }
 
+    /// @notice Mint any amount of goop to a user. Can only be called by ArtGobblers.
+    /// @param to The address of the user to mint goop to.
+    /// @param amount The amount of goop to mint.
     function mintForGobblers(address to, uint256 amount) public only(artGobblers) {
         _mint(to, amount);
     }
 
+    /// @notice Burn any amount of goop from a user. Can only be called by ArtGobblers.
+    /// @param from The address of the user to burn goop from.
+    /// @param amount The amount of goop to burn.
     function burnForGobblers(address from, uint256 amount) public only(artGobblers) {
         _burn(from, amount);
     }
 
+    /// @notice Burn any amount of goop from a user. Can only be called by Pages.
+    /// @param from The address of the user to burn goop from.
+    /// @param amount The amount of goop to burn.
     function burnForPages(address from, uint256 amount) public only(pages) {
         _burn(from, amount);
     }

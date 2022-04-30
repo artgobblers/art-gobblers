@@ -46,10 +46,11 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal constant SWITCH_DAY_WAD = 207e18;
 
-    /// @notice The id of the first page to be priced using the post switch VRGDA.
-    /// @dev Computed by plugging the switch day into the uninverted pacing formula.
+    /// @notice The minimum amount of pages that must be sold for the VRGDA issuance
+    /// schedule to switch from logistic to the "post switch" translated linear formula.
+    /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SWITCH_ID_WAD = 9829.328043791893798338e18;
+    int256 internal constant SOLD_BY_SWITCH_WAD = 9829.328043791893798338e18;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -85,8 +86,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             0.023e18 // Time scale.
         )
         PostSwitchVRGDA(
-            SWITCH_ID_WAD, // Switch id.
-            SWITCH_DAY_WAD, // Switch day.
+            SOLD_BY_SWITCH_WAD, // Sold by switch.
+            SWITCH_DAY_WAD, // Target switch day.
             10e18 // Pages to target per day.
         )
         PagesERC1155B(_artGobblers)
@@ -133,14 +134,19 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         return getPrice(timeSinceStart, currentId);
     }
 
-    function getTargetSaleDay(int256 idWad) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
-        return idWad < SWITCH_ID_WAD ? LogisticVRGDA.getTargetSaleDay(idWad) : PostSwitchVRGDA.getTargetSaleDay(idWad);
+    function getTargetSaleDay(int256 tokens) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
+        return
+            tokens < SOLD_BY_SWITCH_WAD
+                ? LogisticVRGDA.getTargetSaleDay(tokens)
+                : PostSwitchVRGDA.getTargetSaleDay(tokens);
     }
 
     /*//////////////////////////////////////////////////////////////
                              TOKEN URI LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns a pages's URI if it has been minted.
+    /// @param pageId The id of the page to get the URI for.
     function uri(uint256 pageId) public view virtual override returns (string memory) {
         if (pageId > currentId) return "";
 
