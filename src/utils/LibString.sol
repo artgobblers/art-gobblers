@@ -5,7 +5,7 @@ library LibString {
     function toString(uint256 n) internal pure returns (string memory str) {
         if (n == 0) return "0";
 
-        uint256 k = 78; // Will use to compute the length of the string.
+        uint256 k = 78; // 78 is the max length a uint256 string could be.
 
         str = new string(k); // We'll over-allocate memory at first.
 
