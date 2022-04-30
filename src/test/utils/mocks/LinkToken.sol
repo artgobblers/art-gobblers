@@ -3,7 +3,7 @@
 // adapter from dapptools-starter-kit
 pragma solidity ^0.8.0;
 
-import "openzeppelin/token/ERC20/ERC20.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 interface ERC677Receiver {
     function onTokenTransfer(
@@ -16,7 +16,7 @@ interface ERC677Receiver {
 contract LinkToken is ERC20 {
     uint256 initialSupply = 1000000000000000000000000;
 
-    constructor() ERC20("LinkToken", "LINK") {
+    constructor() ERC20("LinkToken", "LINK", 18) {
         _mint(msg.sender, initialSupply);
     }
 

@@ -3,13 +3,13 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {Strings} from "openzeppelin/utils/Strings.sol";
+import {LibString} from "../../utils/LibString.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../Pages.sol";
 import {Goop} from "../../Goop.sol";
 
 contract PageCorrectnessTest is DSTestPlus {
-    using Strings for uint256;
+    using LibString for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 

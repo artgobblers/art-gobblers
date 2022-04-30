@@ -1,13 +1,15 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-library LibStrings {
+library LibString {
     function toString(uint256 n) internal pure returns (string memory str) {
         if (n == 0) return "0";
 
-        assembly {
-            let k := 78 // Over-allocate memory at first.
+        uint256 k = 78; // Will use to compute the length of the string.
 
+        str = new string(k); // We'll over-allocate memory at first.
+
+        assembly {
             // prettier-ignore
             // We'll populate string from right to left.
             for {} n {} { 

@@ -3,12 +3,12 @@ pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {Strings} from "openzeppelin/utils/Strings.sol";
+import {LibString} from "../../utils/LibString.sol";
 import {ArtGobblers} from "../../ArtGobblers.sol";
 import {Goop} from "../../Goop.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
-    using Strings for uint256;
+    using LibString for uint256;
 
     uint256 internal immutable FIVE_YEARS = 365 days * 5;
 
