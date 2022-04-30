@@ -6,7 +6,17 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {LibString} from "../utils/LibString.sol";
 
 contract LibStringTest is DSTestPlus {
-    function testTestToString(uint256 value) public {
+    function testToString() public {
+        assertEq(LibString.toString(0), "0");
+        assertEq(LibString.toString(1), "1");
+        assertEq(LibString.toString(17), "17");
+        assertEq(LibString.toString(99999999), "99999999");
+        assertEq(LibString.toString(99999999999), "99999999999");
+        assertEq(LibString.toString(2342343923423), "2342343923423");
+        assertEq(LibString.toString(98765685434567), "98765685434567");
+    }
+
+    function testDifferentiallyFuzzToString(uint256 value) public {
         string memory libString = LibString.toString(value);
         string memory oz = toStringOZ(value);
 
