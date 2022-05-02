@@ -19,8 +19,8 @@ library LibString {
             // the Solidity convention of keeping the free memory pointer word aligned.
             mstore(0x40, add(str, 128))
 
-            // prettier-ignore
             // We'll populate string from right to left.
+            // prettier-ignore
             for {} n {} {
                 // The ASCII digit offset for '0' is 48.
                 let char := add(48, mod(n, 10))
