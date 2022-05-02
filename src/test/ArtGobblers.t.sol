@@ -141,7 +141,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                PRICING TESTS
+                              PRICING TESTS
     //////////////////////////////////////////////////////////////*/
 
     ///@notice Test VRGDA behaviour when selling at target rate.
