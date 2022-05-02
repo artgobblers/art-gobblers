@@ -1,33 +1,42 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-// https://github.com/mzhu25/sol2string
 library LibString {
-    uint256 private constant MAX_UINT256_STRING_LENGTH = 78;
-    uint8 private constant ASCII_DIGIT_OFFSET = 48;
-
     function toString(uint256 n) internal pure returns (string memory str) {
-        if (n == 0) return "0"; // todo: can this be removed?
+        if (n == 0) return "0"; // Otherwise it'd output an empty string for 0.
 
-        // Overallocate memory
-        str = new string(MAX_UINT256_STRING_LENGTH);
-        uint256 k = MAX_UINT256_STRING_LENGTH;
+        assembly {
+            let k := 78 // Start with the max length a uint256 string could be.
 
-        // Populate string from right to left (lsb to msb).
-        while (n != 0) {
-            assembly {
-                let char := add(ASCII_DIGIT_OFFSET, mod(n, 10))
+            // We'll store our string at the first chunk of free memory.
+            str := mload(0x40)
+
+            // The length of our string will start off at the max of 78.
+            mstore(str, k)
+
+            // Update the free memory pointer to prevent overriding our string.
+            // Add 128 to the str pointer instead of 78 because we want to maintain
+            // the Solidity convention of keeping the free memory pointer word aligned.
+            mstore(0x40, add(str, 128))
+
+            // prettier-ignore
+            // We'll populate string from right to left.
+            for {} n {} {
+                // The ASCII digit offset for '0' is 48.
+                let char := add(48, mod(n, 10))
+
+                // Write the current character into str.
                 mstore(add(str, k), char)
+
                 k := sub(k, 1)
                 n := div(n, 10)
             }
-        }
 
-        assembly {
-            // Shift pointer over to actual start of string.
+            // Shift the pointer to the start of the string.
             str := add(str, k)
-            // Store actual string length.
-            mstore(str, sub(MAX_UINT256_STRING_LENGTH, k))
+
+            // Set the length of the string to the correct value.
+            mstore(str, sub(78, k))
         }
     }
 }
