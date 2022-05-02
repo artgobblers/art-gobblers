@@ -10,11 +10,8 @@ import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
-import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract VRGDAsTest is DSTestPlus {
-    using Strings for uint256;
-
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     uint256 constant ONE_THOUSAND_YEARS = 356 days * 1000;
