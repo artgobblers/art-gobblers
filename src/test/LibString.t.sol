@@ -16,7 +16,7 @@ contract LibStringTest is DSTestPlus {
         assertEq(LibString.toString(98765685434567), "98765685434567");
     }
 
-    function testDifferentiallyFuzzToString(uint256 value, bytes memory brutalizeWith)
+    function testDifferentiallyFuzzToString(uint256 value, bytes calldata brutalizeWith)
         public
         brutalizeMemory(brutalizeWith)
     {

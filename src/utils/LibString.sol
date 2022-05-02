@@ -7,7 +7,7 @@ library LibString {
 
         uint256 k = 78; // 78 is the max length a uint256 string could be.
 
-        // str = new string(k); // We'll over-allocate memory at first.
+        str = new string(k); // We'll over-allocate memory at first.
 
         assembly {
             // prettier-ignore
