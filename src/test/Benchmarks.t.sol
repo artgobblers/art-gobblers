@@ -11,11 +11,8 @@ import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
-import {Strings} from "openzeppelin/utils/Strings.sol";
 
 contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
-    using Strings for uint256;
-
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;

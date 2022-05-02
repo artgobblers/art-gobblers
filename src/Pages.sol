@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {Strings} from "openzeppelin/utils/Strings.sol";
-
 import {VRGDA} from "./utils/VRGDA.sol";
+import {LibString} from "./utils/LibString.sol";
 import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
@@ -13,7 +12,7 @@ import {Goop} from "./Goop.sol";
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
 contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
-    using Strings for uint256;
+    using LibString for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
