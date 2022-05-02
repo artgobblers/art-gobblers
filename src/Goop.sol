@@ -27,7 +27,6 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
 
     constructor(address _artGobblers, address _pages) {
         artGobblers = _artGobblers;
-
         pages = _pages;
     }
 

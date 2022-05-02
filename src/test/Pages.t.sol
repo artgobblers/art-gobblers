@@ -7,6 +7,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
+import {console} from "./utils/Console.sol";
 
 contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -64,6 +65,49 @@ contract PagesTest is DSTestPlus {
         uint256 maxDelta = 5; // 0.000000000000000005
 
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
+    }
+
+    //test that page pricing matches expected behaviour before switch
+    function testPagePricingPricingBeforeSwitch() public {
+        //expected sales rate according to mathematical formula
+        uint256 timeDelta = 60 days;
+        uint256 numMint = 5979;
+
+        vm.warp(block.timestamp + timeDelta);
+
+        uint256 initialPrice = uint256(pages.initialPrice());
+
+        for (uint256 i = 0; i < numMint; i++) {
+            uint256 price = pages.pagePrice();
+            goop.mintForGobblers(user, price);
+            vm.prank(user);
+            pages.mintFromGoop(price);
+        }
+
+        uint256 finalPrice = pages.pagePrice();
+        //if selling at target rate, final price should equal starting price
+        assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
+    }
+
+    //test that page pricing matches expected behaviour before switch
+    function testPagePricingPricingAfterSwitch() public {
+        uint256 timeDelta = 360 days;
+        uint256 numMint = 11359;
+
+        vm.warp(block.timestamp + timeDelta);
+
+        uint256 initialPrice = uint256(pages.initialPrice());
+
+        for (uint256 i = 0; i < numMint; i++) {
+            uint256 price = pages.pagePrice();
+            goop.mintForGobblers(user, price);
+            vm.prank(user);
+            pages.mintFromGoop(price);
+        }
+
+        uint256 finalPrice = pages.pagePrice();
+        //if selling at target rate, final price should equal starting price
+        assertRelApproxEq(initialPrice, finalPrice, 0.02e18);
     }
 
     function testInsufficientBalance() public {

@@ -141,6 +141,33 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
+                              PRICING TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    ///@notice Test VRGDA behaviour when selling at target rate.
+    function testPricingBasic() public {
+        //VRGDA targets this number of mints at given time.
+        uint256 timeDelta = 120 days;
+        uint256 numMint = 4932;
+
+        vm.warp(block.timestamp + timeDelta);
+
+        for (uint256 i = 0; i < numMint; i++) {
+            vm.startPrank(address(gobblers));
+            uint256 price = gobblers.gobblerPrice();
+            goop.mintForGobblers(users[0], price);
+            vm.stopPrank();
+            vm.prank(users[0]);
+            gobblers.mintFromGoop(price);
+        }
+        uint256 initialPrice = uint256(gobblers.initialPrice());
+        uint256 finalPrice = gobblers.gobblerPrice();
+
+        // Equal within 1 percent.
+        assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                            LEADER GOBBLERS
     //////////////////////////////////////////////////////////////*/
 
