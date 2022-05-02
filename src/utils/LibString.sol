@@ -5,20 +5,19 @@ library LibString {
     function toString(uint256 n) internal pure returns (string memory str) {
         if (n == 0) return "0";
 
-        uint256 k = 78; // 78 is the max length a uint256 string could be.
-
         assembly {
-            // Get a pointer to some free memory.
+            let k := 78 // Start with the max length a uint256 string could be.
+
+            // We'll store our string at the first chunk of free memory.
             str := mload(0x40)
 
-            // Update the free memory pointer to prevent overriding our data.
-            // We use and(x, not(31)) as a cheaper equivalent to sub(x, mod(x, 32)).
-            // Adding 31 to size and running the result through the logic above ensures
-            // the memory pointer remains word-aligned, following the Solidity convention.
-            mstore(0x40, add(str, and(add(add(78, 32), 31), not(31))))
+            // The length of our string will start off at the max of 78.
+            mstore(str, k)
 
-            // Store the size of the data in the first 32 byte chunk of free memory.
-            mstore(str, 78)
+            // Update the free memory pointer to prevent overriding our string.
+            // Add 128 to the str pointer instead of 78 because we want to maintain
+            // the Solidity convention of keeping the free memory pointer word aligned.
+            mstore(0x40, add(str, 128))
 
             // prettier-ignore
             // We'll populate string from right to left.
@@ -34,7 +33,7 @@ library LibString {
             // Shift the pointer to the start of the string.
             str := add(str, k)
 
-            // Update to the length of the string in memory.
+            // Set the length of the string to the correct value.
             mstore(str, sub(78, k))
         }
     }
