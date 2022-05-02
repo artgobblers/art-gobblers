@@ -7,9 +7,19 @@ library LibString {
 
         uint256 k = 78; // 78 is the max length a uint256 string could be.
 
-        str = new string(k); // We'll over-allocate memory at first.
-
         assembly {
+            // Get a pointer to some free memory.
+            str := mload(0x40)
+
+            // Update the free memory pointer to prevent overriding our data.
+            // We use and(x, not(31)) as a cheaper equivalent to sub(x, mod(x, 32)).
+            // Adding 31 to size and running the result through the logic above ensures
+            // the memory pointer remains word-aligned, following the Solidity convention.
+            mstore(0x40, add(str, and(add(add(78, 32), 31), not(31))))
+
+            // Store the size of the data in the first 32 byte chunk of free memory.
+            mstore(str, 78)
+
             // prettier-ignore
             // We'll populate string from right to left.
             for {} n {} { 
