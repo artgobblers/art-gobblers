@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 library LibString {
     function toString(uint256 n) internal pure returns (string memory str) {
-        if (n == 0) return "0";
+        if (n == 0) return "0"; // Otherwise it'd output an empty string for 0.
 
         assembly {
             let k := 78 // Start with the max length a uint256 string could be.
