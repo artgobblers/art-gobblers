@@ -457,7 +457,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
-    /// @notice Callback from chainlink VRF. sets randomSeed.
+    /// @notice Callback from Chainlink VRF. Sets randomSeed.
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
