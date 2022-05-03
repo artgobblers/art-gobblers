@@ -21,7 +21,7 @@ contract PagesTest is DSTestPlus {
     uint256 mintStart;
 
     function setUp() public {
-        // avoid starting at timestamp = 0 for ease of testing
+        // Avoid starting at timestamp at 0 for ease of testing.
         vm.warp(block.timestamp + 1);
 
         utils = new Utilities();
@@ -67,9 +67,9 @@ contract PagesTest is DSTestPlus {
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
 
-    //test that page pricing matches expected behaviour before switch
+    /// @notice Test that page pricing matches expected behavior before switch.
     function testPagePricingPricingBeforeSwitch() public {
-        //expected sales rate according to mathematical formula
+        // Expected sales rate according to mathematical formula.
         uint256 timeDelta = 60 days;
         uint256 numMint = 5979;
 
@@ -85,11 +85,12 @@ contract PagesTest is DSTestPlus {
         }
 
         uint256 finalPrice = pages.pagePrice();
-        //if selling at target rate, final price should equal starting price
+
+        // If selling at target rate, final price should equal starting price.
         assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
     }
 
-    //test that page pricing matches expected behaviour before switch
+    /// @notice Test that page pricing matches expected behavior before switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
         uint256 numMint = 11359;
@@ -106,7 +107,8 @@ contract PagesTest is DSTestPlus {
         }
 
         uint256 finalPrice = pages.pagePrice();
-        //if selling at target rate, final price should equal starting price
+
+        // If selling at target rate, final price should equal starting price.
         assertRelApproxEq(initialPrice, finalPrice, 0.02e18);
     }
 
