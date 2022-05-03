@@ -19,7 +19,7 @@ library LibString {
             // the Solidity convention of keeping the free memory pointer word aligned.
             mstore(0x40, add(str, 128))
 
-            // We'll populate string from right to left.
+            // We'll populate the string from right to left.
             // prettier-ignore
             for {} n {} {
                 // The ASCII digit offset for '0' is 48.
