@@ -14,16 +14,16 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev Controls the curve's maximum value which
     /// controls the maximum number of NFTs to be issued.
     /// @dev Represented as a 36 decimal fixed point number.
-    int256 private immutable logisticScale;
+    int256 internal immutable logisticScale;
 
     /// @dev Time scale controls the steepness of the logistic curve,
     /// which effects how quickly we will reach the curve's asymptote.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable timeScale;
+    int256 internal immutable timeScale;
 
     /// @dev The initial value the uninverted logistic formula would output.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 private immutable initialLogisticValue;
+    int256 internal immutable initialLogisticValue;
 
     constructor(int256 _maxMintable, int256 _timeScale) {
         // We need to double _maxMintable to account for initialLogisticValue

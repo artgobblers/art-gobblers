@@ -14,7 +14,7 @@ abstract contract VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 public immutable initialPrice;
 
-    /// @notice Precomputed constant that allows us to rewrite a pow() as an exp().
+    /// @dev Precomputed constant that allows us to rewrite a pow() as an exp().
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
