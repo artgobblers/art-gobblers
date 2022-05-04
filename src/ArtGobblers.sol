@@ -100,7 +100,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Last 10 ids are reserved for leader gobblers.
-    uint256 internal constant LEADER_GOBBLER_ID_START = MAX_SUPPLY - 10;
+    uint256 internal constant LEADER_GOBBLER_ID_START = MAX_SUPPLY - LEADER_SUPPLY;
 
     /// @notice Struct holding data required for leader gobbler auctions.
     struct LeaderGobblerAuctionData {
