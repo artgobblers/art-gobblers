@@ -29,7 +29,7 @@ abstract contract VRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the price of a token according to the VRGDA formula.
-    /// @param timeSinceStart The time since the initial sale, in seconds.
+    /// @param timeSinceStart The time since actions began, in seconds.
     /// @param sold The number of tokens that have been sold so far.
     function getPrice(uint256 timeSinceStart, uint256 sold) public view returns (uint256) {
         unchecked {
