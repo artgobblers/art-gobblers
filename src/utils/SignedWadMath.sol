@@ -28,11 +28,11 @@ function wadMul(int256 x, int256 y) pure returns (int256 z) {
 
 function wadDiv(int256 x, int256 y) pure returns (int256 z) {
     assembly {
-        // Store x * y in z for now.
+        // Store x * 1e18 in z for now.
         z := mul(x, 1000000000000000000)
 
-        // Equivalent to require(y != 0 && (x == 0 || (x * 1e18) / 1e18 == x))
-        if iszero(and(iszero(iszero(y)), or(iszero(x), eq(sdiv(z, 1000000000000000000), x)))) {
+        // Equivalent to require(y != 0 && ((x * 1e18) / 1e18 == x))
+        if iszero(and(iszero(iszero(y)), eq(sdiv(z, 1000000000000000000), x))) {
             revert(0, 0)
         }
 
