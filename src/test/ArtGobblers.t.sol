@@ -248,6 +248,33 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
+    /// @notice Test that Leader Gobblers have expected ids
+    function testMintLeaderGobblersExpectedIds() public {
+        //we expect the first leader to have this ID.
+        uint256 nextMintLeaderId = 9991;
+        uint256 curGobblerId = 1;
+        uint256 startTime = block.timestamp + 45 days;
+        vm.warp(startTime);
+        for (int256 i = 0; i < 10; i++) {
+            uint256 cost = gobblers.leaderGobblerPrice();
+            console.log(cost);
+            mintGobblerToAddress(users[0], cost);
+            for (uint256 j = 0; j < cost; j++) {
+                ids.push(curGobblerId++);
+            }
+
+            vm.prank(users[0]);
+            uint256 justMintedLeaderId = gobblers.mintLeaderGobbler(ids);
+            //assert that leaders have the expected ids
+            assertEq(nextMintLeaderId, justMintedLeaderId);
+            nextMintLeaderId++;
+            for (uint256 j = 0; j < cost; j++) {
+                ids.pop();
+            }
+            vm.warp(block.timestamp + 30 days);
+        }
+    }
+
     /// @notice Test that Leader Gobblers can't be burned to mint another leader.
     function testCannotMintLeaderWithLeader() public {
         vm.warp(block.timestamp + 70 days);
