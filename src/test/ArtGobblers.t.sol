@@ -376,6 +376,26 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
+    function testCannotReuseSeedForReveal() public {
+        // first mint and reveal.
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        // seed used for first reveal.
+        (uint64 firstSeed, , , , ) = gobblers.gobblerRevealsData();
+        // second mint.
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        gobblers.getRandomSeed();
+        // seed we want to use for second reveal.
+        (uint64 secondSeed, , , , ) = gobblers.gobblerRevealsData();
+        // verify that we are trying to use the same seed.
+        assertEq(firstSeed, secondSeed);
+        // try to reveal with same seed, which should fail.
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.revealGobblers(1);
+        assertTrue(true);
+    }
 
     /*//////////////////////////////////////////////////////////////
                                   GOOP
