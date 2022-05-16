@@ -237,12 +237,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
 
         vm.prank(users[0]);
-        uint256 currentLeaderId = gobblers.mintLeaderGobbler(ids);
+        uint256 mintedLeaderId = gobblers.mintLeaderGobbler(ids);
 
         // Leader is owned by user.
-        assertEq(gobblers.ownerOf(currentLeaderId), users[0]);
+        assertEq(gobblers.ownerOf(mintedLeaderId), users[0]);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum * 2);
-        assertEq(gobblers.getGobblerEmissionMultiple(currentLeaderId), emissionMultipleSum * 2);
+
+        assertEq(gobblers.getGobblerEmissionMultiple(mintedLeaderId), emissionMultipleSum * 2);
 
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
@@ -252,17 +253,19 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
         gobblers.mintLeaderGobbler(ids);
-        (, , uint16 leaderId) = gobblers.leaderGobblerAuctionData();
-        assertEq(leaderId, 9991);
+        (, , uint16 nextLeaderId) = gobblers.leaderGobblerAuctionData();
+        uint16 mintedLeaderId = nextLeaderId - 1;
+        //First leader to be minted should be 9991
+        assertEq(mintedLeaderId, 9991);
         uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
 
-        ids[0] = leaderId; // the leader we minted
+        ids[0] = mintedLeaderId; // Try to pass in the leader we just minted as well.
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, leaderId));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, mintedLeaderId));
         gobblers.mintLeaderGobbler(ids);
     }
 
@@ -372,6 +375,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
     }
+
 
     /*//////////////////////////////////////////////////////////////
                                   GOOP
