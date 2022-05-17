@@ -467,8 +467,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     function fulfillRandomness(bytes32, uint256 randomness) internal override {
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
-        // Flip the waiting for seed flag
-        gobblerRevealsData.waitingForSeed = false;
+
+        gobblerRevealsData.waitingForSeed = false; // We have the seed now, open up reveals.
 
         emit RandomnessFulfilled(randomness);
     }
