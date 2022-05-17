@@ -250,7 +250,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that Leader Gobblers have expected ids
     function testMintLeaderGobblersExpectedIds() public {
-        //we expect the first leader to have this ID.
+        // We expect the first leader to have this id.
         uint256 nextMintLeaderId = 9991;
         uint256 curGobblerId = 1;
         uint256 startTime = block.timestamp + 45 days;
