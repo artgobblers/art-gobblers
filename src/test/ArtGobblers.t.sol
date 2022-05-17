@@ -237,14 +237,42 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
 
         vm.prank(users[0]);
-        uint256 currentLeaderId = gobblers.mintLeaderGobbler(ids);
+        uint256 mintedLeaderId = gobblers.mintLeaderGobbler(ids);
 
         // Leader is owned by user.
-        assertEq(gobblers.ownerOf(currentLeaderId), users[0]);
+        assertEq(gobblers.ownerOf(mintedLeaderId), users[0]);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum * 2);
-        assertEq(gobblers.getGobblerEmissionMultiple(currentLeaderId), emissionMultipleSum * 2);
+
+        assertEq(gobblers.getGobblerEmissionMultiple(mintedLeaderId), emissionMultipleSum * 2);
 
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
+    }
+
+    /// @notice Test that leader gobblers have expected ids.
+    function testMintLeaderGobblersExpectedIds() public {
+        // We expect the first leader to have this id.
+        uint256 nextMintLeaderId = 9991;
+        uint256 curGobblerId = 1;
+        uint256 startTime = block.timestamp + 45 days;
+        vm.warp(startTime);
+        for (int256 i = 0; i < 10; i++) {
+            uint256 cost = gobblers.leaderGobblerPrice();
+            console.log(cost);
+            mintGobblerToAddress(users[0], cost);
+            for (uint256 j = 0; j < cost; j++) {
+                ids.push(curGobblerId++);
+            }
+
+            vm.prank(users[0]);
+            uint256 justMintedLeaderId = gobblers.mintLeaderGobbler(ids);
+            //assert that leaders have the expected ids
+            assertEq(nextMintLeaderId, justMintedLeaderId);
+            nextMintLeaderId++;
+            for (uint256 j = 0; j < cost; j++) {
+                ids.pop();
+            }
+            vm.warp(block.timestamp + 30 days);
+        }
     }
 
     /// @notice Test that Leader Gobblers can't be burned to mint another leader.
@@ -252,17 +280,19 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
         gobblers.mintLeaderGobbler(ids);
-        (, , uint16 leaderId) = gobblers.leaderGobblerAuctionData();
-        assertEq(leaderId, 9991);
+        (, , uint16 nextLeaderId) = gobblers.leaderGobblerAuctionData();
+        uint16 mintedLeaderId = nextLeaderId - 1;
+        //First leader to be minted should be 9991
+        assertEq(mintedLeaderId, 9991);
         uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
 
-        ids[0] = leaderId; // the leader we minted
+        ids[0] = mintedLeaderId; // Try to pass in the leader we just minted as well.
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, leaderId));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, mintedLeaderId));
         gobblers.mintLeaderGobbler(ids);
     }
 
@@ -371,6 +401,27 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 51; i <= 100; i++) {
             assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
         }
+    }
+
+    function testCannotReuseSeedForReveal() public {
+        // first mint and reveal.
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        // seed used for first reveal.
+        (uint64 firstSeed, , , , ) = gobblers.gobblerRevealsData();
+        // second mint.
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        gobblers.getRandomSeed();
+        // seed we want to use for second reveal.
+        (uint64 secondSeed, , , , ) = gobblers.gobblerRevealsData();
+        // verify that we are trying to use the same seed.
+        assertEq(firstSeed, secondSeed);
+        // try to reveal with same seed, which should fail.
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.revealGobblers(1);
+        assertTrue(true);
     }
 
     /*//////////////////////////////////////////////////////////////
