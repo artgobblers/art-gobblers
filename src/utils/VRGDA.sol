@@ -33,20 +33,12 @@ abstract contract VRGDA {
     /// @param sold The number of tokens that have been sold so far.
     function getPrice(uint256 timeSinceStart, uint256 sold) public view returns (uint256) {
         unchecked {
-            return
-                uint256(
-                    wadMul(
-                        initialPrice,
-                        wadExp(
-                            unsafeWadMul(
-                                decayConstant,
-                                // Theoretically calling toWadUnsafe with timeSinceStart and sold can overflow without
-                                // detection, but under any reasonable circumstance they will never be large enough.
-                                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold))
-                            )
-                        )
-                    )
-                );
+            // prettier-ignore
+            return uint256(wadMul(initialPrice, wadExp(unsafeWadMul(decayConstant,
+                // Theoretically calling toWadUnsafe with timeSinceStart and sold can overflow without
+                // detection, but under any reasonable circumstance they will never be large enough.
+                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold))
+            ))));
         }
     }
 
