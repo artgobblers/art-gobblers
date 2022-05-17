@@ -347,7 +347,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Id of current leader gobbler being minted.
         currentMintLeaderId = leaderGobblerAuctionData.currentLeaderGobblerAuctionId;
 
-        //If id of current mint is greated than max supply, there are no remaining leaders
+        // If the current id is greater than the max supply, there are no remaining leaders.
         if (currentMintLeaderId > MAX_SUPPLY) revert NoRemainingLeaderGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
