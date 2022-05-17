@@ -108,8 +108,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint120 currentLeaderGobblerStartPrice;
         // Start timestamp of current leader gobbler auction.
         uint120 currentLeaderGobblerAuctionStart;
-        // Id of the next leader gobbler that will be minted,
-        // which is currently being auctioned.
+        // Id of the current gobbler being auctioned.
         // 16 bits has a max value of ~60,000,
         // which is safely within our limits here.
         uint16 currentLeaderGobblerAuctionId;
