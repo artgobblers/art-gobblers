@@ -133,12 +133,12 @@ abstract contract GobblersERC1155B {
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155Received(msg.sender, address(0), id, 1, data) ==
+        if (to.code.length != 0) {
+            require(
+                ERC1155TokenReceiver(to).onERC1155Received(msg.sender, address(0), id, 1, data) ==
                     ERC1155TokenReceiver.onERC1155Received.selector,
-            "UNSAFE_RECIPIENT"
-        );
+                "UNSAFE_RECIPIENT"
+            );
+        } else require(to != address(0), "INVALID_RECIPIENT");
     }
 }
