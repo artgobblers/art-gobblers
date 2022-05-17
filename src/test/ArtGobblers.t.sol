@@ -248,7 +248,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
-    /// @notice Test that Leader Gobblers have expected ids
+    /// @notice Test that leader gobblers have expected ids.
     function testMintLeaderGobblersExpectedIds() public {
         // We expect the first leader to have this id.
         uint256 nextMintLeaderId = 9991;
