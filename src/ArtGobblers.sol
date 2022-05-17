@@ -131,7 +131,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         uint56 lastRevealedIndex;
         // Remaining gobblers to be assigned from seed.
         uint56 gobblersToBeAssigned;
-        // Whether we are waiting to receive a seed from chainlink
+        // Whether we are waiting to receive a seed from Chainlink.
         bool waitingForSeed;
     }
 
