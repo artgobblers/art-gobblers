@@ -443,7 +443,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (gobblerRevealsData.gobblersToBeAssigned != 0) revert Unauthorized();
 
-        //A new seed cannot be requested while we wait for a new seed
+        // A new seed cannot be requested while we wait for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert Unauthorized();
 
         unchecked {
