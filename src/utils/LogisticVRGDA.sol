@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {VRGDA} from "./VRGDA.sol";
 import {wadExp, wadLn, unsafeDiv, unsafeWadDiv} from "./SignedWadMath.sol";
+
+import {VRGDA} from "./VRGDA.sol";
 
 /// @title Logistic Variable Rate Gradual Dutch Auction
 /// @notice Abstract VRGDA with a logistic issuance curve.
