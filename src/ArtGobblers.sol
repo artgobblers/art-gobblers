@@ -742,13 +742,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         emit TransferBatch(msg.sender, from, to, ids, amounts);
 
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
+        if (to.code.length != 0) {
+            require(
+                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
                     ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-            "UNSAFE_RECIPIENT"
-        );
+                "UNSAFE_RECIPIENT"
+            );
+        } else require(to != address(0), "INVALID_RECIPIENT");
     }
 
     function safeTransferFrom(
@@ -784,12 +784,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         emit TransferSingle(msg.sender, from, to, id, amount);
 
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
+        if (to.code.length != 0) {
+            require(
+                ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
                     ERC1155TokenReceiver.onERC1155Received.selector,
-            "UNSAFE_RECIPIENT"
-        );
+                "UNSAFE_RECIPIENT"
+            );
+        } else require(to != address(0), "INVALID_RECIPIENT");
     }
 }
