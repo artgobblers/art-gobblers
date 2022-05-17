@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {VRGDA} from "./VRGDA.sol";
 import {unsafeWadDiv} from "./SignedWadMath.sol";
+
+import {VRGDA} from "./VRGDA.sol";
 
 /// @title "Post Switch" Variable Rate Gradual Dutch Auction
 /// @notice Abstract VRGDA with a (translated) linear issuance curve.
