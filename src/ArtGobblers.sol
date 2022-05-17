@@ -342,13 +342,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Mint a leader gobbler by burning multiple standard gobblers.
     /// @param gobblerIds The ids of the standard gobblers to burn.
-    /// @return currentMintLeaderId The id of the leader gobbler that was minted.
-    function mintLeaderGobbler(uint256[] calldata gobblerIds) external returns (uint256 currentMintLeaderId) {
-        // Id of current leader gobbler being minted.
-        currentMintLeaderId = leaderGobblerAuctionData.currentLeaderGobblerAuctionId;
+    /// @return gobblerId The id of the leader gobbler that was minted.
+    function mintLeaderGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
+        gobblerId = leaderGobblerAuctionData.currentLeaderGobblerAuctionId; // Assign id.
 
         // If the current id is greater than the max supply, there are no remaining leaders.
-        if (currentMintLeaderId > MAX_SUPPLY) revert NoRemainingLeaderGobblers();
+        if (gobblerId > MAX_SUPPLY) revert NoRemainingLeaderGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = leaderGobblerPrice();
@@ -391,7 +390,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the leader's emissionMultiple 2x the sum of the multiples of the gobblers burned.
             // Must be done before minting as the transfer hook will update the user's emissionMultiple.
-            getGobblerData[currentMintLeaderId].emissionMultiple = uint48(burnedMultipleTotal << 1);
+            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal << 1);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -402,14 +401,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Start a new auction, 30 days after the previous start, and update the current leader id.
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
-            leaderGobblerAuctionData.currentLeaderGobblerAuctionId = uint16(currentMintLeaderId) + 1;
+            leaderGobblerAuctionData.currentLeaderGobblerAuctionId = uint16(gobblerId) + 1;
             leaderGobblerAuctionData.currentLeaderGobblerAuctionStart += 30 days;
             leaderGobblerAuctionData.currentLeaderGobblerStartPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
-            emit LeaderGobblerMinted(msg.sender, currentMintLeaderId, gobblerIds);
+            emit LeaderGobblerMinted(msg.sender, gobblerId, gobblerIds);
 
-            _mint(msg.sender, currentMintLeaderId, "");
+            _mint(msg.sender, gobblerId, "");
         }
     }
 
