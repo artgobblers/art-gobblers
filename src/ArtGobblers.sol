@@ -453,6 +453,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Fix number of gobblers to be revealed from seed.
             gobblerRevealsData.gobblersToBeAssigned = uint56(currentNonLeaderId - gobblerRevealsData.lastRevealedIndex);
 
+            // Prevent revealing while we wait for the seed.
             gobblerRevealsData.waitingForSeed = true;
         }
 
