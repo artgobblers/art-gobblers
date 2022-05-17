@@ -344,7 +344,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerIds The ids of the standard gobblers to burn.
     /// @return currentMintLeaderId The id of the leader gobbler that was minted.
     function mintLeaderGobbler(uint256[] calldata gobblerIds) external returns (uint256 currentMintLeaderId) {
-        //Id of current leader gobbler being minted
+        // Id of current leader gobbler being minted.
         currentMintLeaderId = leaderGobblerAuctionData.currentLeaderGobblerAuctionId;
 
         //If id of current mint is greated than max supply, there are no remaining leaders
