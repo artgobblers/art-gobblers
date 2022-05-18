@@ -108,7 +108,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Start price of current leader gobbler auction.
         uint120 startPrice;
         // Start timestamp of current leader gobbler auction.
-        uint120 startTime;
+        uint120 startTimestamp;
         // Id of the current leader gobbler being
         // auctioned. 16 bits has a max value of
         // ~60k which is within our limits here.
@@ -127,10 +127,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Last random seed obtained from VRF.
         uint64 randomSeed;
         // Next reveal cannot happen before this timestamp.
-        uint64 nextReveal;
-        // Index of last token that has been revealed.
-        uint56 lastRevealed;
-        // Remaining gobblers to be assigned from seed.
+        uint64 nextRevealTimestamp;
+        // Id of latest gobbler which has been revealed so far.
+        uint56 lastRevealedId;
+        // Remaining gobblers to be assigned from the current seed.
         uint56 toBeAssigned;
         // Whether we are waiting to receive a seed from Chainlink.
         bool waitingForSeed;
@@ -178,7 +178,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
 
-    event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealed);
+    event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
     event ArtFeedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
 
@@ -245,13 +245,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         leaderGobblerAuctionData.startPrice = 100;
 
         // First leader gobbler auction starts 30 days after the mint starts.
-        leaderGobblerAuctionData.startTime = uint120(_mintStart + 30 days);
+        leaderGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
 
         // Current leader id starts at beginning of leader id space.
         leaderGobblerAuctionData.gobblerId = uint16(FIRST_LEADER_GOBBLER_ID);
 
         // Reveal for initial mint must wait 24 hours
-        gobblerRevealsData.nextReveal = uint64(_mintStart + 1 days);
+        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -403,7 +403,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Start a new auction, 30 days after the previous start, and update the current leader id.
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
             leaderGobblerAuctionData.gobblerId = uint16(gobblerId) + 1;
-            leaderGobblerAuctionData.startTime += 30 days;
+            leaderGobblerAuctionData.startTimestamp += 30 days;
             leaderGobblerAuctionData.startPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
@@ -417,7 +417,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
     function leaderGobblerPrice() public view returns (uint256) {
         // Cannot be unchecked, we want this to revert if the auction has not started yet.
-        uint256 daysSinceStart = (block.timestamp - leaderGobblerAuctionData.startTime) / 1 days;
+        uint256 daysSinceStart = (block.timestamp - leaderGobblerAuctionData.startTimestamp) / 1 days;
 
         // If 30 or more days have passed, leader gobbler is free.
         if (daysSinceStart >= 30) return 0;
@@ -434,10 +434,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Get the random seed for revealing gobblers.
     function getRandomSeed() external returns (bytes32) {
-        uint256 nextReveal = gobblerRevealsData.nextReveal;
+        uint256 nextRevealTimestamp = gobblerRevealsData.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
-        if (block.timestamp < nextReveal) revert Unauthorized();
+        if (block.timestamp < nextRevealTimestamp) revert Unauthorized();
 
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
@@ -448,10 +448,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
-            gobblerRevealsData.nextReveal = uint64(nextReveal + 1 days);
+            gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
 
             // Fix number of gobblers to be revealed from seed.
-            gobblerRevealsData.toBeAssigned = uint56(currentNonLeaderId - gobblerRevealsData.lastRevealed);
+            gobblerRevealsData.toBeAssigned = uint56(currentNonLeaderId - gobblerRevealsData.lastRevealedId);
 
             // Prevent revealing while we wait for the seed.
             gobblerRevealsData.waitingForSeed = true;
@@ -490,7 +490,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         uint256 currentRandomSeed = gobblerRevealsData.randomSeed;
 
-        uint256 currentLastRevealed = gobblerRevealsData.lastRevealed;
+        uint256 currentLastRevealed = gobblerRevealsData.lastRevealedId;
 
         emit GobblersRevealed(msg.sender, numGobblers, currentLastRevealed);
 
@@ -564,7 +564,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Update relevant reveal state state all at once.
             gobblerRevealsData.randomSeed = uint64(currentRandomSeed);
-            gobblerRevealsData.lastRevealed = uint56(currentLastRevealed);
+            gobblerRevealsData.lastRevealedId = uint56(currentLastRevealed);
             gobblerRevealsData.toBeAssigned = uint56(currentGobblersToBeAssigned - numGobblers);
         }
     }
@@ -577,7 +577,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerId The id of the token to get the URI for.
     function uri(uint256 gobblerId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealed are revealed normal gobblers.
-        if (gobblerId <= gobblerRevealsData.lastRevealed) {
+        if (gobblerId <= gobblerRevealsData.lastRevealedId) {
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 
