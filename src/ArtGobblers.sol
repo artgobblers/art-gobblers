@@ -559,7 +559,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
 
                 // Update the random seed to choose a new distance for the next iteration.
-                currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
+                // It is critical that we cast to uint64 here, as otherwise the random seed
+                // set after calling revealGobblers(1) thrice would differ from the seed set
+                // after calling revealGobblers(3) a single time. This would enable an attacker
+                // to choose from a number of different seeds and use whichever is most favorable.
+                currentRandomSeed = uint64(uint256(keccak256(abi.encodePacked(currentRandomSeed))));
             }
 
             // Update relevant reveal state state all at once.
