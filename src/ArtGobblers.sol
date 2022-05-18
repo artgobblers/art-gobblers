@@ -241,7 +241,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
 
-        // Start price for leader gobblers is 100 gobblers.
+        // Starting price for leader gobblers is 100 gobblers.
         leaderGobblerAuctionData.startPrice = 100;
 
         // First leader gobbler auction starts 30 days after the mint starts.
