@@ -516,7 +516,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 uint256 swapId = currentId + distance;
 
                 /*//////////////////////////////////////////////////////////////
-                                       GET INDEXES FOR IDS
+                                       GET INDICES FOR IDS
                 //////////////////////////////////////////////////////////////*/
 
                 // Get the index of the swap id.
@@ -533,7 +533,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                     : getGobblerData[currentId].idx; // Shuffled before.
 
                 /*//////////////////////////////////////////////////////////////
-                                  SWAP INDEXES AND SET MULTIPLE
+                                  SWAP INDICES AND SET MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
                 // Determine the current id's new emission multiple.
