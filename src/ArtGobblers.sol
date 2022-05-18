@@ -480,10 +480,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) external {
-        uint256 currentGobblersToBeAssigned = gobblerRevealsData.toBeAssigned;
+        uint256 totalRemainingToBeAssigned = gobblerRevealsData.toBeAssigned;
 
         // Can't reveal more gobblers than were available when seed was generated.
-        if (numGobblers > currentGobblersToBeAssigned) revert Unauthorized();
+        if (numGobblers > totalRemainingToBeAssigned) revert Unauthorized();
 
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert Unauthorized();
@@ -499,64 +499,64 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         unchecked {
             for (uint256 i = 0; i < numGobblers; i++) {
                 /*//////////////////////////////////////////////////////////////
-                                          CHOOSE SLOTS
+                                      DETERMINE RANDOM SWAP
                 //////////////////////////////////////////////////////////////*/
 
-                // Number of slots that have not been assigned. Subtract 1
+                // Number of ids that have not been revealed. Subtract 1
                 // because we don't want to include any leaders in the swap.
-                uint256 remainingSlots = FIRST_LEADER_GOBBLER_ID - currentLastRevealedId - 1;
+                uint256 remainingIds = FIRST_LEADER_GOBBLER_ID - currentLastRevealedId - 1;
 
                 // Randomly pick distance for swap.
-                uint256 distance = currentRandomSeed % remainingSlots;
+                uint256 distance = currentRandomSeed % remainingIds;
 
-                // Current slot is consecutive to last reveal.
-                uint256 currentSlot = ++currentLastRevealedId;
+                // Current id is consecutive to last reveal.
+                uint256 currentId = ++currentLastRevealedId;
 
-                // Select swap slot, adding distance to next reveal slot.
-                uint256 swapSlot = currentSlot + distance;
+                // Select swap id, adding distance to next reveal id.
+                uint256 swapId = currentId + distance;
 
                 /*//////////////////////////////////////////////////////////////
-                                       RETRIEVE SLOT DATA
+                                         GET INDEX DATA
                 //////////////////////////////////////////////////////////////*/
 
-                // Get the index of the swap slot.
-                uint48 swapIndex = getGobblerData[swapSlot].idx == 0
-                    ? uint48(swapSlot) // Hasn't been shuffled before.
-                    : getGobblerData[swapSlot].idx;
+                // Get the index of the swap id.
+                uint48 swapIndex = getGobblerData[swapId].idx == 0
+                    ? uint48(swapId) // Hasn't been shuffled before.
+                    : getGobblerData[swapId].idx; // Shuffled before.
 
-                // Get the owner of the current slot.
-                address currentSlotOwner = getGobblerData[currentSlot].owner;
+                // Get the owner of the current id.
+                address currentIdOwner = getGobblerData[currentId].owner;
 
-                // Get the index of the current slot.
-                uint48 currentIndex = getGobblerData[currentSlot].idx == 0
-                    ? uint48(currentSlot) // Hasn't been shuffled before.
-                    : getGobblerData[currentSlot].idx;
+                // Get the index of the current id.
+                uint48 currentIndex = getGobblerData[currentId].idx == 0
+                    ? uint48(currentId) // Hasn't been shuffled before.
+                    : getGobblerData[currentId].idx; // Shuffled before.
 
                 /*//////////////////////////////////////////////////////////////
                                   SWAP INDEXES AND SET MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
-                // Determine the current slot's new emission multiple.
-                uint256 newCurrentSlotMultiple = 9; // For beyond 7963.
-                if (swapIndex <= 3054) newCurrentSlotMultiple = 6;
-                else if (swapIndex <= 5672) newCurrentSlotMultiple = 7;
-                else if (swapIndex <= 7963) newCurrentSlotMultiple = 8;
+                // Determine the current id's new emission multiple.
+                uint256 newCurrentIdMultiple = 9; // For beyond 7963.
+                if (swapIndex <= 3054) newCurrentIdMultiple = 6;
+                else if (swapIndex <= 5672) newCurrentIdMultiple = 7;
+                else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
 
-                // Swap the index and multiple of the current slot.
-                getGobblerData[currentSlot].idx = swapIndex;
-                getGobblerData[currentSlot].emissionMultiple = uint48(newCurrentSlotMultiple);
+                // Swap the index and multiple of the current id.
+                getGobblerData[currentId].idx = swapIndex;
+                getGobblerData[currentId].emissionMultiple = uint48(newCurrentIdMultiple);
 
-                // Swap the index of the swap slot.
-                getGobblerData[swapSlot].idx = currentIndex;
+                // Swap the index of the swap id.
+                getGobblerData[swapId].idx = currentIndex;
 
                 /*//////////////////////////////////////////////////////////////
-                                  UPDATE CURRENT SLOT MULTIPLE
+                                   UPDATE CURRENT ID MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
-                // Update the emission data for the owner of the current slot.
-                getEmissionDataForUser[currentSlotOwner].lastBalance = uint128(goopBalance(currentSlotOwner));
-                getEmissionDataForUser[currentSlotOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[currentSlotOwner].emissionMultiple += uint64(newCurrentSlotMultiple);
+                // Update the emission data for the owner of the current id.
+                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(goopBalance(currentIdOwner));
+                getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
+                getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
 
                 // Update the random seed to choose a new distance for the next iteration.
                 currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
@@ -565,7 +565,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // Update relevant reveal state state all at once.
             gobblerRevealsData.randomSeed = uint64(currentRandomSeed);
             gobblerRevealsData.lastRevealedId = uint56(currentLastRevealedId);
-            gobblerRevealsData.toBeAssigned = uint56(currentGobblersToBeAssigned - numGobblers);
+            gobblerRevealsData.toBeAssigned = uint56(totalRemainingToBeAssigned - numGobblers);
         }
     }
 
