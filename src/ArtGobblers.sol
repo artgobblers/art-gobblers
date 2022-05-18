@@ -490,9 +490,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         uint256 currentRandomSeed = gobblerRevealsData.randomSeed;
 
-        uint256 currentLastRevealed = gobblerRevealsData.lastRevealedId;
+        uint256 currentLastRevealedId = gobblerRevealsData.lastRevealedId;
 
-        emit GobblersRevealed(msg.sender, numGobblers, currentLastRevealed);
+        emit GobblersRevealed(msg.sender, numGobblers, currentLastRevealedId);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
@@ -504,13 +504,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 // Number of slots that have not been assigned. Subtract 1
                 // because we don't want to include any leaders in the swap.
-                uint256 remainingSlots = FIRST_LEADER_GOBBLER_ID - currentLastRevealed - 1;
+                uint256 remainingSlots = FIRST_LEADER_GOBBLER_ID - currentLastRevealedId - 1;
 
                 // Randomly pick distance for swap.
                 uint256 distance = currentRandomSeed % remainingSlots;
 
                 // Current slot is consecutive to last reveal.
-                uint256 currentSlot = ++currentLastRevealed;
+                uint256 currentSlot = ++currentLastRevealedId;
 
                 // Select swap slot, adding distance to next reveal slot.
                 uint256 swapSlot = currentSlot + distance;
@@ -564,7 +564,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Update relevant reveal state state all at once.
             gobblerRevealsData.randomSeed = uint64(currentRandomSeed);
-            gobblerRevealsData.lastRevealedId = uint56(currentLastRevealed);
+            gobblerRevealsData.lastRevealedId = uint56(currentLastRevealedId);
             gobblerRevealsData.toBeAssigned = uint56(currentGobblersToBeAssigned - numGobblers);
         }
     }
