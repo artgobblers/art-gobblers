@@ -34,7 +34,8 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Timestamp for the start of the VRGDA mint.
     uint256 public immutable mintStart;
 
-    /// @notice Id of the current page.
+    /// @notice Id of the most recently minted page.
+    /// @dev Will be 0 if no pages have been minted yet.
     uint256 public currentId;
 
     /*//////////////////////////////////////////////////////////////
