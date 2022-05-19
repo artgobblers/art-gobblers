@@ -480,9 +480,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) external {
-        uint256 currentRandomSeed = gobblerRevealsData.randomSeed;
+        uint256 randomSeed = gobblerRevealsData.randomSeed;
 
-        uint256 currentLastRevealedId = gobblerRevealsData.lastRevealedId;
+        uint256 lastRevealedId = gobblerRevealsData.lastRevealedId;
 
         uint256 totalRemainingToBeAssigned = gobblerRevealsData.toBeAssigned;
 
@@ -492,7 +492,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert Unauthorized();
 
-        emit GobblersRevealed(msg.sender, numGobblers, currentLastRevealedId);
+        emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
@@ -504,13 +504,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 // Number of ids that have not been revealed. Subtract 1
                 // because we don't want to include any leaders in the swap.
-                uint256 remainingIds = FIRST_LEADER_GOBBLER_ID - currentLastRevealedId - 1;
+                uint256 remainingIds = FIRST_LEADER_GOBBLER_ID - lastRevealedId - 1;
 
                 // Randomly pick distance for swap.
-                uint256 distance = currentRandomSeed % remainingIds;
+                uint256 distance = randomSeed % remainingIds;
 
                 // Current id is consecutive to last reveal.
-                uint256 currentId = ++currentLastRevealedId;
+                uint256 currentId = ++lastRevealedId;
 
                 // Select swap id, adding distance to next reveal id.
                 uint256 swapId = currentId + distance;
@@ -559,12 +559,22 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
 
                 // Update the random seed to choose a new distance for the next iteration.
-                currentRandomSeed = uint256(keccak256(abi.encodePacked(currentRandomSeed)));
+                // It is critical that we cast to uint64 here, as otherwise the random seed
+                // set after calling revealGobblers(1) thrice would differ from the seed set
+                // after calling revealGobblers(3) a single time. This would enable an attacker
+                // to choose from a number of different seeds and use whichever is most favorable.
+                // Equivalent to randomSeed = uint64(uint256(keccak256(abi.encodePacked(randomSeed))))
+                assembly {
+                    mstore(0, randomSeed) // Store the random seed in scratch space.
+
+                    // Moduloing by 1 << 64 (2 ** 64) is equivalent to a uint64 cast.
+                    randomSeed := mod(keccak256(0, 32), shl(64, 1))
+                }
             }
 
-            // Update relevant reveal state state all at once.
-            gobblerRevealsData.randomSeed = uint64(currentRandomSeed);
-            gobblerRevealsData.lastRevealedId = uint56(currentLastRevealedId);
+            // Update all relevant reveal state state.
+            gobblerRevealsData.randomSeed = uint64(randomSeed);
+            gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
             gobblerRevealsData.toBeAssigned = uint56(totalRemainingToBeAssigned - numGobblers);
         }
     }
