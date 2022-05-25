@@ -325,8 +325,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @return gobblerId The id of the gobbler that was minted.
     function mintForTeam() external returns (uint256 gobblerId) {
         unchecked {
-            // Can mint up to 10% of the current auctioned gobblers.
-            uint256 currentMintLimit = numMintedFromGoop / 10;
+            // Can mint up to 10% of the current auctioned gobblers. After this mint, there would be
+            // numMintedFromGoop + numMintedForTeam + 1 circulating auctioned gobblers.
+            uint256 currentMintLimit = (numMintedFromGoop + numMintedForTeam + 1) / 10;
 
             // Check that we wouldn't go over the limit after minting.
             if (++numMintedForTeam > currentMintLimit) revert Unauthorized();
