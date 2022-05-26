@@ -135,9 +135,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that the team can mint under fair circumstances.
     function testCanMintForTeam() public {
-        mintGobblerToAddress(users[0], 10);
+        mintGobblerToAddress(users[0], 9);
         gobblers.mintForTeam();
-        assertEq(gobblers.ownerOf(11), address(team));
+        assertEq(gobblers.ownerOf(10), address(team));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -621,6 +621,49 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
             gobblers.mintFromGoop(type(uint256).max);
         }
+    }
+
+    /// @notice Check that max team supply is mintable.
+    function testLongRunningMintMaxTeam() public {
+        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+
+        for (uint256 i = 0; i < maxMintableWithGoop; i++) {
+            vm.warp(block.timestamp + 1 days);
+            uint256 cost = gobblers.gobblerPrice();
+            vm.prank(address(gobblers));
+            goop.mintForGobblers(users[0], cost);
+            vm.prank(users[0]);
+            gobblers.mintFromGoop(type(uint256).max);
+        }
+
+        uint256 maxTeamSupply = gobblers.TEAM_SUPPLY();
+
+        for (uint256 i = 0; i < maxTeamSupply; i++) {
+            gobblers.mintForTeam();
+        }
+    }
+
+    /// @notice Check that team minting beyond their max supply reverts.
+    function testLongRunningMintMaxTeamRevert() public {
+        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+
+        for (uint256 i = 0; i < maxMintableWithGoop; i++) {
+            vm.warp(block.timestamp + 1 days);
+            uint256 cost = gobblers.gobblerPrice();
+            vm.prank(address(gobblers));
+            goop.mintForGobblers(users[0], cost);
+            vm.prank(users[0]);
+            gobblers.mintFromGoop(type(uint256).max);
+        }
+
+        uint256 maxTeamSupply = gobblers.TEAM_SUPPLY();
+
+        for (uint256 i = 0; i < maxTeamSupply; i++) {
+            gobblers.mintForTeam();
+        }
+
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintForTeam();
     }
 
     // /// @notice Test whether all ids are assigned after full reveal.
