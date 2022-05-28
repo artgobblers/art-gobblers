@@ -39,13 +39,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     uint256 public constant MINTLIST_SUPPLY = 2000;
 
     /// @notice Maximum amount of mintable legendary gobblers.
-    uint256 public constant LEADER_SUPPLY = 10;
+    uint256 public constant LEGENDARY_SUPPLY = 10;
 
     /// @notice Maximum amount of gobblers that will go to the team.
     uint256 public constant TEAM_SUPPLY = 799;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
-    uint256 public constant MAX_MINTABLE = MAX_SUPPLY - MINTLIST_SUPPLY - LEADER_SUPPLY - TEAM_SUPPLY;
+    uint256 public constant MAX_MINTABLE = MAX_SUPPLY - MINTLIST_SUPPLY - LEGENDARY_SUPPLY - TEAM_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -97,11 +97,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     uint256 public numMintedForTeam;
 
     /*//////////////////////////////////////////////////////////////
-                      LEADER GOBBLER AUCTION STATE
+                     LEGENDARY GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The last LEADER_SUPPLY ids are reserved for legendary gobblers.
-    uint256 internal constant FIRST_LEADER_GOBBLER_ID = MAX_SUPPLY - LEADER_SUPPLY + 1;
+    /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
+    uint256 internal constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
     /// @notice Struct holding data required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
@@ -248,7 +248,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         legendaryGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
-        legendaryGobblerAuctionData.gobblerId = uint16(FIRST_LEADER_GOBBLER_ID);
+        legendaryGobblerAuctionData.gobblerId = uint16(FIRST_LEGENDARY_GOBBLER_ID);
 
         // Reveal for initial mint must wait 24 hours
         gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
@@ -339,7 +339,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /*//////////////////////////////////////////////////////////////
-                      LEADER GOBBLER AUCTION LOGIC
+                     LEGENDARY GOBBLER AUCTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a legendary gobbler by burning multiple standard gobblers.
@@ -372,7 +372,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             for (uint256 i = 0; i < gobblerIds.length; ++i) {
                 id = gobblerIds[i];
 
-                if (id >= FIRST_LEADER_GOBBLER_ID) revert CannotBurnLegendary(id);
+                if (id >= FIRST_LEGENDARY_GOBBLER_ID) revert CannotBurnLegendary(id);
 
                 require(getGobblerData[id].owner == msg.sender, "WRONG_FROM");
 
@@ -386,7 +386,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
 
             /*//////////////////////////////////////////////////////////////
-                                  LEADER MINTING LOGIC
+                                 LEGENDARY MINTING LOGIC
             //////////////////////////////////////////////////////////////*/
 
             // The shift right by 1 is equivalent to multiplication by 2, used to make
@@ -505,7 +505,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 // Number of ids that have not been revealed. Subtract 1
                 // because we don't want to include any legendaries in the swap.
-                uint256 remainingIds = FIRST_LEADER_GOBBLER_ID - lastRevealedId - 1;
+                uint256 remainingIds = FIRST_LEGENDARY_GOBBLER_ID - lastRevealedId - 1;
 
                 // Randomly pick distance for swap.
                 uint256 distance = randomSeed % remainingIds;
@@ -598,10 +598,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Between lastRevealed + 1 and currentNonLegendaryId are minted but not revealed.
         if (gobblerId <= currentNonLegendaryId) return UNREVEALED_URI;
 
-        // Between currentNonLegendaryId and FIRST_LEADER_GOBBLER_ID are unminted.
-        if (gobblerId < FIRST_LEADER_GOBBLER_ID) return "";
+        // Between currentNonLegendaryId and FIRST_LEGENDARY_GOBBLER_ID are unminted.
+        if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID) return "";
 
-        // Between FIRST_LEADER_GOBBLER_ID and gobblerId are minted legendaries.
+        // Between FIRST_LEGENDARY_GOBBLER_ID and gobblerId are minted legendaries.
         if (gobblerId < legendaryGobblerAuctionData.gobblerId)
             return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
 

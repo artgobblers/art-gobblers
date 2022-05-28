@@ -169,7 +169,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                           LEADER GOBBLERS
+                           LEGENDARY GOBBLERS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Test that attempting to mint before start time reverts.
