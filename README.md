@@ -4,6 +4,11 @@
 
 Art Gobblers scan the cosmos in search of art producing life.
 
+# TODO: new state chart diagram for legendary auctions
+# TODO: new state chart diagram for legendary auctions
+# TODO: new state chart diagram for legendary auctions
+# TODO: new state chart diagram for legendary auctions
+
 ![Gobbler Lifecycle](assets/state-machines/gobbler-lifecycle.png)
 ![Legendary Gobbler Auctions](assets/state-machines/legendary-gobbler-auctions.png)
 ![Page Auctions](assets/state-machines/page-auctions.png)
