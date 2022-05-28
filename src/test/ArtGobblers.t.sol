@@ -248,9 +248,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
-    /// @notice Test that leader gobblers have expected ids.
+    /// @notice Test that legendary gobblers have expected ids.
     function testMintLeaderGobblersExpectedIds() public {
-        // We expect the first leader to have this id.
+        // We expect the first legendary to have this id.
         uint256 nextMintLeaderId = 9991;
         uint256 curGobblerId = 1;
         uint256 startTime = block.timestamp + 45 days;
@@ -275,14 +275,14 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    /// @notice Test that Leader Gobblers can't be burned to mint another leader.
+    /// @notice Test that Leader Gobblers can't be burned to mint another legendary.
     function testCannotMintLeaderWithLeader() public {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
         gobblers.mintLeaderGobbler(ids);
         (, , uint16 nextLeaderId) = gobblers.leaderGobblerAuctionData();
         uint16 mintedLeaderId = nextLeaderId - 1;
-        //First leader to be minted should be 9991
+        //First legendary to be minted should be 9991
         assertEq(mintedLeaderId, 9991);
         uint256 cost = gobblers.leaderGobblerPrice();
         assertEq(cost, 66);
@@ -290,7 +290,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
 
-        ids[0] = mintedLeaderId; // Try to pass in the leader we just minted as well.
+        ids[0] = mintedLeaderId; // Try to pass in the legendary we just minted as well.
         vm.prank(users[0]);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.CannotBurnLeader.selector, mintedLeaderId));
         gobblers.mintLeaderGobbler(ids);
@@ -328,9 +328,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
 
-    /// @notice Test that leader gobbler URI is correct.
+    /// @notice Test that legendary gobbler URI is correct.
     function testMintedLeaderURI() public {
-        //mint leader
+        //mint legendary
         vm.warp(block.timestamp + 70 days);
         uint256[] memory _ids; // gobbler should be free at this point
         uint256 currentLeaderId = gobblers.mintLeaderGobbler(_ids);
@@ -341,7 +341,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
-    /// @notice Test that un-minted leader gobbler URI is correct.
+    /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLeaderUri() public {
         (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
 
