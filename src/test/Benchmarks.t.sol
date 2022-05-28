@@ -82,7 +82,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.gobblerPrice();
     }
 
-    function testLeaderGobblersPrice() public view {
+    function testLegendaryGobblersPrice() public view {
         gobblers.legendaryGobblerPrice();
     }
 
@@ -121,10 +121,10 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.revealGobblers(100);
     }
 
-    function testMintLeaderGobbler() public {
+    function testMintLegendaryGobbler() public {
         uint256[] memory ids = new uint256[](100);
         for (uint256 i = 0; i < 100; i++) ids[i] = i + 1;
 
-        gobblers.mintLeaderGobbler(ids);
+        gobblers.mintLegendaryGobbler(ids);
     }
 }
