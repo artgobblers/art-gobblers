@@ -83,7 +83,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testLeaderGobblersPrice() public view {
-        gobblers.leaderGobblerPrice();
+        gobblers.legendaryGobblerPrice();
     }
 
     function testGoopBalance() public view {

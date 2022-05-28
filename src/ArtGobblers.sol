@@ -116,7 +116,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /// @notice Data about the current legendary gobbler auction.
-    LeaderGobblerAuctionData public leaderGobblerAuctionData;
+    LeaderGobblerAuctionData public legendaryGobblerAuctionData;
 
     /*//////////////////////////////////////////////////////////////
                           GOBBLER REVEAL STATE
@@ -242,13 +242,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         UNREVEALED_URI = _unrevealedUri;
 
         // Starting price for legendary gobblers is 100 gobblers.
-        leaderGobblerAuctionData.startPrice = 100;
+        legendaryGobblerAuctionData.startPrice = 100;
 
         // First legendary gobbler auction starts 30 days after the mint starts.
-        leaderGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
+        legendaryGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
 
         // Current legendary id starts at beginning of legendary id space.
-        leaderGobblerAuctionData.gobblerId = uint16(FIRST_LEADER_GOBBLER_ID);
+        legendaryGobblerAuctionData.gobblerId = uint16(FIRST_LEADER_GOBBLER_ID);
 
         // Reveal for initial mint must wait 24 hours
         gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
@@ -346,13 +346,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerIds The ids of the standard gobblers to burn.
     /// @return gobblerId The id of the legendary gobbler that was minted.
     function mintLeaderGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
-        gobblerId = leaderGobblerAuctionData.gobblerId; // Assign id.
+        gobblerId = legendaryGobblerAuctionData.gobblerId; // Assign id.
 
-        // If the current id is greater than the max supply, there are no remaining leaders.
+        // If the current id is greater than the max supply, there are no remaining legendaries.
         if (gobblerId > MAX_SUPPLY) revert NoRemainingLeaderGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
-        uint256 cost = leaderGobblerPrice();
+        uint256 cost = legendaryGobblerPrice();
 
         if (gobblerIds.length != cost) revert IncorrectGobblerAmount(gobblerIds.length, cost);
 
@@ -403,9 +403,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
             // Start a new auction, 30 days after the previous start, and update the current legendary id.
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
-            leaderGobblerAuctionData.gobblerId = uint16(gobblerId) + 1;
-            leaderGobblerAuctionData.startTimestamp += 30 days;
-            leaderGobblerAuctionData.startPrice = uint120(cost < 50 ? 100 : cost << 1);
+            legendaryGobblerAuctionData.gobblerId = uint16(gobblerId) + 1;
+            legendaryGobblerAuctionData.startTimestamp += 30 days;
+            legendaryGobblerAuctionData.startPrice = uint120(cost < 50 ? 100 : cost << 1);
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LeaderGobblerMinted(msg.sender, gobblerId, gobblerIds);
@@ -416,16 +416,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
     /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
-    function leaderGobblerPrice() public view returns (uint256) {
+    function legendaryGobblerPrice() public view returns (uint256) {
         // Cannot be unchecked, we want this to revert if the auction has not started yet.
-        uint256 daysSinceStart = (block.timestamp - leaderGobblerAuctionData.startTimestamp) / 1 days;
+        uint256 daysSinceStart = (block.timestamp - legendaryGobblerAuctionData.startTimestamp) / 1 days;
 
         // If 30 or more days have passed, legendary gobbler is free.
         if (daysSinceStart >= 30) return 0;
 
         unchecked {
             // If we're less than 30 days into the auction, the price simply decays linearly until the 30th day.
-            return (leaderGobblerAuctionData.startPrice * (30 - daysSinceStart)) / 30;
+            return (legendaryGobblerAuctionData.startPrice * (30 - daysSinceStart)) / 30;
         }
     }
 
@@ -504,7 +504,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 //////////////////////////////////////////////////////////////*/
 
                 // Number of ids that have not been revealed. Subtract 1
-                // because we don't want to include any leaders in the swap.
+                // because we don't want to include any legendaries in the swap.
                 uint256 remainingIds = FIRST_LEADER_GOBBLER_ID - lastRevealedId - 1;
 
                 // Randomly pick distance for swap.
@@ -601,11 +601,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Between currentNonLeaderId and FIRST_LEADER_GOBBLER_ID are unminted.
         if (gobblerId < FIRST_LEADER_GOBBLER_ID) return "";
 
-        // Between FIRST_LEADER_GOBBLER_ID and gobblerId are minted leaders.
-        if (gobblerId < leaderGobblerAuctionData.gobblerId)
+        // Between FIRST_LEADER_GOBBLER_ID and gobblerId are minted legendaries.
+        if (gobblerId < legendaryGobblerAuctionData.gobblerId)
             return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
 
-        return ""; // Unminted leaders and invalid token ids.
+        return ""; // Unminted legendaries and invalid token ids.
     }
 
     /*//////////////////////////////////////////////////////////////

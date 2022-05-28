@@ -183,7 +183,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testLeaderGobblerInitialPrice() public {
         // start of initial auction
         vm.warp(block.timestamp + 30 days);
-        uint256 cost = gobblers.leaderGobblerPrice();
+        uint256 cost = gobblers.legendaryGobblerPrice();
         // initial auction should start at a cost of 100
         assertEq(cost, 100);
     }
@@ -192,7 +192,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testLeaderGobblerFinalPrice() public {
         //30 days for initial auction start, 40 days after initial auction
         vm.warp(block.timestamp + 70 days);
-        uint256 cost = gobblers.leaderGobblerPrice();
+        uint256 cost = gobblers.legendaryGobblerPrice();
         // auction price should be 0 after more than 30 days have passed
         assertEq(cost, 0);
     }
@@ -201,7 +201,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testLeaderGobblerMidPrice() public {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 45 days);
-        uint256 cost = gobblers.leaderGobblerPrice();
+        uint256 cost = gobblers.legendaryGobblerPrice();
         // auction price should be 50 mid way through auction
         assertEq(cost, 50);
     }
@@ -214,7 +214,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //empty id list
         uint256[] memory _ids;
         gobblers.mintLeaderGobbler(_ids);
-        uint256 startCost = gobblers.leaderGobblerPrice();
+        uint256 startCost = gobblers.legendaryGobblerPrice();
         // next gobbler should start at a price of 100
         assertEq(startCost, 100);
     }
@@ -223,7 +223,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintLeaderGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
-        uint256 cost = gobblers.leaderGobblerPrice();
+        uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 100);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
@@ -256,7 +256,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 startTime = block.timestamp + 45 days;
         vm.warp(startTime);
         for (int256 i = 0; i < 10; i++) {
-            uint256 cost = gobblers.leaderGobblerPrice();
+            uint256 cost = gobblers.legendaryGobblerPrice();
             console.log(cost);
             mintGobblerToAddress(users[0], cost);
             for (uint256 j = 0; j < cost; j++) {
@@ -265,7 +265,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
             vm.prank(users[0]);
             uint256 justMintedLeaderId = gobblers.mintLeaderGobbler(ids);
-            //assert that leaders have the expected ids
+            //assert that legendaries have the expected ids
             assertEq(nextMintLeaderId, justMintedLeaderId);
             nextMintLeaderId++;
             for (uint256 j = 0; j < cost; j++) {
@@ -280,11 +280,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
         gobblers.mintLeaderGobbler(ids);
-        (, , uint16 nextLeaderId) = gobblers.leaderGobblerAuctionData();
+        (, , uint16 nextLeaderId) = gobblers.legendaryGobblerAuctionData();
         uint16 mintedLeaderId = nextLeaderId - 1;
         //First legendary to be minted should be 9991
         assertEq(mintedLeaderId, 9991);
-        uint256 cost = gobblers.leaderGobblerPrice();
+        uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 66);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
@@ -343,7 +343,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLeaderUri() public {
-        (, , uint16 currentLeaderId) = gobblers.leaderGobblerAuctionData();
+        (, , uint16 currentLeaderId) = gobblers.legendaryGobblerAuctionData();
 
         assertEq(gobblers.uri(currentLeaderId), "");
         assertEq(gobblers.uri(currentLeaderId + 1), "");
