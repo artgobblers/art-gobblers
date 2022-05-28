@@ -179,7 +179,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintLeaderGobbler(ids);
     }
 
-    /// @notice Test that Leader Gobbler initial price is what we expect.
+    /// @notice Test that Legendary Gobbler initial price is what we expect.
     function testLeaderGobblerInitialPrice() public {
         // start of initial auction
         vm.warp(block.timestamp + 30 days);
@@ -219,7 +219,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(startCost, 100);
     }
 
-    /// @notice Test that Leader Gobblers can be minted.
+    /// @notice Test that Legendary Gobblers can be minted.
     function testMintLeaderGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
@@ -239,7 +239,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(users[0]);
         uint256 mintedLeaderId = gobblers.mintLeaderGobbler(ids);
 
-        // Leader is owned by user.
+        // Legendary is owned by user.
         assertEq(gobblers.ownerOf(mintedLeaderId), users[0]);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum * 2);
 
@@ -275,7 +275,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    /// @notice Test that Leader Gobblers can't be burned to mint another legendary.
+    /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
     function testCannotMintLeaderWithLeader() public {
         vm.warp(block.timestamp + 70 days);
         vm.prank(users[0]);
