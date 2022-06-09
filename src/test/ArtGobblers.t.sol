@@ -14,6 +14,7 @@ import {ERC1155BLockupVault} from "../utils/ERC1155BLockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
+import {MockERC721} from "solmate/test/utils/mocks/MockERC721.sol";
 import {LibString} from "../utils/LibString.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
@@ -546,7 +547,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
         assertEq(gobblers.getGobblerFromFedArt(address(pages), 1), 1);
     }
@@ -560,7 +561,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -570,7 +571,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         vm.startPrank(user);
         vm.expectRevert("WRONG_FROM");
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -582,17 +583,55 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         token.mint(user, 1, 2, "");
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
-        gobblers.feedArt(1, address(token), 1);
+        gobblers.feedArt(1, address(token), 1, false);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.AlreadyEaten.selector, 1, token, 1));
-        gobblers.feedArt(1, address(token), 1);
+        gobblers.feedArt(1, address(token), 1, false);
         vm.stopPrank();
+    }
+
+    /// @notice Test that you can feed an ERC721 token to a gobbler.
+    function testCanFeedERC721Art() public {
+        MockERC721 token = new MockERC721("Mock 721", "MOCK");
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        token.mint(user, 0);
+        vm.startPrank(user);
+        token.approve(address(gobblers), 0);
+        gobblers.feedArt(1, address(token), 0, true);
+        vm.stopPrank();
+        assertEq(gobblers.getGobblerFromFedArt(address(token), 0), 1);
+    }
+
+    /// @notice Test that you can't feed an ERC721 token as an ERC1155 token.
+    function testCantFeedERC721AsERC1155() public {
+        MockERC721 token = new MockERC721("Mock 721", "MOCK");
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        token.mint(user, 0);
+        vm.startPrank(user);
+        token.approve(address(gobblers), 0);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(token), 0, false);
+    }
+
+    /// @notice Test that you can't feed an ERC1155 token as an ERC721 token.
+    function testCantFeedERC1155AsERC721() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        uint256 pagePrice = pages.pagePrice();
+        vm.prank(address(gobblers));
+        goop.mintForGobblers(user, pagePrice);
+        vm.startPrank(user);
+        pages.mintFromGoop(type(uint256).max);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(pages), 1, true);
     }
 
     /*//////////////////////////////////////////////////////////////
                            LONG-RUNNING TESTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Check that max supply is mintable
+    /// @notice Check that max supply is mintable.
     function testLongRunningMintMaxFromGoop() public {
         uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
 

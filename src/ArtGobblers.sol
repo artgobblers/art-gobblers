@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
@@ -624,16 +625,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerId The gobbler to feed the page.
     /// @param nft The contract of the work of art.
     /// @param id The id of the work of art.
-    /// @dev NFTs should be ERC1155s, ideally ERC1155Bs.
+    /// @param isERC721 Whether the work of art is an ERC721 token.
     function feedArt(
         uint256 gobblerId,
         address nft,
-        uint256 id
+        uint256 id,
+        bool isERC721
     ) external {
         // The caller must own the gobbler they're feeding.
         if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
-        // In case the NFT is not an 1155B, we prevent eating it twice.
+        // Don't allow feeding multiple copies of an id if the NFT is an ERC1155.
         if (getGobblerFromFedArt[nft][id] != 0) revert AlreadyEaten(gobblerId, nft, id);
 
         // Map the NFT to the gobbler that ate it.
@@ -641,8 +643,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
         emit ArtFeedToGobbler(msg.sender, gobblerId, nft, id);
 
-        // We're assuming this is an 1155B-like NFT, so we'll only transfer 1.
-        ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
+        isERC721
+            ? ERC721(nft).transferFrom(msg.sender, address(this), id)
+            : ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
 
     /*//////////////////////////////////////////////////////////////
