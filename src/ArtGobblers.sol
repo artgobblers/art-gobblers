@@ -539,9 +539,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
                 // Determine the current id's new emission multiple.
                 uint256 newCurrentIdMultiple = 9; // For beyond 7963.
-                if (swapIndex <= 3054) newCurrentIdMultiple = 6;
-                else if (swapIndex <= 5672) newCurrentIdMultiple = 7;
-                else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
+
+                // The branchless expression below is equivalent to:
+                //      if (swapIndex <= 3054) newCurrentIdMultiple = 6;
+                // else if (swapIndex <= 5672) newCurrentIdMultiple = 7;
+                // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
+                assembly {
+                    // prettier-ignore
+                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple, 
+                        lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
+                    )
+                }
 
                 // Swap the index and multiple of the current id.
                 getGobblerData[currentId].idx = swapIndex;
