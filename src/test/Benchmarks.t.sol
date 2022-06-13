@@ -122,8 +122,8 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintLegendaryGobbler() public {
-        uint256[] memory ids = new uint256[](100);
-        for (uint256 i = 0; i < 100; i++) ids[i] = i + 1;
+        uint256[] memory ids = new uint256[](69);
+        for (uint256 i = 0; i < 69; i++) ids[i] = i + 1;
 
         gobblers.mintLegendaryGobbler(ids);
     }

@@ -241,8 +241,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
 
-        // Starting price for legendary gobblers is 100 gobblers.
-        legendaryGobblerAuctionData.startPrice = 100;
+        // Starting price for legendary gobblers is 69 gobblers.
+        legendaryGobblerAuctionData.startPrice = 69;
 
         // First legendary gobbler auction starts 30 days after the mint starts.
         legendaryGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
@@ -405,7 +405,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.gobblerId = uint16(gobblerId) + 1;
             legendaryGobblerAuctionData.startTimestamp += 30 days;
-            legendaryGobblerAuctionData.startPrice = uint120(cost < 50 ? 100 : cost << 1);
+            legendaryGobblerAuctionData.startPrice = uint120(cost < 34 ? 69 : cost << 1);
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
