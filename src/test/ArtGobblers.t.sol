@@ -286,6 +286,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //First legendary to be minted should be 9991
         assertEq(mintedLegendaryId, 9991);
         uint256 cost = gobblers.legendaryGobblerPrice();
+        //two thirds of starting price after 10 days
         assertEq(cost, 46);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
