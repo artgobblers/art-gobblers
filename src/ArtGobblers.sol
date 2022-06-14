@@ -351,7 +351,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             for (uint256 i = 0; i < amount; ++i) {
                 ids[i] = ++lastMintedId; // Increment id while setting.
 
-                amounts[i] = 1; // ERC155B amounts are always 1.
+                amounts[i] = 1; // ERC1155B amounts are always 1.
 
                 getGobblerData[lastMintedId].owner = address(team);
             }
