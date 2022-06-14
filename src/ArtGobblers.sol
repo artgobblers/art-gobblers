@@ -341,8 +341,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             lastMintedId = currentNonLegendaryId;
 
             // Efficiently transfer mint gobbler for the team.
-            // TODO: does ++i save gas here
-            for (uint256 i = 0; i < amount; i++) {
+            for (uint256 i = 0; i < amount; ++i) {
                 ids[i] = ++lastMintedId; // Increment id while setting.
 
                 amounts[i] = 1; // ERC155B amounts are always 1.
