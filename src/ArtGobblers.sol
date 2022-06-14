@@ -324,14 +324,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// the circulating supply of goop/team minted gobblers.
     function mintForTeam(uint256 amount) external returns (uint256 lastMintedId) {
         unchecked {
-            // TODO: does caching numMintedForTeam help
+            uint256 mintedForTeam = numMintedForTeam; // Cache the current # minted for the team.
 
             // After this mint, there will be numMintedFromGoop + numMintedForTeam + 1 circulating
             // goop/team minted gobblers. The team gobblers can't compromise more than 10% of that.
-            uint256 currentMintLimit = (numMintedFromGoop + numMintedForTeam + 1) / 10;
+            uint256 currentMintLimit = (numMintedFromGoop + mintedForTeam + 1) / 10;
 
-            // Check that we wouldn't go over the limit after minting.
-            if ((numMintedForTeam += amount) > currentMintLimit) revert Unauthorized();
+            // Check that we wouldn't go over the limit after minting the desired amount of gobblers.
+            if ((numMintedForTeam = amount + mintedForTeam) > currentMintLimit) revert Unauthorized();
+
+            /*//////////////////////////////////////////////////////////////
+                                      BATCH MINTING
+            //////////////////////////////////////////////////////////////*/
 
             // Allocate arrays before entering the loop.
             uint256[] memory ids = new uint256[](amount);
@@ -349,10 +353,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 getGobblerData[lastMintedId].owner = address(team);
             }
 
+            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
+
+            /*//////////////////////////////////////////////////////////////
+                                      FINALIZATION
+            //////////////////////////////////////////////////////////////*/
+
             // Update the current non legendary id after minting.
             currentNonLegendaryId = uint128(lastMintedId);
-
-            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
 
             emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
         }
