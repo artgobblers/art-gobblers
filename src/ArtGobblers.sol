@@ -344,7 +344,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             uint256[] memory ids = new uint256[](amount);
             uint256[] memory amounts = new uint256[](amount);
 
-            // We'll skip the current id using ++ in the loop.
+            // We'll skip the starting id in the loop.
             lastMintedId = currentNonLegendaryId;
 
             // Efficiently transfer mint gobbler for the team.
