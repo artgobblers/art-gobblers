@@ -337,10 +337,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             uint256[] memory ids = new uint256[](amount);
             uint256[] memory amounts = new uint256[](amount);
 
-            // TODO: does caching currentNonLegendaryId help or nah
+            // We'll skip the current id using ++ in the loop.
             lastMintedId = currentNonLegendaryId;
-
-            emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
 
             // Efficiently transfer mint gobbler for the team.
             // TODO: does ++i save gas here
@@ -352,10 +350,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                 getGobblerData[lastMintedId].owner = address(team);
             }
 
-            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
-
             // Update the current non legendary id after minting.
             currentNonLegendaryId = uint128(lastMintedId);
+
+            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
+
+            emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
         }
     }
 
