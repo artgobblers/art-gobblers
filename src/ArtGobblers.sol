@@ -172,7 +172,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
-    event GobblerMintedForTeam(address indexed user, uint256 indexed gobblerId);
+    event GobblersMintedForTeam(address indexed user, uint256 indexed lastMintedGobblerId, uint256 amount);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
@@ -180,7 +180,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
-    event ArtFeedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
+    event ArtFedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -319,22 +319,43 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                            TEAM MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a gobbler for the team.
+    /// @notice Mint a number of gobblers for the team.
     /// @dev Team gobblers can never be more than 10% of
     /// the circulating supply of goop/team minted gobblers.
-    /// @return gobblerId The id of the gobbler that was minted.
-    function mintForTeam() external returns (uint256 gobblerId) {
+    function mintForTeam(uint256 amount) external returns (uint256 lastMintedId) {
         unchecked {
+            // TODO: does caching numMintedForTeam help
+
             // After this mint, there will be numMintedFromGoop + numMintedForTeam + 1 circulating
             // goop/team minted gobblers. The team gobblers can't compromise more than 10% of that.
             uint256 currentMintLimit = (numMintedFromGoop + numMintedForTeam + 1) / 10;
 
             // Check that we wouldn't go over the limit after minting.
-            if (++numMintedForTeam > currentMintLimit) revert Unauthorized();
+            if ((numMintedForTeam += amount) > currentMintLimit) revert Unauthorized();
 
-            emit GobblerMintedForTeam(msg.sender, gobblerId = ++currentNonLegendaryId);
+            // Allocate arrays before entering the loop.
+            uint256[] memory ids = new uint256[](amount);
+            uint256[] memory amounts = new uint256[](amount);
 
-            _mint(address(team), gobblerId, "");
+            // TODO: does caching currentNonLegendaryId help or nah
+            lastMintedId = currentNonLegendaryId;
+
+            emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
+
+            // Efficiently transfer mint gobbler for the team.
+            // TODO: does ++i save gas here
+            for (uint256 i = 0; i < amount; i++) {
+                ids[i] = ++lastMintedId; // Increment id while setting.
+
+                amounts[i] = 1; // ERC155B amounts are always 1.
+
+                getGobblerData[lastMintedId].owner = address(team);
+            }
+
+            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
+
+            // Update the current non legendary id after minting.
+            currentNonLegendaryId = uint128(lastMintedId);
         }
     }
 
@@ -639,7 +660,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Map the NFT to the gobbler that ate it.
         getGobblerFromFedArt[nft][id] = gobblerId;
 
-        emit ArtFeedToGobbler(msg.sender, gobblerId, nft, id);
+        emit ArtFedToGobbler(msg.sender, gobblerId, nft, id);
 
         // We're assuming this is an 1155B-like NFT, so we'll only transfer 1.
         ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
