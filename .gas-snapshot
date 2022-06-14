@@ -1,5 +1,5 @@
-ArtGobblersTest:testCanMintForTeam() (gas: 645225)
-ArtGobblersTest:testCanMintMultipleForTeam() (gas: 1299744)
+ArtGobblersTest:testCanMintForTeam() (gas: 645220)
+ArtGobblersTest:testCanMintMultipleForTeam() (gas: 1299739)
 ArtGobblersTest:testCannotMintLegendaryWithLegendary() (gas: 6846819)
 ArtGobblersTest:testCannotReuseSeedForReveal() (gas: 260126)
 ArtGobblersTest:testCantFeedArtToUnownedGobbler() (gas: 97117)
