@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {ERC721} from "solmate/tokens/ERC721.sol";
+import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
@@ -16,7 +17,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -161,7 +162,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mapping from NFT contracts to their ids to gobbler ids they were fed to.
-    mapping(address => mapping(uint256 => uint256)) public getGobblerFromFedArt;
+    mapping(ERC721 => mapping(uint256 => uint256)) public getGobblerFromFedArt;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -180,7 +181,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
-    event ArtFeedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
+    event ArtFeedToGobbler(address indexed user, uint256 indexed gobblerId, ERC721 indexed nft, uint256 id);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -191,8 +192,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     error NoRemainingLegendaryGobblers();
 
     error CannotBurnLegendary(uint256 gobblerId);
-
-    error AlreadyEaten(uint256 gobblerId, address nft, uint256 id);
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
@@ -621,28 +620,23 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Feed a gobbler a work of art.
-    /// @param gobblerId The gobbler to feed the page.
-    /// @param nft The contract of the work of art.
+    /// @param gobblerId The gobbler to feed the work of art.
+    /// @param nft The ERC721 contract for the work of art.
     /// @param id The id of the work of art.
-    /// @dev NFTs should be ERC1155s, ideally ERC1155Bs.
     function feedArt(
         uint256 gobblerId,
-        address nft,
+        ERC721 nft,
         uint256 id
     ) external {
         // The caller must own the gobbler they're feeding.
         if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
-
-        // In case the NFT is not an 1155B, we prevent eating it twice.
-        if (getGobblerFromFedArt[nft][id] != 0) revert AlreadyEaten(gobblerId, nft, id);
 
         // Map the NFT to the gobbler that ate it.
         getGobblerFromFedArt[nft][id] = gobblerId;
 
         emit ArtFeedToGobbler(msg.sender, gobblerId, nft, id);
 
-        // We're assuming this is an 1155B-like NFT, so we'll only transfer 1.
-        ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "");
+        nft.transferFrom(msg.sender, address(this), id);
     }
 
     /*//////////////////////////////////////////////////////////////
