@@ -324,16 +324,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// the circulating supply of goop/team minted gobblers.
     function mintForTeam(uint256 amount) external returns (uint256 lastMintedId) {
         unchecked {
-            uint256 mintedForTeam = numMintedForTeam; // Cache the current # minted for the team.
+            // Optimistically increment numMintedForTeam, may be reverted below.
+            uint256 newNumMintedForTeam = (numMintedForTeam += amount);
 
-            // After this mint, there will be numMintedFromGoop + numMintedForTeam + 1 circulating
+            // After this mint, there will be numMintedFromGoop + mintedForTeam + amount circulating
             // goop/team minted gobblers. The team gobblers can't compromise more than 10% of that.
-            uint256 currentMintLimit = (numMintedFromGoop + mintedForTeam + 1) / 10;
+            uint256 currentTeamMintLimit = (numMintedFromGoop + newNumMintedForTeam) / 10;
 
             // Check that we won't go over the limit after minting the desired amount of gobblers.
             // Note: It's possible to make amount + mintedForTeam overflow, but amount would have
             // to be so large that it would cause the batch minting loop below to run out of gas.
-            if ((numMintedForTeam = amount + mintedForTeam) > currentMintLimit) revert Unauthorized();
+            if (newNumMintedForTeam > currentTeamMintLimit) revert Unauthorized();
 
             /*//////////////////////////////////////////////////////////////
                                       BATCH MINTING
