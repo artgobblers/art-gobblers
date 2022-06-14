@@ -330,7 +330,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             // goop/team minted gobblers. The team gobblers can't compromise more than 10% of that.
             uint256 currentMintLimit = (numMintedFromGoop + mintedForTeam + 1) / 10;
 
-            // Check that we wouldn't go over the limit after minting the desired amount of gobblers.
+            // Check that we won't go over the limit after minting the desired amount of gobblers.
+            // Note: It's possible to make amount + mintedForTeam overflow, but amount would have
+            // to be so large that it would cause the batch minting loop below to run out of gas.
             if ((numMintedForTeam = amount + mintedForTeam) > currentMintLimit) revert Unauthorized();
 
             /*//////////////////////////////////////////////////////////////
