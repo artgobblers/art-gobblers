@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {Owned} from "solmate/auth/Owned.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
@@ -16,7 +17,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -234,7 +235,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         string memory _baseUri,
         string memory _unrevealedUri
     )
-        VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
             6.9e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -244,6 +244,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             int256(MAX_MINTABLE * 1e18),
             0.014e18 // Time scale.
         )
+        VRFConsumerBase(_vrfCoordinator, _linkToken)
+        Owned(msg.sender) // Deployer starts as owner.
     {
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
