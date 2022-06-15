@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
@@ -17,7 +17,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -161,8 +161,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase {
                             ART FEEDING STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mapping from NFT contracts to their ids to gobbler ids they were fed to.
-    mapping(ERC721 => mapping(uint256 => uint256)) public getGobblerFromFedArt;
+    /// @notice Maps gobbler ids to NFT contracts and their ids to the # of those NFT ids fed to the gobbler.
+    mapping(uint256 => mapping(address => mapping(uint256 => uint256))) public getCopiesOfArtFedToGobbler;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -181,7 +181,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase {
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
-    event ArtFeedToGobbler(address indexed user, uint256 indexed gobblerId, ERC721 indexed nft, uint256 id);
+    event ArtFedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -621,22 +621,26 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase {
 
     /// @notice Feed a gobbler a work of art.
     /// @param gobblerId The gobbler to feed the work of art.
-    /// @param nft The ERC721 contract for the work of art.
+    /// @param nft The ERC721 or ERC1155 contract of the work of art.
     /// @param id The id of the work of art.
+    /// @param isERC1155 Whether the work of art is an ERC1155 token.
     function feedArt(
         uint256 gobblerId,
-        ERC721 nft,
-        uint256 id
+        address nft,
+        uint256 id,
+        bool isERC1155
     ) external {
         // The caller must own the gobbler they're feeding.
         if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
 
-        // Map the NFT to the gobbler that ate it.
-        getGobblerFromFedArt[nft][id] = gobblerId;
+        // Increment the number of copies fed to the gobbler.
+        ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
 
-        emit ArtFeedToGobbler(msg.sender, gobblerId, nft, id);
+        emit ArtFedToGobbler(msg.sender, gobblerId, nft, id);
 
-        nft.transferFrom(msg.sender, address(this), id);
+        isERC1155
+            ? ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "")
+            : ERC721(nft).transferFrom(msg.sender, address(this), id);
     }
 
     /*//////////////////////////////////////////////////////////////

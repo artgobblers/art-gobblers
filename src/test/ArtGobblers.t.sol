@@ -546,9 +546,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
-        gobblers.feedArt(1, ERC721(address(pages)), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
-        assertEq(gobblers.getGobblerFromFedArt(ERC721(address(pages)), 1), 1);
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
     }
 
     /// @notice Test that you can't feed art to gobblers you don't own.
@@ -560,7 +560,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.feedArt(1, ERC721(address(pages)), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -570,7 +570,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         vm.startPrank(user);
         vm.expectRevert("WRONG_FROM");
-        gobblers.feedArt(1, ERC721(address(pages)), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
