@@ -14,6 +14,7 @@ import {ERC1155BLockupVault} from "../utils/ERC1155BLockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
+import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "../utils/LibString.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
@@ -572,6 +573,57 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.expectRevert("WRONG_FROM");
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
+    }
+
+    function testCantFeed721As1155() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        uint256 pagePrice = pages.pagePrice();
+        vm.prank(address(gobblers));
+        goop.mintForGobblers(user, pagePrice);
+        vm.startPrank(user);
+        pages.mintFromGoop(type(uint256).max);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(pages), 1, true);
+    }
+
+    function testFeeding1155() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 1, "");
+        vm.startPrank(user);
+        token.setApprovalForAll(address(gobblers), true);
+        gobblers.feedArt(1, address(token), 0, true);
+        vm.stopPrank();
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 1);
+    }
+
+    function testFeedingMultiple1155Copies() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 5, "");
+        vm.startPrank(user);
+        token.setApprovalForAll(address(gobblers), true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        vm.stopPrank();
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 5);
+    }
+
+    function testCantFeed1155As721() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 1, "");
+        vm.startPrank(user);
+        token.setApprovalForAll(address(gobblers), true);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(token), 0, false);
     }
 
     /*//////////////////////////////////////////////////////////////
