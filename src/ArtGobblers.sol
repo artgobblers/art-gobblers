@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+import {Owned} from "solmate/auth/Owned.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
@@ -17,7 +18,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -173,7 +174,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
-    event GobblerMintedForTeam(address indexed user, uint256 indexed gobblerId);
+    event GobblersMintedForTeam(address indexed user, uint256 indexed lastMintedGobblerId, uint256 amount);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
@@ -217,7 +218,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         string memory _baseUri,
         string memory _unrevealedUri
     )
-        VRFConsumerBase(_vrfCoordinator, _linkToken)
         VRGDA(
             6.9e18, // Initial price.
             0.31e18 // Per period price decrease.
@@ -227,6 +227,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             int256(MAX_MINTABLE * 1e18),
             0.014e18 // Time scale.
         )
+        VRFConsumerBase(_vrfCoordinator, _linkToken)
+        Owned(msg.sender) // Deployer starts as owner.
     {
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
@@ -318,22 +320,53 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
                            TEAM MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a gobbler for the team.
+    /// @notice Mint a number of gobblers for the team.
     /// @dev Team gobblers can never be more than 10% of
     /// the circulating supply of goop/team minted gobblers.
-    /// @return gobblerId The id of the gobbler that was minted.
-    function mintForTeam() external returns (uint256 gobblerId) {
+    function mintForTeam(uint256 amount) external returns (uint256 lastMintedId) {
         unchecked {
-            // After this mint, there will be numMintedFromGoop + numMintedForTeam + 1 circulating
+            // Optimistically increment numMintedForTeam, may be reverted below.
+            uint256 newNumMintedForTeam = (numMintedForTeam += amount);
+
+            // After this mint, there will be numMintedFromGoop + mintedForTeam + amount circulating
             // goop/team minted gobblers. The team gobblers can't compromise more than 10% of that.
-            uint256 currentMintLimit = (numMintedFromGoop + numMintedForTeam + 1) / 10;
+            uint256 currentTeamMintLimit = (numMintedFromGoop + newNumMintedForTeam) / 10;
 
-            // Check that we wouldn't go over the limit after minting.
-            if (++numMintedForTeam > currentMintLimit) revert Unauthorized();
+            // Check that we won't go over the limit after minting the desired amount of gobblers.
+            // Note: It's possible to make amount + mintedForTeam overflow, but amount would have
+            // to be so large that it would cause the batch minting loop below to run out of gas.
+            if (newNumMintedForTeam > currentTeamMintLimit) revert Unauthorized();
 
-            emit GobblerMintedForTeam(msg.sender, gobblerId = ++currentNonLegendaryId);
+            /*//////////////////////////////////////////////////////////////
+                                      BATCH MINTING
+            //////////////////////////////////////////////////////////////*/
 
-            _mint(address(team), gobblerId, "");
+            // Allocate arrays before entering the loop.
+            uint256[] memory ids = new uint256[](amount);
+            uint256[] memory amounts = new uint256[](amount);
+
+            // We'll skip the starting id in the loop.
+            lastMintedId = currentNonLegendaryId;
+
+            // Efficiently transfer mint gobbler for the team.
+            for (uint256 i = 0; i < amount; ++i) {
+                ids[i] = ++lastMintedId; // Increment id while setting.
+
+                amounts[i] = 1; // ERC1155B amounts are always 1.
+
+                getGobblerData[lastMintedId].owner = address(team);
+            }
+
+            emit TransferBatch(msg.sender, address(0), address(team), ids, amounts);
+
+            /*//////////////////////////////////////////////////////////////
+                                      FINALIZATION
+            //////////////////////////////////////////////////////////////*/
+
+            // Update the current non legendary id after minting.
+            currentNonLegendaryId = uint128(lastMintedId);
+
+            emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
         }
     }
 
