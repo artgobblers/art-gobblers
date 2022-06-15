@@ -34,6 +34,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
             address(0),
             address(0),
             address(0),
+            address(0),
             0,
             0,
             "",
