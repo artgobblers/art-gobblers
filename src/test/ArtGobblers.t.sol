@@ -185,8 +185,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // start of initial auction
         vm.warp(block.timestamp + 30 days);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // initial auction should start at a cost of 100
-        assertEq(cost, 100);
+        // initial auction should start at a cost of 69
+        assertEq(cost, 69);
     }
 
     /// @notice Test that auction ends at a price of 0.
@@ -203,8 +203,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //30 days for initial auction start, 15 days after initial auction
         vm.warp(block.timestamp + 45 days);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // auction price should be 50 mid way through auction
-        assertEq(cost, 50);
+        // auction price should be cut by half mid way through auction
+        assertEq(cost, 34);
     }
 
     /// @notice Test that initial price doens't fall below what we expect.
@@ -217,7 +217,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintLegendaryGobbler(_ids);
         uint256 startCost = gobblers.legendaryGobblerPrice();
         // next gobbler should start at a price of 100
-        assertEq(startCost, 100);
+        assertEq(startCost, 69);
     }
 
     /// @notice Test that Legendary Gobblers can be minted.
@@ -225,7 +225,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        assertEq(cost, 100);
+        console.log(cost);
+        assertEq(cost, 69);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         uint256 emissionMultipleSum;
@@ -286,7 +287,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //First legendary to be minted should be 9991
         assertEq(mintedLegendaryId, 9991);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        assertEq(cost, 66);
+        assertEq(cost, 46);
         mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
