@@ -41,6 +41,7 @@ contract DeployTestnet {
             block.timestamp,
             goop,
             address(team),
+            address(0xBEEFBEEFBEEFBEEFBEEFBEEF), // TODO
             address(vrfCoordinator),
             linkToken,
             0,
