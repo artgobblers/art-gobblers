@@ -54,10 +54,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
-    /// @notice Maximum amount of gobblers that will go to the team reserve.
+    /// @notice Maximum amount of gobblers that will go to the team reserve pool.
     uint256 public constant TEAM_SUPPLY = 799;
 
-    /// @notice Maximum amount of gobblers that will go to the community reserve.
+    /// @notice Maximum amount of gobblers that will go to the community reserve pool.
     uint256 public constant COMMUNITY_SUPPLY = 799;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
@@ -114,10 +114,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @dev Will be 0 if no non legendary gobblers have been minted yet.
     uint128 public currentNonLegendaryId;
 
-    /// @notice The number of gobblers minted to the team reserve.
+    /// @notice The number of gobblers minted to the team reserve pool.
     uint256 public numMintedForTeam;
 
-    /// @notice The number of gobblers minted to the community reserve.
+    /// @notice The number of gobblers minted to the community reserve pool.
     uint256 public numMintedForCommunity;
 
     /*//////////////////////////////////////////////////////////////

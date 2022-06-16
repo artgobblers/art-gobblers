@@ -17,6 +17,7 @@ contract DeployTestnet {
     bool public constant IS_TEST = true;
 
     ERC1155BLockupVault public immutable team;
+    ERC1155BLockupVault public immutable community;
 
     VRFCoordinatorMock public immutable vrfCoordinator;
 
@@ -28,6 +29,7 @@ contract DeployTestnet {
         vrfCoordinator = new VRFCoordinatorMock(linkToken);
 
         team = new ERC1155BLockupVault(address(this), 730 days);
+        community = new ERC1155BLockupVault(address(this), 730 days);
 
         goop = new Goop(
             // Gobblers (contract nonces start at 1):
@@ -41,7 +43,7 @@ contract DeployTestnet {
             block.timestamp,
             goop,
             address(team),
-            address(0xBEEFBEEFBEEFBEEFBEEFBEEF), // TODO
+            address(community),
             address(vrfCoordinator),
             linkToken,
             0,
