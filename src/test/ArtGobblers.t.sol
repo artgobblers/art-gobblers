@@ -10,7 +10,7 @@ import {stdError} from "forge-std/Test.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 import {Goop} from "../Goop.sol";
 import {Pages} from "../Pages.sol";
-import {ERC1155BLockupVault} from "../utils/ERC1155BLockupVault.sol";
+import {GobblerReserve} from "../utils/GobblerReserve.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
@@ -31,8 +31,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     LinkToken internal linkToken;
     Goop internal goop;
     Pages internal pages;
-    ERC1155BLockupVault internal team;
-    ERC1155BLockupVault internal community;
+    GobblerReserve internal team;
+    GobblerReserve internal community;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -49,8 +49,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        team = new ERC1155BLockupVault(address(this), 730 days);
-        community = new ERC1155BLockupVault(address(this), 730 days);
+        team = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 3)), address(this));
+        community = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 2)), address(this));
 
         goop = new Goop(
             // Gobblers:
