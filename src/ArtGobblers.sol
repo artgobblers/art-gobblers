@@ -105,6 +105,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
+    /// @notice Legendary auctions are triggered when a certain percentage of the supply is minted.
+    /// In this case, we split the mintabl supply into 11 intervals, where every interval
+    /// but the first is used to hold an auction.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / 11;
 
     /// @notice Struct holding data required for legendary gobbler auctions.
@@ -425,7 +428,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
-            // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
+            // The new start price is max of 69 and cost * 2. Shift left by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.startPrice = uint120(cost < 35 ? 69 : cost << 1);
             legendaryGobblerAuctionData.numSold = legendaryGobblerAuctionData.numSold + 1;
 
@@ -450,7 +453,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         ///if auction has not yet started.
         uint256 numMintedSinceStart = numMintedFromGoop - auctionStart;
 
-        ///If price is fully decayed, just return 0
+        ///The price fully decays after we mint more than the full interval. In this case just return 0
         if (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL) return 0;
 
         /// we only enter this block in the case where there is an auction where price is partially decayed
