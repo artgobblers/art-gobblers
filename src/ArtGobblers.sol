@@ -14,8 +14,6 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
@@ -29,13 +27,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /*//////////////////////////////////////////////////////////////
                          RESERVE POOL CONSTANTS
     //////////////////////////////////////////////////////////////*/
-
-    /// @dev Reserves hold gobblers which are earmarked
-    /// for special purposes, like community building.
-    enum ReservePool {
-        TEAM,
-        COMMUNITY
-    }
 
     /// @notice The address which receives gobblers reserved for the team.
     address public immutable team;
@@ -56,19 +47,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
-    /// @notice Maximum amount of gobblers that will go to the team reserve pool.
-    uint256 public constant TEAM_SUPPLY = 799;
-
-    /// @notice Maximum amount of gobblers that will go to the community reserve pool.
-    uint256 public constant COMMUNITY_SUPPLY = 799;
+    /// @notice Maximum amount of gobblers split between the reserves.
+    /// @dev Set to compromise 20% of the sum of goop mintable gobblers + reserved gobblers.
+    uint256 public constant RESERVED_SUPPLY = (MAX_SUPPLY - MINTLIST_SUPPLY - LEGENDARY_SUPPLY) / 5;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
     // prettier-ignore
-    uint256 public constant MAX_MINTABLE = MAX_SUPPLY 
-        - MINTLIST_SUPPLY 
-        - LEGENDARY_SUPPLY 
-        - TEAM_SUPPLY 
-        - COMMUNITY_SUPPLY;
+    uint256 public constant MAX_MINTABLE = MAX_SUPPLY
+        - MINTLIST_SUPPLY
+        - LEGENDARY_SUPPLY
+        - RESERVED_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -116,11 +104,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @dev Will be 0 if no non legendary gobblers have been minted yet.
     uint128 public currentNonLegendaryId;
 
-    /// @notice The number of gobblers minted to the team reserve pool.
-    uint256 public numMintedForTeam;
-
-    /// @notice The number of gobblers minted to the community reserve pool.
-    uint256 public numMintedForCommunity;
+    /// @notice The number of gobblers minted to the reserves.
+    uint256 public numMintedForReserves;
 
     /*//////////////////////////////////////////////////////////////
                      LEGENDARY GOBBLER AUCTION STATE
@@ -199,13 +184,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
-
-    event GobblersMintedToReservePool(
-        address indexed user,
-        ReservePool indexed reservePool,
-        uint256 indexed lastMintedGobblerId,
-        uint256 amount
-    );
+    event ReservedGobblersMinted(address indexed user, uint256 indexed lastMintedGobblerId, uint256 numGobblersEach);
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
@@ -556,7 +535,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
                 assembly {
                     // prettier-ignore
-                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple, 
+                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple,
                         lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
                     )
                 }
@@ -674,12 +653,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // prettier-ignore
             return lastBalanceWad + // The last recorded balance.
-                
+
             // Don't need to do wad multiplication since we're
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
             ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
-            
+
             daysElapsedWad.mulWadDown( // Terms are wads, so must mulWad.
                 // No wad multiplication for emissionMultiple * lastBalance
                 // because emissionMultiple is a plain integer with no decimals.
@@ -720,44 +699,31 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                      RESERVED GOBBLERS MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a number of gobblers to a reserve pool.
-    /// @param reservePool The reserve pool to mint the gobblers to.
-    /// @param amount The number of gobblers to mint to the chosen reserve pool.
-    /// @dev A reserve pool's gobbler supply can never be more than 10% of the
-    /// circulating supply of goop minted + the reserve pool's minted gobblers.
-    function mintReservedGobblers(ReservePool reservePool, uint256 amount) external returns (uint256 lastMintedId) {
+    /// @notice Mint a number of gobblers to the reserves.
+    /// @param numGobblersEach The number of gobblers to mint to each reserve.
+    /// @dev Gobblers minted to reserves cannot compromise more than 20% of the sum of
+    /// the supply of goop minted gobblers and the supply of gobblers minted to reserves.
+    function mintReservedGobblers(uint256 numGobblersEach) external returns (uint256 lastMintedGobblerId) {
         unchecked {
-            // Optimistically increment numMintedForTeam, may be reverted below. Overflow
-            // is possible for numMintedForTeam += amount, but amount would have to be so
-            // large that it would cause the loop in _batchMint to run out of gas quickly.
-            uint256 newNumMinted = reservePool == ReservePool.TEAM
-                ? numMintedForTeam += amount
-                : numMintedForCommunity += amount;
+            // Optimistically increment numMintedForReserves, may be reverted below. Overflow in this
+            // calculation is possible but numGobblersEach would have to be so large that it would cause the
+            // loop in _batchMint to run out of gas quickly. Shift left by 1 is equivalent to multiplying by 2.
+            uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach << 1);
 
-            console2.log(newNumMinted);
-            console2.log((numMintedFromGoop + newNumMinted) / 10);
-            // ├─ [25998] ArtGobblers::mintReservedGobblers(0, 799)
-            // │   ├─ [0] console::log(799) [staticcall]
-            // │   │   └─ ← ()
-            // │   ├─ [0] console::log(719) [staticcall]
-            // │   │   └─ ← ()
-            // │   └─ ← "Unauthorized()"
-
-            // After this mint, there will be numMintedFromGoop + newNumMinted circulating goop minted
-            // and team minted gobblers. The reserve's gobblers can't compromise more than 10% of that.
-            if (newNumMinted > (numMintedFromGoop + newNumMinted) / 10) revert Unauthorized();
+            // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
+            // the sum of the supply of goop minted gobblers and the supply of gobblers minted to reserves.
+            if (newNumMintedForReserves > (numMintedFromGoop + numMintedForReserves) / 5) revert Unauthorized();
         }
 
+        // First mint numGobblersEach gobblers to the team reserve.
+        lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
+
+        // Then mint numGobblersEach gobblers to the community reserve, and update currentNonLegendaryId.
         currentNonLegendaryId = uint128(
-            lastMintedId = _batchMint(
-                reservePool == ReservePool.TEAM ? team : community,
-                amount,
-                currentNonLegendaryId,
-                ""
-            )
+            lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "")
         );
 
-        emit GobblersMintedToReservePool(msg.sender, reservePool, lastMintedId, amount);
+        emit ReservedGobblersMinted(msg.sender, lastMintedGobblerId, numGobblersEach);
     }
 
     /*//////////////////////////////////////////////////////////////
