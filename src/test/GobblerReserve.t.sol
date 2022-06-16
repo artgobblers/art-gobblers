@@ -17,8 +17,8 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "../utils/LibString.sol";
 
-/// @notice Unit test for Art Gobbler Contract.
-contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
+/// @notice Unit test for the Gobbler Reserve contract.
+contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
     using LibString for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -80,6 +80,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                             WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Tests that a reserve can be withdrawn from.
     function testCanWithdraw() public {
         mintGobblerToAddress(users[0], 9);
 
@@ -104,7 +105,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                  HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice  Mint a number of gobblers to the given address
+    /// @notice Mint a number of gobblers to the given address
     function mintGobblerToAddress(address addr, uint256 num) internal {
         for (uint256 i = 0; i < num; i++) {
             vm.startPrank(address(gobblers));
