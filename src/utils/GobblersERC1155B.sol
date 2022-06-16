@@ -98,6 +98,13 @@ abstract contract GobblersERC1155B {
         bytes calldata data
     ) public virtual;
 
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] calldata ids,
+        bytes calldata data
+    ) public virtual;
+
     function balanceOfBatch(address[] calldata owners, uint256[] calldata ids)
         public
         view

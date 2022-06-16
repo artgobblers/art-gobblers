@@ -22,6 +22,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
+
     Goop public immutable goop;
 
     /*//////////////////////////////////////////////////////////////
@@ -779,15 +783,51 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 emissionsMultipleTotal += getGobblerData[id].emissionMultiple;
             }
 
-            // Decrease the from user's emissionMultiple by emissionsMultipleTotal.
-            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
-            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[from].emissionMultiple -= emissionsMultipleTotal;
+            transferUserEmissionMultiple(from, to, emissionsMultipleTotal);
+        }
 
-            // Increase the to user's emissionMultiple by emissionsMultipleTotal.
-            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
-            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[to].emissionMultiple += emissionsMultipleTotal;
+        emit TransferBatch(msg.sender, from, to, ids, amounts);
+
+        if (to.code.length != 0) {
+            require(
+                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
+                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
+                "UNSAFE_RECIPIENT"
+            );
+        } else require(to != address(0), "INVALID_RECIPIENT");
+    }
+
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] calldata ids,
+        bytes calldata data
+    ) public override {
+        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+
+        // Storing these outside the loop saves ~15 gas per iteration.
+        uint256 id;
+
+        // Allocate arrays before entering the loop.
+        uint256[] memory amounts = new uint256[](ids.length);
+
+        unchecked {
+            uint64 emissionsMultipleTotal; // Will use to set each user's multiple.
+
+            for (uint256 i = 0; i < ids.length; i++) {
+                id = ids[i];
+
+                amounts[i] = 1;
+
+                // Can only transfer from the owner.
+                require(from == getGobblerData[id].owner, "WRONG_FROM");
+
+                getGobblerData[id].owner = to;
+
+                emissionsMultipleTotal += getGobblerData[id].emissionMultiple;
+            }
+
+            transferUserEmissionMultiple(from, to, emissionsMultipleTotal);
         }
 
         emit TransferBatch(msg.sender, from, to, ids, amounts);
@@ -817,20 +857,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         getGobblerData[id].owner = to;
 
-        unchecked {
-            // Get the transferred gobbler's emission multiple. Can be zero before reveal.
-            uint64 emissionMultiple = getGobblerData[id].emissionMultiple;
-
-            // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
-            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
-
-            // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
-            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
-        }
+        transferUserEmissionMultiple(from, to, getGobblerData[id].emissionMultiple);
 
         emit TransferSingle(msg.sender, from, to, id, amount);
 
@@ -841,5 +868,32 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 "UNSAFE_RECIPIENT"
             );
         } else require(to != address(0), "INVALID_RECIPIENT");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              HELPER LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Transfer an amount of a user's emission's multiple to another user.
+    /// @dev Should be done whenever a gobbler is transferred between two users.
+    /// @param from The user to transfer the amount of emission multiple from.
+    /// @param to The user to transfer the amount of emission multiple to.
+    /// @param emissionMultiple The amount of emission multiple to transfer.
+    function transferUserEmissionMultiple(
+        address from,
+        address to,
+        uint64 emissionMultiple // TODO: would taking uint256 be cheaper
+    ) internal {
+        unchecked {
+            // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
+            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
+
+            // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
+            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
+            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
+            getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
+        }
     }
 }
