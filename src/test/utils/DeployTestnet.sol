@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 
-import {ERC1155BLockupVault} from "../../utils/ERC1155BLockupVault.sol";
+import {GobblerReserve} from "../../utils/GobblerReserve.sol";
 
 import {Goop} from "../../Goop.sol";
 import {Pages} from "../../Pages.sol";
@@ -16,7 +16,8 @@ contract DeployTestnet {
     // about the size of this contract.
     bool public constant IS_TEST = true;
 
-    ERC1155BLockupVault public immutable team;
+    GobblerReserve public immutable team;
+    GobblerReserve public immutable community;
 
     VRFCoordinatorMock public immutable vrfCoordinator;
 
@@ -27,13 +28,14 @@ contract DeployTestnet {
     constructor(address linkToken) {
         vrfCoordinator = new VRFCoordinatorMock(linkToken);
 
-        team = new ERC1155BLockupVault(address(this), 730 days);
+        team = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
+        community = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
 
         goop = new Goop(
             // Gobblers (contract nonces start at 1):
-            LibRLP.computeAddress(address(this), 4),
+            LibRLP.computeAddress(address(this), 5),
             // Pages (contract nonces start at 1):
-            LibRLP.computeAddress(address(this), 5)
+            LibRLP.computeAddress(address(this), 6)
         );
 
         artGobblers = new ArtGobblers(
@@ -41,6 +43,7 @@ contract DeployTestnet {
             block.timestamp,
             goop,
             address(team),
+            address(community),
             address(vrfCoordinator),
             linkToken,
             0,

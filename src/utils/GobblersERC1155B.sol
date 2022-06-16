@@ -141,4 +141,38 @@ abstract contract GobblersERC1155B {
             );
         } else require(to != address(0), "INVALID_RECIPIENT");
     }
+
+    function _batchMint(
+        address to,
+        uint256 amount,
+        uint256 lastMintedId,
+        bytes memory data
+    ) internal returns (uint256) {
+        // Allocate arrays before entering the loop.
+        uint256[] memory ids = new uint256[](amount);
+        uint256[] memory amounts = new uint256[](amount);
+
+        // Counter overflow is unrealistic on human timescales.
+        unchecked {
+            for (uint256 i = 0; i < amount; ++i) {
+                ids[i] = ++lastMintedId; // Increment id while setting.
+
+                amounts[i] = 1; // ERC1155B amounts are always 1.
+
+                getGobblerData[lastMintedId].owner = to;
+            }
+        }
+
+        emit TransferBatch(msg.sender, address(0), to, ids, amounts);
+
+        if (to.code.length != 0) {
+            require(
+                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, address(0), ids, amounts, data) ==
+                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
+                "UNSAFE_RECIPIENT"
+            );
+        } else require(to != address(0), "INVALID_RECIPIENT");
+
+        return lastMintedId; // Return the new last minted id.
+    }
 }
