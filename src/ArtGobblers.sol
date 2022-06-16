@@ -14,6 +14,8 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 import {Goop} from "./Goop.sol";
 
 /// @title Art Gobblers NFT
@@ -731,6 +733,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             uint256 newNumMinted = reservePool == ReservePool.TEAM
                 ? numMintedForTeam += amount
                 : numMintedForCommunity += amount;
+
+            console2.log(newNumMinted);
+            console2.log((numMintedFromGoop + newNumMinted) / 10);
+            // ├─ [25998] ArtGobblers::mintReservedGobblers(0, 799)
+            // │   ├─ [0] console::log(799) [staticcall]
+            // │   │   └─ ← ()
+            // │   ├─ [0] console::log(719) [staticcall]
+            // │   │   └─ ← ()
+            // │   └─ ← "Unauthorized()"
 
             // After this mint, there will be numMintedFromGoop + newNumMinted circulating goop minted
             // and team minted gobblers. The reserve's gobblers can't compromise more than 10% of that.
