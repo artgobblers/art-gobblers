@@ -26,6 +26,9 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /// @param to The address to transfer the gobblers to.
     /// @param ids The ids of the gobblers to transfer.
     function withdraw(address to, uint256[] calldata ids) public onlyOwner {
-        artGobblers.safeBatchTransferFrom(address(this), to, ids, "");
+        uint256[] memory amounts = new uint256[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) amounts[i] = 1;
+
+        artGobblers.safeBatchTransferFrom(address(this), to, ids, amounts, "");
     }
 }

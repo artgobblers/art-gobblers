@@ -737,7 +737,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                  HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice  Mint a number of gobblers to the given address
+    /// @notice Mint a number of gobblers to the given address
     function mintGobblerToAddress(address addr, uint256 num) internal {
         for (uint256 i = 0; i < num; i++) {
             vm.startPrank(address(gobblers));
