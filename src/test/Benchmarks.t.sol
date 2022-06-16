@@ -48,7 +48,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             block.timestamp,
             goop,
             address(0xBEEF),
-            address(0xBEEFBEEFBEEFBEEFBEEFBEEF), // TODO
+            address(0xBEEF),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
