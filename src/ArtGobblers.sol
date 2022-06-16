@@ -101,18 +101,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
-    uint256 internal constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
+    uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
+
+    uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / 11;
 
     /// @notice Struct holding data required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
         // Start price of current legendary gobbler auction.
-        uint120 startPrice;
+        uint128 startPrice;
         // Start timestamp of current legendary gobbler auction.
-        uint120 startTimestamp;
-        // Id of the current legendary gobbler being
-        // auctioned. 16 bits has a max value of
-        // ~60k which is within our limits here.
-        uint16 gobblerId;
+        uint128 numSold;
     }
 
     /// @notice Data about the current legendary gobbler auction.
@@ -244,12 +242,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Starting price for legendary gobblers is 69 gobblers.
         legendaryGobblerAuctionData.startPrice = 69;
 
-        // First legendary gobbler auction starts 30 days after the mint starts.
-        legendaryGobblerAuctionData.startTimestamp = uint120(_mintStart + 30 days);
-
-        // Current legendary id starts at beginning of legendary id space.
-        legendaryGobblerAuctionData.gobblerId = uint16(FIRST_LEGENDARY_GOBBLER_ID);
-
         // Reveal for initial mint must wait 24 hours
         gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
     }
@@ -346,7 +338,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     /// @param gobblerIds The ids of the standard gobblers to burn.
     /// @return gobblerId The id of the legendary gobbler that was minted.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
-        gobblerId = legendaryGobblerAuctionData.gobblerId; // Assign id.
+        gobblerId = FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold; // Assign id.
 
         // If the current id is greater than the max supply, there are no remaining legendaries.
         if (gobblerId > MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
@@ -401,11 +393,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
-            // Start a new auction, 30 days after the previous start, and update the current legendary id.
             // The new start price is max of 100 and cost * 2. Shift left by 1 is like multiplication by 2.
-            legendaryGobblerAuctionData.gobblerId = uint16(gobblerId) + 1;
-            legendaryGobblerAuctionData.startTimestamp += 30 days;
             legendaryGobblerAuctionData.startPrice = uint120(cost < 34 ? 69 : cost << 1);
+            legendaryGobblerAuctionData.numSold = legendaryGobblerAuctionData.numSold + 1;
+
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
@@ -415,17 +406,28 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
     }
 
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
+    /// Intended behaviour is for legendary gobbler price to decay as the total number of minted gobblers increases.
+    /// We hold 10 legendary gobbler auctions. The first one starts when 1/11th of the total supply is minted, and price
+    /// price decays linearly as the next 1/11th of the supply is minted. Every time an additional 1/11th of the supply
+    /// is minted, a new auction starts.
     /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
     function legendaryGobblerPrice() public view returns (uint256) {
-        // Cannot be unchecked, we want this to revert if the auction has not started yet.
-        uint256 daysSinceStart = (block.timestamp - legendaryGobblerAuctionData.startTimestamp) / 1 days;
+        ///The nth auction starts when n/11 of the supply is minted.
+        uint256 auctionStart = (legendaryGobblerAuctionData.numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
 
-        // If 30 or more days have passed, legendary gobbler is free.
-        if (daysSinceStart >= 30) return 0;
+        ///How many gobblers where minted since auction start. Cannot be unchecked, we want this to revert
+        ///if auction has not yet started.
+        uint256 numMintedSinceStart = numMintedFromGoop - auctionStart;
 
+        ///If price is fully decayed, just return 0
+        if (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL) return 0;
+
+        /// we only enter this block in the case where there is an auction where price is partially decayed
         unchecked {
-            // If we're less than 30 days into the auction, the price simply decays linearly until the 30th day.
-            return (legendaryGobblerAuctionData.startPrice * (30 - daysSinceStart)) / 30;
+            // Decay start price linearly based on how many of the gobblers in the current interval we have minted
+            return
+                (legendaryGobblerAuctionData.startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) /
+                LEGENDARY_AUCTION_INTERVAL;
         }
     }
 
@@ -609,8 +611,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, ERC115
         // Between currentNonLegendaryId and FIRST_LEGENDARY_GOBBLER_ID are unminted.
         if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID) return "";
 
-        // Between FIRST_LEGENDARY_GOBBLER_ID and gobblerId are minted legendaries.
-        if (gobblerId < legendaryGobblerAuctionData.gobblerId)
+        // Between FIRST_LEGENDARY_GOBBLER_ID and FIRST_LEGENDARY_GOBBLER_ID + numSold are minted legendaries.
+        if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold)
             return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
 
         return ""; // Unminted legendaries and invalid token ids.
