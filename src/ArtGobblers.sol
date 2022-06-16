@@ -106,7 +106,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
     /// @notice Legendary auctions are triggered when a certain percentage of the supply is minted.
-    /// In this case, we split the mintabl supply into 11 intervals, where every interval
+    /// In this case, we split the mintable supply into 11 intervals, where every interval
     /// but the first is used to hold an auction.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / 11;
 
