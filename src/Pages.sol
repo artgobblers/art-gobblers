@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {VRGDA} from "./utils/VRGDA.sol";
 import {LibString} from "./utils/LibString.sol";
-import {PagesERC1155B} from "./utils/PagesERC1155B.sol";
+import {PagesERC721} from "./utils/PagesERC721.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
@@ -11,7 +11,7 @@ import {Goop} from "./Goop.sol";
 
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
-contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
+contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     using LibString for uint256;
 
     /*//////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
             SWITCH_DAY_WAD, // Target switch day.
             10e18 // Pages to target per day.
         )
-        PagesERC1155B(_artGobblers)
+        PagesERC721(_artGobblers, "Pages", "PAGES")
     {
         mintStart = _mintStart;
 
@@ -118,7 +118,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
 
-            _mint(msg.sender, pageId, "");
+            _mint(msg.sender, pageId);
         }
     }
 
@@ -147,7 +147,7 @@ contract Pages is PagesERC1155B, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice Returns a pages's URI if it has been minted.
     /// @param pageId The id of the page to get the URI for.
-    function uri(uint256 pageId) public view virtual override returns (string memory) {
+    function tokenURI(uint256 pageId) public view virtual override returns (string memory) {
         if (pageId > currentId) return "";
 
         return string(abi.encodePacked(BASE_URI, pageId.toString()));

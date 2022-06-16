@@ -13,6 +13,7 @@ import {Pages} from "../Pages.sol";
 import {ERC1155BLockupVault} from "../utils/ERC1155BLockupVault.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
+import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "../utils/LibString.sol";
 
@@ -569,9 +570,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goop.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
-        assertEq(gobblers.getGobblerFromFedArt(address(pages), 1), 1);
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
     }
 
     /// @notice Test that you can't feed art to gobblers you don't own.
@@ -583,7 +584,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         pages.mintFromGoop(type(uint256).max);
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -593,22 +594,59 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         vm.startPrank(user);
         vm.expectRevert("WRONG_FROM");
-        gobblers.feedArt(1, address(pages), 1);
+        gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
-    /// @notice Test that you can't feed art twice.
-    function testCantFeedArtTwice() public {
-        MockERC1155 token = new MockERC1155();
+    function testCantFeed721As1155() public {
         address user = users[0];
         mintGobblerToAddress(user, 1);
-        token.mint(user, 1, 2, "");
+        uint256 pagePrice = pages.pagePrice();
+        vm.prank(address(gobblers));
+        goop.mintForGobblers(user, pagePrice);
+        vm.startPrank(user);
+        pages.mintFromGoop(type(uint256).max);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(pages), 1, true);
+    }
+
+    function testFeeding1155() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 1, "");
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
-        gobblers.feedArt(1, address(token), 1);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.AlreadyEaten.selector, 1, token, 1));
-        gobblers.feedArt(1, address(token), 1);
+        gobblers.feedArt(1, address(token), 0, true);
         vm.stopPrank();
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 1);
+    }
+
+    function testFeedingMultiple1155Copies() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 5, "");
+        vm.startPrank(user);
+        token.setApprovalForAll(address(gobblers), true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.feedArt(1, address(token), 0, true);
+        vm.stopPrank();
+        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 5);
+    }
+
+    function testCantFeed1155As721() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 1);
+        MockERC1155 token = new MockERC1155();
+        token.mint(user, 0, 1, "");
+        vm.startPrank(user);
+        token.setApprovalForAll(address(gobblers), true);
+        vm.expectRevert();
+        gobblers.feedArt(1, address(token), 0, false);
     }
 
     /*//////////////////////////////////////////////////////////////
