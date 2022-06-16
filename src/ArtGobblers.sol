@@ -882,7 +882,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     function transferUserEmissionMultiple(
         address from,
         address to,
-        uint64 emissionMultiple // TODO: would taking uint256 be cheaper
+        uint64 emissionMultiple
     ) internal {
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
