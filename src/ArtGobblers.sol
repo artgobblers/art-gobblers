@@ -21,14 +21,23 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
-    /*//////////////////////////////////////////////////////////////
-                                ADDRESSES
-    //////////////////////////////////////////////////////////////*/
-
     Goop public immutable goop;
 
+    /*//////////////////////////////////////////////////////////////
+                         RESERVE POOL CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Reserves hold gobblers which are earmarked
+    /// for special purposes, like community building.
+    enum ReservePool {
+        TEAM,
+        COMMUNITY
+    }
+
+    /// @notice The address which receives gobblers reserved for the team.
     address public immutable team;
 
+    /// @notice The address which receives gobblers reserved for the community.
     address public immutable community;
 
     /*//////////////////////////////////////////////////////////////
@@ -44,10 +53,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Maximum amount of mintable legendary gobblers.
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
-    /// @notice Maximum amount of gobblers that will go to the team pool.
+    /// @notice Maximum amount of gobblers that will go to the team reserve.
     uint256 public constant TEAM_SUPPLY = 799;
 
-    /// @notice Maximum amount of gobblers that will go to the community pool.
+    /// @notice Maximum amount of gobblers that will go to the community reserve.
     uint256 public constant COMMUNITY_SUPPLY = 799;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
@@ -104,10 +113,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @dev Will be 0 if no non legendary gobblers have been minted yet.
     uint128 public currentNonLegendaryId;
 
-    /// @notice The number of gobblers minted to the team pool.
+    /// @notice The number of gobblers minted to the team reserve.
     uint256 public numMintedForTeam;
 
-    /// @notice The number of gobblers minted to the community pool.
+    /// @notice The number of gobblers minted to the community reserve.
     uint256 public numMintedForCommunity;
 
     /*//////////////////////////////////////////////////////////////
@@ -188,8 +197,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
 
-    event GobblersMintedForTeam(address indexed user, uint256 indexed lastMintedGobblerId, uint256 amount);
-    event GobblersMintedForCommunity(address indexed user, uint256 indexed lastMintedGobblerId, uint256 amount);
+    event GobblersMintedToReservePool(
+        address indexed user,
+        ReservePool indexed reservePool,
+        uint256 indexed lastMintedGobblerId,
+        uint256 amount
+    );
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
@@ -704,55 +717,38 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     }
 
     /*//////////////////////////////////////////////////////////////
-                    TEAM/COMMUNITY POOL MINTING LOGIC
+                     RESERVED GOBBLERS MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a number of gobblers to the team pool.
-    /// @dev Team pool gobblers can never be more than 10% of the
-    /// circulating supply of goop minted and team minted gobblers.
-    /// @param amount The number of gobblers to mint to the team pool.
-    function mintForTeam(uint256 amount) external returns (uint256 lastMintedId) {
+    /// @notice Mint a number of gobblers to a reserve pool.
+    /// @param reservePool The reserve pool to mint the gobblers to.
+    /// @param amount The number of gobblers to mint to the chosen reserve pool.
+    /// @dev A reserve pool's gobbler supply can never be more than 10% of the
+    /// circulating supply of goop minted + the reserve pool's minted gobblers.
+    function mintReservedGobblers(ReservePool reservePool, uint256 amount) external returns (uint256 lastMintedId) {
         unchecked {
             // Optimistically increment numMintedForTeam, may be reverted below. Overflow
             // is possible for numMintedForTeam += amount, but amount would have to be so
             // large that it would cause the loop in _batchMint to run out of gas quickly.
-            uint256 newNumMintedForTeam = (numMintedForTeam += amount);
+            uint256 newNumMinted = reservePool == ReservePool.TEAM
+                ? numMintedForTeam += amount
+                : numMintedForCommunity += amount;
 
-            // After this mint, there will be numMintedFromGoop + newNumMintedForTeam circulating goop
-            // minted and team minted gobblers. The team gobblers can't compromise more than 10% of that.
-            if (newNumMintedForTeam > (numMintedFromGoop + newNumMintedForTeam) / 10) revert Unauthorized();
+            // After this mint, there will be numMintedFromGoop + newNumMinted circulating goop minted
+            // and team minted gobblers. The reserve's gobblers can't compromise more than 10% of that.
+            if (newNumMinted > (numMintedFromGoop + newNumMinted) / 10) revert Unauthorized();
         }
 
         currentNonLegendaryId = uint128(
-            // Efficiently mint the desired amount of gobblers directly to the team pool.
-            lastMintedId = _batchMint(address(team), amount, currentNonLegendaryId, "")
+            lastMintedId = _batchMint(
+                reservePool == ReservePool.TEAM ? team : community,
+                amount,
+                currentNonLegendaryId,
+                ""
+            )
         );
 
-        emit GobblersMintedForTeam(msg.sender, lastMintedId, amount);
-    }
-
-    /// @notice Mint a number of gobblers to the community pool.
-    /// @dev Community pool gobblers can never be more than 10% of the
-    /// circulating supply of goop minted and community minted gobblers.
-    /// @param amount The number of gobblers to mint to the community pool.
-    function mintForCommunity(uint256 amount) external returns (uint256 lastMintedId) {
-        unchecked {
-            // Optimistically increment numMintedForCommunity, may be reverted below. Overflow
-            // is possible for numMintedForCommunity += amount, but amount would have to be so
-            // large that it would cause the loop in _batchMint to run out of gas quickly.
-            uint256 newNumMintedForCommunity = (numMintedForCommunity += amount);
-
-            // After this mint, there will be numMintedFromGoop + newNumMintedForCommunity circulating goop
-            // minted and community minted gobblers. The community gobblers can't compromise more than 10% of that.
-            if (newNumMintedForCommunity > (numMintedFromGoop + newNumMintedForCommunity) / 10) revert Unauthorized();
-        }
-
-        currentNonLegendaryId = uint128(
-            // Efficiently mint the desired amount of gobblers directly to the community pool.
-            lastMintedId = _batchMint(address(community), amount, currentNonLegendaryId, "")
-        );
-
-        emit GobblersMintedForCommunity(msg.sender, lastMintedId, amount);
+        emit GobblersMintedToReservePool(msg.sender, reservePool, lastMintedId, amount);
     }
 
     /*//////////////////////////////////////////////////////////////

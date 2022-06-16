@@ -31,6 +31,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     Goop internal goop;
     Pages internal pages;
     ERC1155BLockupVault internal team;
+    ERC1155BLockupVault internal community;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -48,6 +49,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
         team = new ERC1155BLockupVault(address(this), 730 days);
+        community = new ERC1155BLockupVault(address(this), 730 days);
 
         goop = new Goop(
             // Gobblers:
@@ -61,7 +63,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             block.timestamp,
             goop,
             address(team),
-            address(0xBEEFBEEFBEEFBEEFBEEFBEEF), // TODO
+            address(community),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
@@ -128,25 +130,37 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
-    /// @notice Tests that team should not be able to mint more than 10%.
-    function testMintForTeamReverts() public {
+    /// @notice Test that minting reserved gobblers fails if there are no mints.
+    function testMintReservedGobblersFailsWithNoMints() public {
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.mintForTeam(1);
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, 1);
+
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, 1);
     }
 
-    /// @notice Test that the team can mint under fair circumstances.
-    function testCanMintForTeam() public {
+    /// @notice Test that reserved gobblers can be minted under fair circumstances.
+    function testCanMintReserved() public {
         mintGobblerToAddress(users[0], 9);
-        gobblers.mintForTeam(1);
+
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, 1);
         assertEq(gobblers.ownerOf(10), address(team));
+
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, 1);
+        assertEq(gobblers.ownerOf(11), address(community));
     }
 
-    /// @notice Test that the team can mint multiple under fair circumstances.
-    function testCanMintMultipleForTeam() public {
+    /// @notice Test multiple reserved gobblers can be minted under fair circumstances.
+    function testCanMintMultipleReserved() public {
         mintGobblerToAddress(users[0], 19);
-        gobblers.mintForTeam(2);
+
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, 2);
         assertEq(gobblers.ownerOf(20), address(team));
         assertEq(gobblers.ownerOf(21), address(team));
+
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, 2);
+        assertEq(gobblers.ownerOf(22), address(community));
+        assertEq(gobblers.ownerOf(23), address(community));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -634,8 +648,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    /// @notice Check that max team supply is mintable.
-    function testLongRunningMintMaxTeam() public {
+    /// @notice Check that max reserved supplies are mintable.
+    function testLongRunningMintMaxReserved() public {
         uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
 
         for (uint256 i = 0; i < maxMintableWithGoop; i++) {
@@ -647,10 +661,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             gobblers.mintFromGoop(type(uint256).max);
         }
 
-        gobblers.mintForTeam(gobblers.TEAM_SUPPLY());
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, gobblers.TEAM_SUPPLY());
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, gobblers.COMMUNITY_SUPPLY());
     }
 
-    /// @notice Check that team minting beyond their max supply reverts.
+    /// @notice Check that minting reserves beyond their max supply reverts.
     function testLongRunningMintMaxTeamRevert() public {
         uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
 
@@ -663,10 +678,14 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             gobblers.mintFromGoop(type(uint256).max);
         }
 
-        gobblers.mintForTeam(gobblers.TEAM_SUPPLY());
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, gobblers.TEAM_SUPPLY());
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, gobblers.COMMUNITY_SUPPLY());
 
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
-        gobblers.mintForTeam(1);
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.TEAM, 1);
+
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintReservedGobblers(ArtGobblers.ReservePool.COMMUNITY, 1);
     }
 
     // /// @notice Test whether all ids are assigned after full reveal.
