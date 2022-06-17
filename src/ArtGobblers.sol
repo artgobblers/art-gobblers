@@ -14,7 +14,7 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
-import {Goop} from "./Goop.sol";
+import {Goo} from "./Goo.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -26,7 +26,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public immutable goop;
+    Goo public immutable goo;
 
     /*//////////////////////////////////////////////////////////////
                          RESERVE POOL CONSTANTS
@@ -52,7 +52,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
     /// @notice Maximum amount of gobblers split between the reserves.
-    /// @dev Set to compromise 20% of the sum of goop mintable gobblers + reserved gobblers.
+    /// @dev Set to compromise 20% of the sum of goo mintable gobblers + reserved gobblers.
     uint256 public constant RESERVED_SUPPLY = (MAX_SUPPLY - MINTLIST_SUPPLY - LEGENDARY_SUPPLY) / 5;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
@@ -97,8 +97,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Timestamp for the start of minting.
     uint256 public immutable mintStart;
 
-    /// @notice Number of gobblers minted from goop.
-    uint128 public numMintedFromGoop;
+    /// @notice Number of gobblers minted from goo.
+    uint128 public numMintedFromGoo;
 
     /*//////////////////////////////////////////////////////////////
                          STANDARD GOBBLER STATE
@@ -158,7 +158,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct data info required for goop emission reward calculations.
+    /// @notice Struct data info required for goo emission reward calculations.
     struct EmissionData {
         // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
@@ -182,8 +182,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event GoopAdded(address indexed user, uint256 goopAdded);
-    event GoopRemoved(address indexed user, uint256 goopAdded);
+    event GooAdded(address indexed user, uint256 gooAdded);
+    event GooRemoved(address indexed user, uint256 gooAdded);
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
@@ -220,7 +220,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         bytes32 _merkleRoot,
         uint256 _mintStart,
         // Addresses:
-        Goop _goop,
+        Goo _goo,
         address _team,
         address _community,
         // Chainlink:
@@ -247,7 +247,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
 
-        goop = _goop;
+        goo = _goo;
         team = _team;
         community = _community;
 
@@ -291,10 +291,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a gobbler with goop, burning the cost.
+    /// @notice Mint a gobbler with goo, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return gobblerId The id of the gobbler that was minted.
-    function mintFromGoop(uint256 maxPrice) external returns (uint256 gobblerId) {
+    function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
         // No need to check mint cap, gobblerPrice()
         // will revert due to overflow if we reach it.
         // It will also revert prior to the mint start.
@@ -303,10 +303,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
 
-        goop.burnForGobblers(msg.sender, currentPrice);
+        goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoop; // Before mint to prevent reentrancy.
+            ++numMintedFromGoo; // Before mint to prevent reentrancy.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
@@ -314,7 +314,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         }
     }
 
-    /// @notice Gobbler pricing in terms of goop.
+    /// @notice Gobbler pricing in terms of goo.
     /// @dev Will revert if called before minting starts
     /// or after all gobblers have been minted via VRGDA.
     function gobblerPrice() public view returns (uint256) {
@@ -322,7 +322,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, numMintedFromGoop);
+        return getPrice(timeSinceStart, numMintedFromGoo);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -384,7 +384,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
             // were burned and hence should have their multiples subtracted from the user's total multiple.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender));
+            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender));
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
@@ -418,7 +418,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // How many gobblers where minted since auction began. Cannot be
         // unchecked, we want this to revert if auction has not yet started.
-        uint256 numMintedSinceStart = numMintedFromGoop - numMintedAtStart;
+        uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
             // If we've minted more than the full interval, the price has decayed to 0.
@@ -562,7 +562,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 //////////////////////////////////////////////////////////////*/
 
                 // Update the emission data for the owner of the current id.
-                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(goopBalance(currentIdOwner));
+                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(gooBalance(currentIdOwner));
                 getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
                 getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
 
@@ -647,10 +647,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate a user's staked goop balance.
+    /// @notice Calculate a user's staked goo balance.
     /// @param user The user to query balance for.
-    function goopBalance(address user) public view returns (uint256) {
-        // If a user's goop balance is greater than
+    function gooBalance(address user) public view returns (uint256) {
+        // If a user's goo balance is greater than
         // 2**256 - 1 we've got much bigger problems.
         unchecked {
             uint256 emissionMultiple = getEmissionDataForUser[user].emissionMultiple;
@@ -678,31 +678,31 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         }
     }
 
-    /// @notice Add goop to your emission balance.
-    /// @param goopAmount The amount of goop to add.
-    function addGoop(uint256 goopAmount) external {
-        // Burn goop being added to gobbler.
-        goop.burnForGobblers(msg.sender, goopAmount);
+    /// @notice Add goo to your emission balance.
+    /// @param gooAmount The amount of goo to add.
+    function addGoo(uint256 gooAmount) external {
+        // Burn goo being added to gobbler.
+        goo.burnForGobblers(msg.sender, gooAmount);
 
         unchecked {
-            // If a user has enough goop to overflow their balance we've got big problems.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) + goopAmount);
+            // If a user has enough goo to overflow their balance we've got big problems.
+            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) + gooAmount);
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
         }
 
-        emit GoopAdded(msg.sender, goopAmount);
+        emit GooAdded(msg.sender, gooAmount);
     }
 
-    /// @notice Remove goop from your emission balance.
-    /// @param goopAmount The amount of goop to remove.
-    function removeGoop(uint256 goopAmount) external {
-        // Will revert due to underflow if removed amount is larger than the user's current goop balance.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) - goopAmount);
+    /// @notice Remove goo from your emission balance.
+    /// @param gooAmount The amount of goo to remove.
+    function removeGoo(uint256 gooAmount) external {
+        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
+        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        emit GoopRemoved(msg.sender, goopAmount);
+        emit GooRemoved(msg.sender, gooAmount);
 
-        goop.mintForGobblers(msg.sender, goopAmount);
+        goo.mintForGobblers(msg.sender, gooAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -712,7 +712,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Mint a number of gobblers to the reserves.
     /// @param numGobblersEach The number of gobblers to mint to each reserve.
     /// @dev Gobblers minted to reserves cannot compromise more than 20% of the sum of
-    /// the supply of goop minted gobblers and the supply of gobblers minted to reserves.
+    /// the supply of goo minted gobblers and the supply of gobblers minted to reserves.
     function mintReservedGobblers(uint256 numGobblersEach) external returns (uint256 lastMintedGobblerId) {
         unchecked {
             // Optimistically increment numMintedForReserves, may be reverted below. Overflow in this
@@ -721,8 +721,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach << 1);
 
             // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
-            // the sum of the supply of goop minted gobblers and the supply of gobblers minted to reserves.
-            if (newNumMintedForReserves > (numMintedFromGoop + numMintedForReserves) / 5) revert Unauthorized();
+            // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
+            if (newNumMintedForReserves > (numMintedFromGoo + numMintedForReserves) / 5) revert Unauthorized();
         }
 
         // First mint numGobblersEach gobblers to the team reserve.
@@ -848,12 +848,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     ) internal {
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getEmissionDataForUser[from].lastBalance = uint128(gooBalance(from));
             getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
 
             // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
+            getEmissionDataForUser[to].lastBalance = uint128(gooBalance(to));
             getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
         }

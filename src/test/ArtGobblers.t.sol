@@ -8,7 +8,7 @@ import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
-import {Goop} from "../Goop.sol";
+import {Goo} from "../Goo.sol";
 import {Pages} from "../Pages.sol";
 import {GobblerReserve} from "../utils/GobblerReserve.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
@@ -29,7 +29,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     ArtGobblers internal gobblers;
     VRFCoordinatorMock internal vrfCoordinator;
     LinkToken internal linkToken;
-    Goop internal goop;
+    Goo internal goo;
     Pages internal pages;
     GobblerReserve internal team;
     GobblerReserve internal community;
@@ -52,7 +52,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         team = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 3)), address(this));
         community = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 2)), address(this));
 
-        goop = new Goop(
+        goo = new Goo(
             // Gobblers:
             utils.predictContractAddress(address(this), 1),
             // Pages:
@@ -62,7 +62,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers = new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
-            goop,
+            goo,
             address(team),
             address(community),
             address(vrfCoordinator),
@@ -73,7 +73,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goop, "");
+        pages = new Pages(block.timestamp, address(gobblers), goo, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -97,13 +97,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
     }
 
-    /// @notice Test that you can successfully mint from goop.
-    function testMintFromGoop() public {
+    /// @notice Test that you can successfully mint from goo.
+    function testMintFromGoo() public {
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(users[0], cost);
+        goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        gobblers.mintFromGoop(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max);
         assertEq(gobblers.ownerOf(1), users[0]);
     }
 
@@ -111,17 +111,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintInsufficientBalance() public {
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
-        gobblers.mintFromGoop(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max);
     }
 
     /// @notice Test that if mint price exceeds max it reverts.
     function testMintPriceExceededMax() public {
         uint256 cost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(users[0], cost);
+        goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost, cost - 1));
-        gobblers.mintFromGoop(cost - 1);
+        gobblers.mintFromGoo(cost - 1);
     }
 
     /// @notice Test that initial gobbler price is what we expect.
@@ -172,10 +172,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < numMint; i++) {
             vm.startPrank(address(gobblers));
             uint256 price = gobblers.gobblerPrice();
-            goop.mintForGobblers(users[0], price);
+            goo.mintForGobblers(users[0], price);
             vm.stopPrank();
             vm.prank(users[0]);
-            gobblers.mintFromGoop(price);
+            gobblers.mintFromGoo(price);
         }
 
         uint256 initialPrice = uint256(gobblers.initialPrice());
@@ -316,9 +316,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testUnrevealedUri() public {
         uint256 gobblerCost = gobblers.gobblerPrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(users[0], gobblerCost);
+        goo.mintForGobblers(users[0], gobblerCost);
         vm.prank(users[0]);
-        gobblers.mintFromGoop(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max);
         // assert gobbler not revealed after mint
         assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
     }
@@ -433,71 +433,71 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                  GOOP
+                                  GOO
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice test that goop balance grows as expected.
+    /// @notice test that goo balance grows as expected.
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
         // balance should initially be zero
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         vm.warp(block.timestamp + 100000);
         // balance should be zero while no reveal
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
         // balance should NOT grow on same timestamp after reveal
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         vm.warp(block.timestamp + 100000);
         // balance should grow after reveal
-        assertGt(gobblers.goopBalance(users[0]), 0);
+        assertGt(gobblers.gooBalance(users[0]), 0);
     }
 
-    /// @notice Test that goop removal works as expected.
-    function testGoopRemoval() public {
+    /// @notice Test that goo removal works as expected.
+    function testGooRemoval() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         vm.warp(block.timestamp + 100000);
-        uint256 initialBalance = gobblers.goopBalance(users[0]);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
         uint256 removalAmount = initialBalance / 10; //10%
         vm.prank(users[0]);
-        gobblers.removeGoop(removalAmount);
-        uint256 finalBalance = gobblers.goopBalance(users[0]);
+        gobblers.removeGoo(removalAmount);
+        uint256 finalBalance = gobblers.gooBalance(users[0]);
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
-        // user should have removed goop
-        assertEq(goop.balanceOf(users[0]), removalAmount);
+        // user should have removed goo
+        assertEq(goo.balanceOf(users[0]), removalAmount);
     }
 
-    /// @notice Test that goop can't be removed by a different user.
-    function testCantRemoveGoop() public {
+    /// @notice Test that goo can't be removed by a different user.
+    function testCantRemoveGoo() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 100000);
         setRandomnessAndReveal(1, "seed");
         vm.prank(users[1]);
         vm.expectRevert(stdError.arithmeticError);
-        gobblers.removeGoop(1);
+        gobblers.removeGoo(1);
     }
 
-    /// @notice Test that adding goop is reflected in balance.
-    function testGoopAddition() public {
+    /// @notice Test that adding goo is reflected in balance.
+    function testGooAddition() public {
         mintGobblerToAddress(users[0], 1);
         assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         // waiting after mint to reveal shouldn't affect balance
         vm.warp(block.timestamp + 100000);
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
         uint256 gobblerMultiple = gobblers.getGobblerEmissionMultiple(1);
         assertGt(gobblerMultiple, 0);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), gobblerMultiple);
         vm.prank(address(gobblers));
         uint256 additionAmount = 1000;
-        goop.mintForGobblers(users[0], additionAmount);
+        goo.mintForGobblers(users[0], additionAmount);
         vm.prank(users[0]);
-        gobblers.addGoop(additionAmount);
-        assertEq(gobblers.goopBalance(users[0]), additionAmount);
+        gobblers.addGoo(additionAmount);
+        assertEq(gobblers.gooBalance(users[0]), additionAmount);
     }
 
     /// @notice Test that emission multiple changes as expected after transfer.
@@ -525,8 +525,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         vm.warp(block.timestamp + 1000000);
 
-        uint256 userOneBalance = gobblers.goopBalance(users[0]);
-        uint256 userTwoBalance = gobblers.goopBalance(users[1]);
+        uint256 userOneBalance = gobblers.gooBalance(users[0]);
+        uint256 userTwoBalance = gobblers.gooBalance(users[1]);
         //user with gobbler should have non-zero balance
         assertGt(userOneBalance, 0);
         //other user should have zero balance
@@ -535,8 +535,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
         //balance should not change after transfer
-        assertEq(gobblers.goopBalance(users[0]), userOneBalance);
-        assertEq(gobblers.goopBalance(users[1]), userTwoBalance);
+        assertEq(gobblers.gooBalance(users[0]), userOneBalance);
+        assertEq(gobblers.gooBalance(users[1]), userTwoBalance);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -549,9 +549,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(user, pagePrice);
+        goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
         assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
@@ -562,9 +562,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         address user = users[0];
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(user, pagePrice);
+        goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
@@ -585,9 +585,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
-        goop.mintForGobblers(user, pagePrice);
+        goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
         vm.expectRevert();
         gobblers.feedArt(1, address(pages), 1, true);
     }
@@ -636,49 +636,49 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Check that max supply is mintable
-    function testLongRunningMintMaxFromGoop() public {
-        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+    function testLongRunningMintMaxFromGoo() public {
+        uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoop; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
-            goop.mintForGobblers(users[0], cost);
+            goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
     }
 
     /// @notice Check that minting beyond max supply should revert.
-    function testLongRunningMintMaxFromGoopRevert() public {
-        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+    function testLongRunningMintMaxFromGooRevert() public {
+        uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoop + 1; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo + 1; i++) {
             vm.warp(block.timestamp + 1 days);
 
-            if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
+            if (i == maxMintableWithGoo) vm.expectRevert("UNDEFINED");
             uint256 cost = gobblers.gobblerPrice();
 
             vm.prank(address(gobblers));
-            goop.mintForGobblers(users[0], cost);
+            goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
 
-            if (i == maxMintableWithGoop) vm.expectRevert("UNDEFINED");
-            gobblers.mintFromGoop(type(uint256).max);
+            if (i == maxMintableWithGoo) vm.expectRevert("UNDEFINED");
+            gobblers.mintFromGoo(type(uint256).max);
         }
     }
 
     /// @notice Check that max reserved supplies are mintable.
     function testLongRunningMintMaxReserved() public {
-        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+        uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoop; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
-            goop.mintForGobblers(users[0], cost);
+            goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
 
         gobblers.mintReservedGobblers(gobblers.RESERVED_SUPPLY() / 2);
@@ -686,15 +686,15 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Check that minting reserves beyond their max supply reverts.
     function testLongRunningMintMaxTeamRevert() public {
-        uint256 maxMintableWithGoop = gobblers.MAX_MINTABLE();
+        uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoop; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
-            goop.mintForGobblers(users[0], cost);
+            goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
 
         gobblers.mintReservedGobblers(gobblers.RESERVED_SUPPLY() / 2);
@@ -702,25 +702,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.mintReservedGobblers(1);
     }
-
-    // /// @notice Test whether all ids are assigned after full reveal.
-    // function testLongRunningAllIdsUnique() public {
-    //     int256[10001] memory counts;
-    //     // mint all
-    //     uint256 mintCount = gobblers.MAX_GOOP_MINT();
-
-    //     mintGobblerToAddress(users[0], mintCount);
-    //     setRandomnessAndReveal(mintCount, "seed");
-    //     // count ids
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, ) = gobblers.getGobblerData(i);
-    //         counts[tokenId]++;
-    //     }
-    //     // check that all ids are unique
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         assertTrue(counts[i] <= 1);
-    //     }
-    // }
 
     /*//////////////////////////////////////////////////////////////
                                  HELPERS
@@ -730,11 +711,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function mintGobblerToAddress(address addr, uint256 num) internal {
         for (uint256 i = 0; i < num; i++) {
             vm.startPrank(address(gobblers));
-            goop.mintForGobblers(addr, gobblers.gobblerPrice());
+            goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
     }
 
