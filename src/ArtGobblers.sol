@@ -109,8 +109,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @dev We add 1 to LEGENDARY_SUPPLY because legendary auctions only begin after the first interval.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / (LEGENDARY_SUPPLY + 1);
 
-    // TODO: wait what happens if the next interval occurs and no one buys legendary by then
-
     /// @notice Struct holding data required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
         // Start price of current legendary gobbler auction.
