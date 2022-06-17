@@ -42,7 +42,7 @@ contract PagesTest is DSTestPlus {
     function testMintBeforeSetMint() public {
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
     }
 
     function testMintBeforeStart() public {
@@ -50,13 +50,13 @@ contract PagesTest is DSTestPlus {
 
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
     }
 
     function testRegularMint() public {
         goo.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
         assertEq(user, pages.ownerOf(1));
     }
 
@@ -81,7 +81,7 @@ contract PagesTest is DSTestPlus {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
-            pages.mintFromGoop(price);
+            pages.mintFromGoo(price);
         }
 
         uint256 finalPrice = pages.pagePrice();
@@ -103,7 +103,7 @@ contract PagesTest is DSTestPlus {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
-            pages.mintFromGoop(price);
+            pages.mintFromGoo(price);
         }
 
         uint256 finalPrice = pages.pagePrice();
@@ -115,7 +115,7 @@ contract PagesTest is DSTestPlus {
     function testInsufficientBalance() public {
         vm.prank(user);
         vm.expectRevert(stdError.arithmeticError);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
     }
 
     function testMintPriceExceededMax() public {
@@ -123,12 +123,12 @@ contract PagesTest is DSTestPlus {
         goo.mintForGobblers(user, cost);
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(Pages.PriceExceededMax.selector, cost, cost - 1));
-        pages.mintFromGoop(cost - 1);
+        pages.mintFromGoo(cost - 1);
     }
 
     function mintPage(address _user) internal {
         goo.mintForGobblers(_user, pages.pagePrice());
         vm.prank(_user);
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
     }
 }

@@ -3,11 +3,11 @@ pragma solidity >=0.8.0;
 
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
-contract MockGoopCalculator {
+contract MockGooCalculator {
     /// @notice Compute goo balance based on emission multiple, last balance, and days
     /// @dev Must be kept up to date with the gooBalance function's corresponding emission balance calculations in ArtGobblers.sol.
     /// @dev Forked from https://github.com/FrankieIsLost/art-gobblers/blob/807809821c615ec46b7f42e838346c5c57a402f6/src/ArtGobblers.sol#L579-L595
-    function computeGoopBalance(
+    function computeGooBalance(
         uint256 emissionMultiple,
         uint256 lastBalanceWad,
         uint256 daysElapsedWad

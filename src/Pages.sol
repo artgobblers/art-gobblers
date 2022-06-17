@@ -106,7 +106,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Mint a page with goo, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return pageId The id of the page that was minted.
-    function mintFromGoop(uint256 maxPrice) external returns (uint256 pageId) {
+    function mintFromGoo(uint256 maxPrice) external returns (uint256 pageId) {
         // Will revert if prior to mint start.
         uint256 currentPrice = pagePrice();
 
