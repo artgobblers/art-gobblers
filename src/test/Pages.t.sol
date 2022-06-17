@@ -70,7 +70,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function testMintCommunityPagesFailsWithNoMints() public {
-        vm.expectRevert(Pages.Unauthorized.selector);
+        vm.expectRevert(Pages.ReserveImbalance.selector);
         pages.mintCommunityPages(1);
     }
 
