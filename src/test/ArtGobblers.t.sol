@@ -73,7 +73,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goo, "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
     }
 
     /*//////////////////////////////////////////////////////////////

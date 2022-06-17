@@ -184,20 +184,14 @@ abstract contract PagesERC721 {
         emit Transfer(address(0), to, id);
     }
 
-    function _burn(uint256 id) internal virtual {
-        address owner = _ownerOf[id];
-
-        require(owner != address(0), "NOT_MINTED");
-
-        // Ownership check above ensures no underflow.
+    function _uncheckedMint(address to, uint256 id) internal virtual {
+        // Counter overflow is incredibly unrealistic.
         unchecked {
-            _balanceOf[owner]--;
+            _balanceOf[to]++;
         }
 
-        delete _ownerOf[id];
+        _ownerOf[id] = to;
 
-        delete getApproved[id];
-
-        emit Transfer(owner, address(0), id);
+        emit Transfer(address(0), to, id);
     }
 }
