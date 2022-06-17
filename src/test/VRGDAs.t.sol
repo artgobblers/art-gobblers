@@ -47,6 +47,7 @@ contract VRGDAsTest is DSTestPlus {
             block.timestamp,
             goop,
             address(0xBEEF),
+            address(0xBEEF),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
@@ -65,31 +66,23 @@ contract VRGDAsTest is DSTestPlus {
     //     }
     // }
 
-    // function testFindLastGobblerTooEarlyOverflowPoint() public {
-    //     uint256 time = 999 days;
-    //     while (true) {
-    //         emit log_uint((time -= 1 days) / 1 days);
-    //         gobblers.getPrice(time, 7191);
-    //     }
-    // }
-
     function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6756));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6005));
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 437 days, ONE_THOUSAND_YEARS), bound(sold, 0, 7190));
+        gobblers.getPrice(bound(timeSinceStart, 437 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6391));
     }
 
     function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 7191, type(uint128).max));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 6392, type(uint128).max));
     }
 
     function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 6756) {
+        while (sold <= 6005) {
             uint256 price = gobblers.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
