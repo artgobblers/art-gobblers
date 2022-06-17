@@ -88,7 +88,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testGoopBalance() public view {
-        gobblers.goopBalance(address(this));
+        gobblers.gooBalance(address(this));
     }
 
     function testMintPage() public {

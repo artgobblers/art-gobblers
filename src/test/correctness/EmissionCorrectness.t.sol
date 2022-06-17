@@ -11,7 +11,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    MockGoopCalculator immutable goopCalculator = new MockGoopCalculator();
+    MockGoopCalculator immutable gooCalculator = new MockGoopCalculator();
 
     function testFFIEmissionCorrectness(
         uint256 daysElapsedWad,
@@ -26,7 +26,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
 
         uint256 expectedBalance = calculateBalance(daysElapsedWad, lastBalanceWad, emissionMultiple);
 
-        uint256 actualBalance = goopCalculator.computeGoopBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
+        uint256 actualBalance = gooCalculator.computeGoopBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
 
         // Equal within 1 percent.
         assertRelApproxEq(actualBalance, expectedBalance, 0.01e18);

@@ -73,7 +73,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         uint256 _mintStart,
         // Addresses:
         address _artGobblers,
-        Goo _goop,
+        Goo _goo,
         // URIs:
         string memory _baseUri
     )
@@ -94,7 +94,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     {
         mintStart = _mintStart;
 
-        goo = _goop;
+        goo = _goo;
 
         BASE_URI = _baseUri;
     }
