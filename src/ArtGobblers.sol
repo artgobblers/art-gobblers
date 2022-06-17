@@ -105,16 +105,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
-    /// @notice Legendary auctions are triggered when a certain percentage of the supply is minted.
-    /// In this case, we split the mintabl supply into 11 intervals, where every interval
-    /// but the first is used to hold an auction.
-    uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / 11;
+    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted.
+    /// @dev We add 1 to LEGENDARY_SUPPLY because legendary auctions only begin after the first interval.
+    uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / (LEGENDARY_SUPPLY + 1);
+
+    // TODO: wait what happens if the next interval occurs and no one buys legendary by then
 
     /// @notice Struct holding data required for legendary gobbler auctions.
     struct LegendaryGobblerAuctionData {
         // Start price of current legendary gobbler auction.
         uint128 startPrice;
-        // Start timestamp of current legendary gobbler auction.
+        // Number of legendary gobblers sold so far.
         uint128 numSold;
     }
 
@@ -430,7 +431,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // The new start price is max of 69 and cost * 2. Shift left by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.startPrice = uint120(cost < 35 ? 69 : cost << 1);
-            legendaryGobblerAuctionData.numSold = legendaryGobblerAuctionData.numSold + 1;
+            legendaryGobblerAuctionData.numSold = legendaryGobblerAuctionData.numSold + 1; // TODO does ++ prefix or += save gas
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
@@ -439,29 +440,32 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         }
     }
 
-    /// @notice Calculate the legendary gobbler price in terms of gobblers, according to linear decay function.
-    /// Intended behaviour is for legendary gobbler price to decay as the total number of minted gobblers increases.
-    /// We hold 10 legendary gobbler auctions. The first one starts when 1/11th of the total supply is minted, and price
-    /// price decays linearly as the next 1/11th of the supply is minted. Every time an additional 1/11th of the supply
-    /// is minted, a new auction starts.
-    /// @dev Reverts due to underflow if the auction has not yet begun. This is intended behavior and helps save gas.
+    /// @notice Calculate the legendary gobbler price in terms of gobblers, according to a linear decay function.
+    /// @dev The price of a legendary gobbler decays as gobblers are minted. The first legendary auction begins when
+    /// 1 LEGENDARY_AUCTION_INTERVAL worth of gobblers are minted, and the price decays linearly while the next interval of
+    /// gobblers is minted. Every time an additional interval is minted, a new auction begins until all legendaries been sold.
     function legendaryGobblerPrice() public view returns (uint256) {
-        ///The nth auction starts when n/11 of the supply is minted.
-        uint256 auctionStart = (legendaryGobblerAuctionData.numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
+        uint256 numMintedAtStart; // The number of gobblers minted at the start of the auction.
 
-        ///How many gobblers where minted since auction start. Cannot be unchecked, we want this to revert
-        ///if auction has not yet started.
-        uint256 numMintedSinceStart = numMintedFromGoop - auctionStart;
-
-        ///The price fully decays after we mint more than the full interval. In this case just return 0
-        if (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL) return 0;
-
-        /// we only enter this block in the case where there is an auction where price is partially decayed
         unchecked {
-            // Decay start price linearly based on how many of the gobblers in the current interval we have minted
+            // The number of gobblers minted at the start of the auction is computed by multiplying the # of
+            // intervals that must pass before the next auction begins by the number of gobblers in each interval.
+            numMintedAtStart = (legendaryGobblerAuctionData.numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
+        }
+
+        // How many gobblers where minted since auction began. Cannot be
+        // unchecked, we want this to revert if auction has not yet started.
+        uint256 numMintedSinceStart = numMintedFromGoop - numMintedAtStart;
+
+        unchecked {
             return
-                (legendaryGobblerAuctionData.startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) /
-                LEGENDARY_AUCTION_INTERVAL;
+                // If we've minted more than the full interval:
+                (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL)
+                    ? 0 // The price has fully decayed to 0.
+                    : (legendaryGobblerAuctionData.startPrice *
+                        // Decay start price linearly based on how many of
+                        // the gobblers in the current interval we've minted.
+                        (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
         }
     }
 
@@ -582,7 +586,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
                 assembly {
                     // prettier-ignore
-                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple, 
+                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple,
                         lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
                     )
                 }
@@ -700,12 +704,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // prettier-ignore
             return lastBalanceWad + // The last recorded balance.
-                
+
             // Don't need to do wad multiplication since we're
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.
             ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
-            
+
             daysElapsedWad.mulWadDown( // Terms are wads, so must mulWad.
                 // No wad multiplication for emissionMultiple * lastBalance
                 // because emissionMultiple is a plain integer with no decimals.
