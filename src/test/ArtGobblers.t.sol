@@ -451,16 +451,16 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testSimpleRewards() public {
         mintGobblerToAddress(users[0], 1);
         // balance should initially be zero
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         vm.warp(block.timestamp + 100000);
         // balance should be zero while no reveal
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
         // balance should NOT grow on same timestamp after reveal
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         vm.warp(block.timestamp + 100000);
         // balance should grow after reveal
-        assertGt(gobblers.goopBalance(users[0]), 0);
+        assertGt(gobblers.gooBalance(users[0]), 0);
     }
 
     /// @notice Test that goo removal works as expected.
@@ -469,11 +469,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
         vm.warp(block.timestamp + 100000);
-        uint256 initialBalance = gobblers.goopBalance(users[0]);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
         uint256 removalAmount = initialBalance / 10; //10%
         vm.prank(users[0]);
         gobblers.removeGoop(removalAmount);
-        uint256 finalBalance = gobblers.goopBalance(users[0]);
+        uint256 finalBalance = gobblers.gooBalance(users[0]);
         // balance should change
         assertTrue(initialBalance != finalBalance);
         assertEq(initialBalance, finalBalance + removalAmount);
@@ -498,7 +498,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         // waiting after mint to reveal shouldn't affect balance
         vm.warp(block.timestamp + 100000);
-        assertEq(gobblers.goopBalance(users[0]), 0);
+        assertEq(gobblers.gooBalance(users[0]), 0);
         setRandomnessAndReveal(1, "seed");
         uint256 gobblerMultiple = gobblers.getGobblerEmissionMultiple(1);
         assertGt(gobblerMultiple, 0);
@@ -508,7 +508,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(users[0], additionAmount);
         vm.prank(users[0]);
         gobblers.addGoop(additionAmount);
-        assertEq(gobblers.goopBalance(users[0]), additionAmount);
+        assertEq(gobblers.gooBalance(users[0]), additionAmount);
     }
 
     /// @notice Test that emission multiple changes as expected after transfer.
@@ -536,8 +536,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         vm.warp(block.timestamp + 1000000);
 
-        uint256 userOneBalance = gobblers.goopBalance(users[0]);
-        uint256 userTwoBalance = gobblers.goopBalance(users[1]);
+        uint256 userOneBalance = gobblers.gooBalance(users[0]);
+        uint256 userTwoBalance = gobblers.gooBalance(users[1]);
         //user with gobbler should have non-zero balance
         assertGt(userOneBalance, 0);
         //other user should have zero balance
@@ -546,8 +546,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
         //balance should not change after transfer
-        assertEq(gobblers.goopBalance(users[0]), userOneBalance);
-        assertEq(gobblers.goopBalance(users[1]), userTwoBalance);
+        assertEq(gobblers.gooBalance(users[0]), userOneBalance);
+        assertEq(gobblers.gooBalance(users[1]), userTwoBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -182,8 +182,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event GoopAdded(address indexed user, uint256 goopAdded);
-    event GoopRemoved(address indexed user, uint256 goopAdded);
+    event GoopAdded(address indexed user, uint256 gooAdded);
+    event GoopRemoved(address indexed user, uint256 gooAdded);
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
@@ -220,7 +220,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         bytes32 _merkleRoot,
         uint256 _mintStart,
         // Addresses:
-        Goo _goop,
+        Goo _goo,
         address _team,
         address _community,
         // Chainlink:
@@ -247,7 +247,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
 
-        goo = _goop;
+        goo = _goo;
         team = _team;
         community = _community;
 
@@ -390,7 +390,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
             // were burned and hence should have their multiples subtracted from the user's total multiple.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender));
+            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender));
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
@@ -556,7 +556,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 //////////////////////////////////////////////////////////////*/
 
                 // Update the emission data for the owner of the current id.
-                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(goopBalance(currentIdOwner));
+                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(gooBalance(currentIdOwner));
                 getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
                 getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
 
@@ -643,7 +643,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Calculate a user's staked goo balance.
     /// @param user The user to query balance for.
-    function goopBalance(address user) public view returns (uint256) {
+    function gooBalance(address user) public view returns (uint256) {
         // If a user's goo balance is greater than
         // 2**256 - 1 we've got much bigger problems.
         unchecked {
@@ -673,30 +673,30 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     }
 
     /// @notice Add goo to your emission balance.
-    /// @param goopAmount The amount of goo to add.
-    function addGoop(uint256 goopAmount) external {
+    /// @param gooAmount The amount of goo to add.
+    function addGoop(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
-        goo.burnForGobblers(msg.sender, goopAmount);
+        goo.burnForGobblers(msg.sender, gooAmount);
 
         unchecked {
             // If a user has enough goo to overflow their balance we've got big problems.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) + goopAmount);
+            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) + gooAmount);
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
         }
 
-        emit GoopAdded(msg.sender, goopAmount);
+        emit GoopAdded(msg.sender, gooAmount);
     }
 
     /// @notice Remove goo from your emission balance.
-    /// @param goopAmount The amount of goo to remove.
-    function removeGoop(uint256 goopAmount) external {
+    /// @param gooAmount The amount of goo to remove.
+    function removeGoop(uint256 gooAmount) external {
         // Will revert due to underflow if removed amount is larger than the user's current goo balance.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(goopBalance(msg.sender) - goopAmount);
+        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        emit GoopRemoved(msg.sender, goopAmount);
+        emit GoopRemoved(msg.sender, gooAmount);
 
-        goo.mintForGobblers(msg.sender, goopAmount);
+        goo.mintForGobblers(msg.sender, gooAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -842,12 +842,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     ) internal {
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[from].lastBalance = uint128(goopBalance(from));
+            getEmissionDataForUser[from].lastBalance = uint128(gooBalance(from));
             getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
 
             // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[to].lastBalance = uint128(goopBalance(to));
+            getEmissionDataForUser[to].lastBalance = uint128(gooBalance(to));
             getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
         }
