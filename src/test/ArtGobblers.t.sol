@@ -198,41 +198,41 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that Legendary Gobbler initial price is what we expect.
     function testLegendaryGobblerInitialPrice() public {
-        // start of initial auction
-        vm.warp(block.timestamp + 30 days);
+        // Start of initial auction after initial interval is minted.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // initial auction should start at a cost of 69
+        // Initial auction should start at a cost of 69.
         assertEq(cost, 69);
     }
 
     /// @notice Test that auction ends at a price of 0.
     function testLegendaryGobblerFinalPrice() public {
-        //30 days for initial auction start, 40 days after initial auction
-        vm.warp(block.timestamp + 70 days);
+        // Mint two full intervals.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // auction price should be 0 after more than 30 days have passed
+        // Auction price should be 0 after full interval decay.
         assertEq(cost, 0);
     }
 
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
-        //30 days for initial auction start, 15 days after initial auction
-        vm.warp(block.timestamp + 45 days);
+        // Mint first interval and half of second interval.
+        mintGobblerToAddress(users[0], (gobblers.LEGENDARY_AUCTION_INTERVAL() * 3) / 2);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // auction price should be cut by half mid way through auction
+        // Auction price should be cut by half mid way through auction.
         assertEq(cost, 34);
     }
 
-    /// @notice Test that initial price doens't fall below what we expect.
+    /// @notice Test that initial price does't fall below what we expect.
     function testLegendaryGobblerMinStartPrice() public {
-        //30 days for initial auction start, 15 days after initial auction
-        vm.warp(block.timestamp + 60 days);
-        vm.prank(users[0]);
-        //empty id list
+        // Mint two full intervals, such that price of first auction goes to zero.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
+        // Empty id list.
         uint256[] memory _ids;
+        // Mint first auction at zero cost.
         gobblers.mintLegendaryGobbler(_ids);
+        // Start cost of next auction, which should equal 69.
         uint256 startCost = gobblers.legendaryGobblerPrice();
-        // next gobbler should start at a price of 100
         assertEq(startCost, 69);
     }
 
@@ -240,10 +240,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintLegendaryGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
-        console.log(cost);
         assertEq(cost, 69);
-        mintGobblerToAddress(users[0], cost);
         setRandomnessAndReveal(cost, "seed");
         uint256 emissionMultipleSum;
         for (uint256 curId = 1; curId <= cost; curId++) {
@@ -270,40 +270,30 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintLegendaryGobblersExpectedIds() public {
         // We expect the first legendary to have this id.
         uint256 nextMintLegendaryId = 9991;
-        uint256 curGobblerId = 1;
-        uint256 startTime = block.timestamp + 45 days;
-        vm.warp(startTime);
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         for (int256 i = 0; i < 10; i++) {
-            uint256 cost = gobblers.legendaryGobblerPrice();
-            mintGobblerToAddress(users[0], cost);
-            for (uint256 j = 0; j < cost; j++) {
-                ids.push(curGobblerId++);
-            }
+            vm.warp(block.timestamp + 40 days);
 
-            vm.prank(users[0]);
+            mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
             uint256 justMintedLegendaryId = gobblers.mintLegendaryGobbler(ids);
             //assert that legendaries have the expected ids
             assertEq(nextMintLegendaryId, justMintedLegendaryId);
             nextMintLegendaryId++;
-            for (uint256 j = 0; j < cost; j++) {
-                ids.pop();
-            }
-            vm.warp(block.timestamp + 30 days);
         }
     }
 
     /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
     function testCannotMintLegendaryWithLegendary() public {
-        vm.warp(block.timestamp + 70 days);
-        vm.prank(users[0]);
-        gobblers.mintLegendaryGobbler(ids);
-        (, , uint16 nextLegendaryId) = gobblers.legendaryGobblerAuctionData();
-        uint16 mintedLegendaryId = nextLegendaryId - 1;
+        vm.warp(block.timestamp + 30 days);
+
+        mintNextLegendary(users[0]);
+        uint256 mintedLegendaryId = gobblers.FIRST_LEGENDARY_GOBBLER_ID();
         //First legendary to be minted should be 9991
         assertEq(mintedLegendaryId, 9991);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        assertEq(cost, 46);
-        mintGobblerToAddress(users[0], cost);
+
+        // Starting price should be 69.
+        assertEq(cost, 69);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
 
@@ -347,10 +337,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that legendary gobbler URI is correct.
     function testMintedLegendaryURI() public {
-        //mint legendary
-        vm.warp(block.timestamp + 70 days);
-        uint256[] memory _ids; // gobbler should be free at this point
-        uint256 currentLegendaryId = gobblers.mintLegendaryGobbler(_ids);
+        //mint legendary for free
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
+        uint256 currentLegendaryId = gobblers.mintLegendaryGobbler(ids);
 
         //expected URI should not be shuffled
         string memory expectedURI = string(
@@ -362,10 +351,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLegendaryUri() public {
-        (, , uint16 currentLegendaryId) = gobblers.legendaryGobblerAuctionData();
+        (, uint128 numSold) = gobblers.legendaryGobblerAuctionData();
 
-        assertEq(gobblers.uri(currentLegendaryId), "");
-        assertEq(gobblers.uri(currentLegendaryId + 1), "");
+        assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID()), "");
+        assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID() + 1), "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -761,5 +750,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Check for string equality.
     function stringEquals(string memory s1, string memory s2) internal pure returns (bool) {
         return keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
+    }
+
+    function mintNextLegendary(address addr) internal {
+        uint256[] memory id;
+        mintGobblerToAddress(addr, gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
+        vm.prank(addr);
+        gobblers.mintLegendaryGobbler(id);
     }
 }

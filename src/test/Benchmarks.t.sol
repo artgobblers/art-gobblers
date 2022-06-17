@@ -25,6 +25,8 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     Goo goo;
     Pages pages;
 
+    uint256 legendaryCost;
+
     bytes32 private keyHash;
     uint256 private fee;
 
@@ -73,6 +75,9 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         bytes32 requestId = gobblers.getRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+        //mint to benchmark legendary mint
+        mintGobblerToAddress(address(this), gobblers.LEGENDARY_AUCTION_INTERVAL());
+        legendaryCost = gobblers.legendaryGobblerPrice();
     }
 
     function testPagePrice() public view {
@@ -123,9 +128,20 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintLegendaryGobbler() public {
-        uint256[] memory ids = new uint256[](69);
-        for (uint256 i = 0; i < 69; i++) ids[i] = i + 1;
+        uint256[] memory ids = new uint256[](legendaryCost);
+        for (uint256 i = 0; i < legendaryCost; i++) ids[i] = i + 1;
 
         gobblers.mintLegendaryGobbler(ids);
+    }
+
+    function mintGobblerToAddress(address addr, uint256 num) internal {
+        for (uint256 i = 0; i < num; i++) {
+            vm.startPrank(address(gobblers));
+            goop.mintForGobblers(addr, gobblers.gobblerPrice());
+            vm.stopPrank();
+
+            vm.prank(addr);
+            gobblers.mintFromGoop(type(uint256).max);
+        }
     }
 }
