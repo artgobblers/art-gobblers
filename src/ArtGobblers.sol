@@ -418,7 +418,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // How many gobblers where minted since auction began. Cannot be
         // unchecked, we want this to revert if auction has not yet started.
-        uint256 numMintedSinceStart = numMintedFromGoop - numMintedAtStart;
+        uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
             // If we've minted more than the full interval, the price has decayed to 0.

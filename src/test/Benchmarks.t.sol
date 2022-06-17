@@ -137,11 +137,11 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     function mintGobblerToAddress(address addr, uint256 num) internal {
         for (uint256 i = 0; i < num; i++) {
             vm.startPrank(address(gobblers));
-            goop.mintForGobblers(addr, gobblers.gobblerPrice());
+            goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
     }
 }

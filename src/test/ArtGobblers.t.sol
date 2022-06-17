@@ -433,7 +433,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                  GOOP
+                                  GOO
     //////////////////////////////////////////////////////////////*/
 
     /// @notice test that goo balance grows as expected.
@@ -702,25 +702,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.expectRevert(ArtGobblers.Unauthorized.selector);
         gobblers.mintReservedGobblers(1);
     }
-
-    // /// @notice Test whether all ids are assigned after full reveal.
-    // function testLongRunningAllIdsUnique() public {
-    //     int256[10001] memory counts;
-    //     // mint all
-    //     uint256 mintCount = gobblers.MAX_GOOP_MINT();
-
-    //     mintGobblerToAddress(users[0], mintCount);
-    //     setRandomnessAndReveal(mintCount, "seed");
-    //     // count ids
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         (uint256 tokenId, ) = gobblers.getGobblerData(i);
-    //         counts[tokenId]++;
-    //     }
-    //     // check that all ids are unique
-    //     for (uint256 i = 1; i < 10001; i++) {
-    //         assertTrue(counts[i] <= 1);
-    //     }
-    // }
 
     /*//////////////////////////////////////////////////////////////
                                  HELPERS
