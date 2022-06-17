@@ -443,11 +443,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// 1 LEGENDARY_AUCTION_INTERVAL worth of gobblers are minted, and the price decays linearly while the next interval of
     /// gobblers is minted. Every time an additional interval is minted, a new auction begins until all legendaries been sold.
     function legendaryGobblerPrice() public view returns (uint256) {
-        uint256 numMintedAtStart; // The number of gobblers minted at the start of the auction.
-
         // Retrieve and cache the auction's startPrice and numSold on the stack.
         uint256 startPrice = legendaryGobblerAuctionData.startPrice;
         uint256 numSold = legendaryGobblerAuctionData.numSold;
+
+        uint256 numMintedAtStart; // The number of gobblers minted at the start of the auction.
 
         unchecked {
             // The number of gobblers minted at the start of the auction is computed by multiplying the # of
