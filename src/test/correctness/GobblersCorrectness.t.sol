@@ -5,7 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {LibString} from "../../utils/LibString.sol";
 import {ArtGobblers} from "../../ArtGobblers.sol";
-import {Goop} from "../../Goop.sol";
+import {Goo} from "../../Goo.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
     using LibString for uint256;
@@ -30,7 +30,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
         gobblers = new ArtGobblers(
             "root",
             block.timestamp,
-            Goop(address(0)),
+            Goo(address(0)),
             address(0),
             address(0),
             address(0),

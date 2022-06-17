@@ -7,7 +7,7 @@ import {PagesERC721} from "./utils/PagesERC721.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
-import {Goop} from "./Goop.sol";
+import {Goo} from "./Goo.sol";
 
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
@@ -18,7 +18,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public immutable goop;
+    Goo public immutable goop;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -73,7 +73,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         uint256 _mintStart,
         // Addresses:
         address _artGobblers,
-        Goop _goop,
+        Goo _goop,
         // URIs:
         string memory _baseUri
     )

@@ -5,7 +5,7 @@ import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 
 import {GobblerReserve} from "../../utils/GobblerReserve.sol";
 
-import {Goop} from "../../Goop.sol";
+import {Goo} from "../../Goo.sol";
 import {Pages} from "../../Pages.sol";
 import {ArtGobblers} from "../../ArtGobblers.sol";
 
@@ -23,7 +23,7 @@ contract DeployTestnet {
 
     ArtGobblers public immutable artGobblers;
     Pages public immutable pages;
-    Goop public immutable goop;
+    Goo public immutable goop;
 
     constructor(address linkToken) {
         vrfCoordinator = new VRFCoordinatorMock(linkToken);
@@ -31,7 +31,7 @@ contract DeployTestnet {
         team = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
         community = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
 
-        goop = new Goop(
+        goop = new Goo(
             // Gobblers (contract nonces start at 1):
             LibRLP.computeAddress(address(this), 5),
             // Pages (contract nonces start at 1):

@@ -5,18 +5,18 @@ import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {Goop} from "../Goop.sol";
+import {Goo} from "../Goo.sol";
 
 contract GoopTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;
-    Goop internal goop;
+    Goo internal goop;
 
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
-        goop = new Goop(address(this), users[0]);
+        goop = new Goo(address(this), users[0]);
     }
 
     function testMintByAuthority() public {
@@ -30,7 +30,7 @@ contract GoopTest is DSTest {
     function testMintByNonAuthority() public {
         uint256 mintAmount = 100000;
         vm.prank(users[0]);
-        vm.expectRevert(Goop.Unauthorized.selector);
+        vm.expectRevert(Goo.Unauthorized.selector);
         goop.mintForGobblers(address(this), mintAmount);
     }
 
