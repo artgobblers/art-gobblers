@@ -427,9 +427,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
-            // The new start price is max of 69 and cost * 2. Shift left by 1 is like multiplication by 2.
+            // New start price is the max of 69 and cost * 2. Left shift by 1 is like multiplication by 2.
             legendaryGobblerAuctionData.startPrice = uint120(cost < 35 ? 69 : cost << 1);
-            legendaryGobblerAuctionData.numSold = legendaryGobblerAuctionData.numSold + 1; // TODO does ++ prefix or += save gas
+            legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
