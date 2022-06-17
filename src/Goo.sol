@@ -3,10 +3,10 @@ pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
-/// @title Goop Token (GOOP)
-/// @notice Goop is an in-game token for ArtGobblers. It's a standard ERC20
+/// @title Goo Token (GOO)
+/// @notice Goo is an in-game token for ArtGobblers. It's a standard ERC20
 /// token that can be burned and minted by the gobblers and pages contract.
-contract Goop is ERC20("Goop", "GOOP", 18) {
+contract Goo is ERC20("Goo", "GOO", 18) {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
@@ -41,23 +41,23 @@ contract Goop is ERC20("Goop", "GOOP", 18) {
         _;
     }
 
-    /// @notice Mint any amount of goop to a user. Can only be called by ArtGobblers.
-    /// @param to The address of the user to mint goop to.
-    /// @param amount The amount of goop to mint.
+    /// @notice Mint any amount of goo to a user. Can only be called by ArtGobblers.
+    /// @param to The address of the user to mint goo to.
+    /// @param amount The amount of goo to mint.
     function mintForGobblers(address to, uint256 amount) public only(artGobblers) {
         _mint(to, amount);
     }
 
-    /// @notice Burn any amount of goop from a user. Can only be called by ArtGobblers.
-    /// @param from The address of the user to burn goop from.
-    /// @param amount The amount of goop to burn.
+    /// @notice Burn any amount of goo from a user. Can only be called by ArtGobblers.
+    /// @param from The address of the user to burn goo from.
+    /// @param amount The amount of goo to burn.
     function burnForGobblers(address from, uint256 amount) public only(artGobblers) {
         _burn(from, amount);
     }
 
-    /// @notice Burn any amount of goop from a user. Can only be called by Pages.
-    /// @param from The address of the user to burn goop from.
-    /// @param amount The amount of goop to burn.
+    /// @notice Burn any amount of goo from a user. Can only be called by Pages.
+    /// @param from The address of the user to burn goo from.
+    /// @param amount The amount of goo to burn.
     function burnForPages(address from, uint256 amount) public only(pages) {
         _burn(from, amount);
     }

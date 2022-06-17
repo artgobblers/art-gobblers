@@ -6,7 +6,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {LibString} from "../../utils/LibString.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../Pages.sol";
-import {Goop} from "../../Goop.sol";
+import {Goo} from "../../Goo.sol";
 
 contract PageCorrectnessTest is DSTestPlus {
     using LibString for uint256;
@@ -32,7 +32,7 @@ contract PageCorrectnessTest is DSTestPlus {
     Pages internal pages;
 
     function setUp() public {
-        pages = new Pages(block.timestamp, address(0), Goop(address(0)), "");
+        pages = new Pages(block.timestamp, address(0), Goo(address(0)), "");
 
         LOGISTIC_SCALE = int256(MAX_MINTABLE * 2e18);
     }

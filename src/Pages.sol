@@ -7,7 +7,7 @@ import {PagesERC721} from "./utils/PagesERC721.sol";
 import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 
-import {Goop} from "./Goop.sol";
+import {Goo} from "./Goo.sol";
 
 /// @title Pages NFT
 /// @notice Pages is an ERC721 that can hold drawn art.
@@ -18,7 +18,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public immutable goop;
+    Goo public immutable goo;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -73,7 +73,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         uint256 _mintStart,
         // Addresses:
         address _artGobblers,
-        Goop _goop,
+        Goo _goo,
         // URIs:
         string memory _baseUri
     )
@@ -94,7 +94,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     {
         mintStart = _mintStart;
 
-        goop = _goop;
+        goo = _goo;
 
         BASE_URI = _baseUri;
     }
@@ -103,17 +103,17 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a page with goop, burning the cost.
+    /// @notice Mint a page with goo, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return pageId The id of the page that was minted.
-    function mintFromGoop(uint256 maxPrice) external returns (uint256 pageId) {
+    function mintFromGoo(uint256 maxPrice) external returns (uint256 pageId) {
         // Will revert if prior to mint start.
         uint256 currentPrice = pagePrice();
 
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
 
-        goop.burnForPages(msg.sender, currentPrice);
+        goo.burnForPages(msg.sender, currentPrice);
 
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
