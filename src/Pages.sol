@@ -183,6 +183,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             // Mint the pages to the community reserve while updating lastMintedPageId.
             for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
 
+            currentId = lastMintedPageId; // Update currentId with the last minted page id.
+
             emit CommunityPagesMinted(msg.sender, lastMintedPageId, numPages);
         }
     }
