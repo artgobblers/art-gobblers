@@ -63,7 +63,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         - RESERVED_SUPPLY;
 
     /*//////////////////////////////////////////////////////////////
-                                  URIS
+                           METADATA CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Base URI for minted gobblers.
@@ -71,6 +71,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice URI for gobblers that have yet to be revealed.
     string public UNREVEALED_URI;
+
+    /// @notice The name displayed for the contract on Etherscan.
+    string public constant name = "Art Gobblers";
 
     /*//////////////////////////////////////////////////////////////
                               VRF CONSTANTS
