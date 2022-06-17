@@ -23,7 +23,7 @@ contract DeployTestnet {
 
     ArtGobblers public immutable artGobblers;
     Pages public immutable pages;
-    Goo public immutable goop;
+    Goo public immutable goo;
 
     constructor(address linkToken) {
         vrfCoordinator = new VRFCoordinatorMock(linkToken);
@@ -31,7 +31,7 @@ contract DeployTestnet {
         team = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
         community = new GobblerReserve(ArtGobblers(LibRLP.computeAddress(address(this), 5)), address(this));
 
-        goop = new Goo(
+        goo = new Goo(
             // Gobblers (contract nonces start at 1):
             LibRLP.computeAddress(address(this), 5),
             // Pages (contract nonces start at 1):
@@ -41,7 +41,7 @@ contract DeployTestnet {
         artGobblers = new ArtGobblers(
             "root",
             block.timestamp,
-            goop,
+            goo,
             address(team),
             address(community),
             address(vrfCoordinator),
@@ -52,6 +52,6 @@ contract DeployTestnet {
             "unrevealed"
         );
 
-        pages = new Pages(block.timestamp, address(artGobblers), goop, "base://");
+        pages = new Pages(block.timestamp, address(artGobblers), goo, "base://");
     }
 }

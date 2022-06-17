@@ -29,7 +29,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
     ArtGobblers internal gobblers;
     VRFCoordinatorMock internal vrfCoordinator;
     LinkToken internal linkToken;
-    Goo internal goop;
+    Goo internal goo;
     Pages internal pages;
     GobblerReserve internal team;
     GobblerReserve internal community;
@@ -52,7 +52,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         team = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 3)), address(this));
         community = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 2)), address(this));
 
-        goop = new Goo(
+        goo = new Goo(
             // Gobblers:
             utils.predictContractAddress(address(this), 1),
             // Pages:
@@ -62,7 +62,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers = new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
-            goop,
+            goo,
             address(team),
             address(community),
             address(vrfCoordinator),
@@ -73,7 +73,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goop, "");
+        pages = new Pages(block.timestamp, address(gobblers), goo, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
     function mintGobblerToAddress(address addr, uint256 num) internal {
         for (uint256 i = 0; i < num; i++) {
             vm.startPrank(address(gobblers));
-            goop.mintForGobblers(addr, gobblers.gobblerPrice());
+            goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
             vm.prank(addr);

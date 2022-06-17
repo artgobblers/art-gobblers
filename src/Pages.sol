@@ -18,7 +18,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goo public immutable goop;
+    Goo public immutable goo;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -94,7 +94,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     {
         mintStart = _mintStart;
 
-        goop = _goop;
+        goo = _goop;
 
         BASE_URI = _baseUri;
     }
@@ -103,7 +103,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a page with goop, burning the cost.
+    /// @notice Mint a page with goo, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return pageId The id of the page that was minted.
     function mintFromGoop(uint256 maxPrice) external returns (uint256 pageId) {
@@ -113,7 +113,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
 
-        goop.burnForPages(msg.sender, currentPrice);
+        goo.burnForPages(msg.sender, currentPrice);
 
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
