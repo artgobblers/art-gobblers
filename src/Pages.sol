@@ -10,7 +10,7 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 import {Goo} from "./Goo.sol";
 
 /// @title Pages NFT
-/// @notice Pages is an ERC721 that can hold drawn art.
+/// @notice Pages is an ERC721 that can hold custom art.
 contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     using LibString for uint256;
 
@@ -18,7 +18,11 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice The address of the goo ERC20 token contract.
     Goo public immutable goo;
+
+    /// @notice The address which receives pages reserved for the community.
+    address public immutable community;
 
     /*//////////////////////////////////////////////////////////////
                                   URIS
@@ -37,6 +41,13 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Id of the most recently minted page.
     /// @dev Will be 0 if no pages have been minted yet.
     uint256 public currentId;
+
+    /*//////////////////////////////////////////////////////////////
+                          COMMUNITY PAGES STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The number of pages minted to the community reserve.
+    uint256 public numMintedForCommunity;
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -58,9 +69,13 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     event PagePurchased(address indexed user, uint256 indexed pageId, uint256 price);
 
+    event CommunityPagesMinted(address indexed user, uint256 lastMintedPageId, uint256 numPages);
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
+
+    error Unauthorized();
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
@@ -72,8 +87,9 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // Mint config:
         uint256 _mintStart,
         // Addresses:
-        address _artGobblers,
         Goo _goo,
+        address _community,
+        address _artGobblers,
         // URIs:
         string memory _baseUri
     )
@@ -96,6 +112,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
         goo = _goo;
 
+        community = _community;
+
         BASE_URI = _baseUri;
     }
 
@@ -104,7 +122,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mint a page with goo, burning the cost.
-    /// @param maxPrice Maximum price to pay to mint the gobbler.
+    /// @param maxPrice Maximum price to pay to mint the page.
     /// @return pageId The id of the page that was minted.
     function mintFromGoo(uint256 maxPrice) external returns (uint256 pageId) {
         // Will revert if prior to mint start.
@@ -139,6 +157,34 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             tokens < SOLD_BY_SWITCH_WAD
                 ? LogisticVRGDA.getTargetSaleDay(tokens)
                 : PostSwitchVRGDA.getTargetSaleDay(tokens);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      COMMUNITY PAGES MINTING LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Mint a number of pages to the community reserve.
+    /// @param numPages The number of pages to mint to the reserve.
+    /// @dev Pages minted to the reserve cannot compromise more than 10% of the sum of the
+    /// supply of goo minted pages and the supply of pages minted to the community reserve.
+    function mintCommunityPages(uint256 numPages) external returns (uint256 lastMintedPageId) {
+        unchecked {
+            // Optimistically increment numMintedForCommunity, may be reverted below.
+            // Overflow in this calculation is possible but numPages would have to
+            // be so large that it would cause the loop to run out of gas quickly.
+            uint256 newNumMintedForCommunity = numMintedForCommunity + numPages;
+
+            // Ensure that after this mint pages minted to the reserve won't compromise more than 10% of
+            // the sum of the supply of goo minted pages and the supply of pages minted to the reserve.
+            if (newNumMintedForCommunity > (currentId + numMintedForCommunity / 10)) revert Unauthorized();
+
+            lastMintedPageId = currentId; // The last minted page is the current page id.
+
+            // Mint the pages to the community reserve while updating lastMintedPageId.
+            for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
+
+            emit CommunityPagesMinted(msg.sender, lastMintedPageId, numPages);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -59,7 +59,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goo, "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
 
         vm.prank(address(gobblers));
         goo.mintForGobblers(address(this), type(uint128).max);

@@ -26,11 +26,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice The address of the Goo ERC20 token contract.
     Goo public immutable goo;
-
-    /*//////////////////////////////////////////////////////////////
-                         RESERVE POOL CONSTANTS
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice The address which receives gobblers reserved for the team.
     address public immutable team;
@@ -191,7 +188,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
-    event ReservedGobblersMinted(address indexed user, uint256 indexed lastMintedGobblerId, uint256 numGobblersEach);
+    event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
@@ -273,6 +270,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Claim from mintlist, using a merkle proof.
     /// @param proof Merkle proof to verify the sender is mintlisted.
+
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
         // If minting has not yet begun or the user has already claimed, revert.

@@ -56,7 +56,7 @@ contract VRGDAsTest is DSTestPlus {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goo, "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
     }
 
     // function testFindGobblerOverflowPoint() public view {

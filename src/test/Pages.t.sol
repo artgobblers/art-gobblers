@@ -20,6 +20,8 @@ contract PagesTest is DSTestPlus {
     Pages internal pages;
     uint256 mintStart;
 
+    address internal community;
+
     function setUp() public {
         // Avoid starting at timestamp at 0 for ease of testing.
         vm.warp(block.timestamp + 1);
@@ -34,7 +36,7 @@ contract PagesTest is DSTestPlus {
             utils.predictContractAddress(address(this), 1)
         );
 
-        pages = new Pages(block.timestamp, address(this), goo, "");
+        pages = new Pages(block.timestamp, goo, community, address(this), "");
 
         user = users[1];
     }
