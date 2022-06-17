@@ -29,7 +29,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     uint256 private fee;
 
     function setUp() public {
-        vm.warp(1); // Otherwise mintStart will be set to 0 and brick pages.mintFromGoop(type(uint256).max)
+        vm.warp(1); // Otherwise mintStart will be set to 0 and brick pages.mintFromGoo(type(uint256).max)
 
         utils = new Utilities();
         users = utils.createUsers(5);
@@ -62,13 +62,13 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(address(this), type(uint128).max);
 
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
 
-        gobblers.addGoop(1e18);
+        gobblers.addGoo(1e18);
 
         vm.warp(block.timestamp + 30 days);
 
-        for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoop(type(uint256).max);
+        for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoo(type(uint256).max);
 
         bytes32 requestId = gobblers.getRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
@@ -87,16 +87,16 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.legendaryGobblerPrice();
     }
 
-    function testGoopBalance() public view {
+    function testGooBalance() public view {
         gobblers.gooBalance(address(this));
     }
 
     function testMintPage() public {
-        pages.mintFromGoop(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max);
     }
 
     function testMintGobbler() public {
-        gobblers.mintFromGoop(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max);
     }
 
     function testBatchTransferGobblers() public {
@@ -110,12 +110,12 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.safeBatchTransferFrom(address(this), address(0xBEEF), ids, amounts, "");
     }
 
-    function testAddGoop() public {
-        gobblers.addGoop(1e18);
+    function testAddGoo() public {
+        gobblers.addGoo(1e18);
     }
 
-    function testRemoveGoop() public {
-        gobblers.removeGoop(1e18);
+    function testRemoveGoo() public {
+        gobblers.removeGoo(1e18);
     }
 
     function testRevealGobblers() public {

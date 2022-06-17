@@ -7,7 +7,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
 import {Goo} from "../Goo.sol";
 
-contract GoopTest is DSTest {
+contract GooTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;

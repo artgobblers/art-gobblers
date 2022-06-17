@@ -113,7 +113,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoop(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max);
         }
     }
 }

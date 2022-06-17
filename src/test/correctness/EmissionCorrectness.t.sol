@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {MockGoopCalculator} from "../utils/mocks/MockGoopCalculator.sol";
+import {MockGooCalculator} from "../utils/mocks/MockGooCalculator.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {LibString} from "../../utils/LibString.sol";
 
@@ -11,7 +11,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    MockGoopCalculator immutable gooCalculator = new MockGoopCalculator();
+    MockGooCalculator immutable gooCalculator = new MockGooCalculator();
 
     function testFFIEmissionCorrectness(
         uint256 daysElapsedWad,
@@ -26,7 +26,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
 
         uint256 expectedBalance = calculateBalance(daysElapsedWad, lastBalanceWad, emissionMultiple);
 
-        uint256 actualBalance = gooCalculator.computeGoopBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
+        uint256 actualBalance = gooCalculator.computeGooBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
 
         // Equal within 1 percent.
         assertRelApproxEq(actualBalance, expectedBalance, 0.01e18);
