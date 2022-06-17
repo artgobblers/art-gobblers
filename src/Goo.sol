@@ -3,10 +3,10 @@ pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
-/// @title Goo Token (GOOP)
+/// @title Goo Token (GOO)
 /// @notice Goo is an in-game token for ArtGobblers. It's a standard ERC20
 /// token that can be burned and minted by the gobblers and pages contract.
-contract Goo is ERC20("Goo", "GOOP", 18) {
+contract Goo is ERC20("Goo", "GOO", 18) {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
