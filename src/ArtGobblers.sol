@@ -14,7 +14,7 @@ import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
-import {Goop} from "./Goop.sol";
+import {Goo} from "./Goo.sol";
 
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
@@ -26,7 +26,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    Goop public immutable goop;
+    Goo public immutable goop;
 
     /*//////////////////////////////////////////////////////////////
                          RESERVE POOL CONSTANTS
@@ -220,7 +220,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         bytes32 _merkleRoot,
         uint256 _mintStart,
         // Addresses:
-        Goop _goop,
+        Goo _goop,
         address _team,
         address _community,
         // Chainlink:

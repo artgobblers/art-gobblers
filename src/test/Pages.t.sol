@@ -5,7 +5,7 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {Goop} from "../Goop.sol";
+import {Goo} from "../Goo.sol";
 import {Pages} from "../Pages.sol";
 import {console} from "./utils/Console.sol";
 
@@ -16,7 +16,7 @@ contract PagesTest is DSTestPlus {
     address internal mintAuth;
 
     address internal user;
-    Goop internal goop;
+    Goo internal goop;
     Pages internal pages;
     uint256 mintStart;
 
@@ -27,7 +27,7 @@ contract PagesTest is DSTestPlus {
         utils = new Utilities();
         users = utils.createUsers(5);
 
-        goop = new Goop(
+        goop = new Goo(
             // Gobblers:
             address(this),
             // Pages:
