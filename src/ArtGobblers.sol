@@ -445,10 +445,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     function legendaryGobblerPrice() public view returns (uint256) {
         uint256 numMintedAtStart; // The number of gobblers minted at the start of the auction.
 
+        // Retrieve and cache the auction's startPrice and numSold on the stack.
+        uint256 startPrice = legendaryGobblerAuctionData.startPrice;
+        uint256 numSold = legendaryGobblerAuctionData.numSold;
+
         unchecked {
             // The number of gobblers minted at the start of the auction is computed by multiplying the # of
             // intervals that must pass before the next auction begins by the number of gobblers in each interval.
-            numMintedAtStart = (legendaryGobblerAuctionData.numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
+            numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
         }
 
         // How many gobblers where minted since auction began. Cannot be
@@ -456,14 +460,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 numMintedSinceStart = numMintedFromGoop - numMintedAtStart;
 
         unchecked {
-            return
-                // If we've minted more than the full interval:
-                (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL)
-                    ? 0 // The price has fully decayed to 0.
-                    : (legendaryGobblerAuctionData.startPrice *
-                        // Decay start price linearly based on how many of
-                        // the gobblers in the current interval we've minted.
-                        (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
+            // If we've minted more than the full interval, the price has decayed to 0.
+            if (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL) return 0;
+            // Otherwise decay the price linearly based on what fraction of the interval has been minted.
+            else return (startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
         }
     }
 
