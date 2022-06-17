@@ -11,19 +11,19 @@ contract GoopTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
     Utilities internal utils;
     address payable[] internal users;
-    Goo internal goop;
+    Goo internal goo;
 
     function setUp() public {
         utils = new Utilities();
         users = utils.createUsers(5);
-        goop = new Goo(address(this), users[0]);
+        goo = new Goo(address(this), users[0]);
     }
 
     function testMintByAuthority() public {
-        uint256 initialSupply = goop.totalSupply();
+        uint256 initialSupply = goo.totalSupply();
         uint256 mintAmount = 100000;
-        goop.mintForGobblers(address(this), mintAmount);
-        uint256 finalSupply = goop.totalSupply();
+        goo.mintForGobblers(address(this), mintAmount);
+        uint256 finalSupply = goo.totalSupply();
         assertEq(finalSupply, initialSupply + mintAmount);
     }
 
@@ -31,33 +31,33 @@ contract GoopTest is DSTest {
         uint256 mintAmount = 100000;
         vm.prank(users[0]);
         vm.expectRevert(Goo.Unauthorized.selector);
-        goop.mintForGobblers(address(this), mintAmount);
+        goo.mintForGobblers(address(this), mintAmount);
     }
 
     function testSetPages() public {
-        goop.mintForGobblers(address(this), 1000000);
-        uint256 initialSupply = goop.totalSupply();
+        goo.mintForGobblers(address(this), 1000000);
+        uint256 initialSupply = goo.totalSupply();
         uint256 burnAmount = 100000;
         vm.prank(users[0]);
-        goop.burnForPages(address(this), burnAmount);
-        uint256 finalSupply = goop.totalSupply();
+        goo.burnForPages(address(this), burnAmount);
+        uint256 finalSupply = goo.totalSupply();
         assertEq(finalSupply, initialSupply - burnAmount);
     }
 
     function testBurnAllowed() public {
         uint256 mintAmount = 100000;
-        goop.mintForGobblers(address(this), mintAmount);
+        goo.mintForGobblers(address(this), mintAmount);
         uint256 burnAmount = 30000;
-        goop.burnForGobblers(address(this), burnAmount);
-        uint256 finalBalance = goop.balanceOf(address(this));
+        goo.burnForGobblers(address(this), burnAmount);
+        uint256 finalBalance = goo.balanceOf(address(this));
         assertEq(finalBalance, mintAmount - burnAmount);
     }
 
     function testBurnNotAllowed() public {
         uint256 mintAmount = 100000;
-        goop.mintForGobblers(address(this), mintAmount);
+        goo.mintForGobblers(address(this), mintAmount);
         uint256 burnAmount = 200000;
         vm.expectRevert(stdError.arithmeticError);
-        goop.burnForGobblers(address(this), burnAmount);
+        goo.burnForGobblers(address(this), burnAmount);
     }
 }

@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {FixedPointMathLib as Math} from "solmate/utils/FixedPointMathLib.sol";
 
 contract MockGoopCalculator {
-    /// @notice Compute goop balance based on emission multiple, last balance, and days
+    /// @notice Compute goo balance based on emission multiple, last balance, and days
     /// @dev Must be kept up to date with the goopBalance function's corresponding emission balance calculations in ArtGobblers.sol.
     /// @dev Forked from https://github.com/FrankieIsLost/art-gobblers/blob/807809821c615ec46b7f42e838346c5c57a402f6/src/ArtGobblers.sol#L579-L595
     function computeGoopBalance(
@@ -17,7 +17,7 @@ contract MockGoopCalculator {
 
             // prettier-ignore
             return lastBalanceWad + // The last recorded balance.
-                
+
             // Don't need to do wad multiplication since we're
             // multiplying by a plain integer with no decimals.
             // Shift right by 2 is equivalent to division by 4.

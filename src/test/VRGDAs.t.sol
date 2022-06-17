@@ -23,7 +23,7 @@ contract VRGDAsTest is DSTestPlus {
     VRFCoordinatorMock private vrfCoordinator;
     LinkToken private linkToken;
 
-    Goo goop;
+    Goo goo;
     Pages pages;
 
     bytes32 private keyHash;
@@ -35,7 +35,7 @@ contract VRGDAsTest is DSTestPlus {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        goop = new Goo(
+        goo = new Goo(
             // Gobblers:
             utils.predictContractAddress(address(this), 1),
             // Pages:
@@ -45,7 +45,7 @@ contract VRGDAsTest is DSTestPlus {
         gobblers = new ArtGobblers(
             "root",
             block.timestamp,
-            goop,
+            goo,
             address(0xBEEF),
             address(0xBEEF),
             address(vrfCoordinator),
@@ -56,7 +56,7 @@ contract VRGDAsTest is DSTestPlus {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goop, "");
+        pages = new Pages(block.timestamp, address(gobblers), goo, "");
     }
 
     // function testFindGobblerOverflowPoint() public view {

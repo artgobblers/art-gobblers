@@ -46,7 +46,7 @@ abstract contract GobblersERC1155B {
         address owner;
         // Index of token after shuffle.
         uint48 idx;
-        // Multiple on goop issuance.
+        // Multiple on goo issuance.
         uint48 emissionMultiple;
     }
 
