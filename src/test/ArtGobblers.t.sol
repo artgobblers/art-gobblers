@@ -198,40 +198,40 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that Legendary Gobbler initial price is what we expect.
     function testLegendaryGobblerInitialPrice() public {
-        // start of initial auction after initial interval is minted
+        // Start of initial auction after initial interval is minted.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // initial auction should start at a cost of 69
+        // Initial auction should start at a cost of 69.
         assertEq(cost, 69);
     }
 
     /// @notice Test that auction ends at a price of 0.
     function testLegendaryGobblerFinalPrice() public {
-        //mint two full intervals
+        // Mint two full intervals.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // auction price should be 0 after full interval decay
+        // Auction price should be 0 after full interval decay.
         assertEq(cost, 0);
     }
 
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
-        //mint first interval and half of second interval
+        // Mint first interval and half of second interval.
         mintGobblerToAddress(users[0], (gobblers.LEGENDARY_AUCTION_INTERVAL() * 3) / 2);
         uint256 cost = gobblers.legendaryGobblerPrice();
-        // auction price should be cut by half mid way through auction
+        // Auction price should be cut by half mid way through auction.
         assertEq(cost, 34);
     }
 
-    /// @notice Test that initial price doens't fall below what we expect.
+    /// @notice Test that initial price does't fall below what we expect.
     function testLegendaryGobblerMinStartPrice() public {
-        //mint two full intervals, such that price of first auction goes to zero
+        // Mint two full intervals, such that price of first auction goes to zero.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
-        //empty id list
+        // Empty id list.
         uint256[] memory _ids;
-        //mint first auction at zero cost
+        // Mint first auction at zero cost.
         gobblers.mintLegendaryGobbler(_ids);
-        //start cost of next auction, which should equal 69
+        // Start cost of next auction, which should equal 69.
         uint256 startCost = gobblers.legendaryGobblerPrice();
         assertEq(startCost, 69);
     }
@@ -240,7 +240,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintLegendaryGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
-        //mint full interval to kick off first auction
+        // Mint full interval to kick off first auction.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
         assertEq(cost, 69);
@@ -272,16 +272,14 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 nextMintLegendaryId = 9991;
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         for (int256 i = 0; i < 10; i++) {
-            vm.warp(block.timestamp + 30 days);
-            console.log(nextMintLegendaryId);
+            vm.warp(block.timestamp + 40 days);
+
             mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
             uint256 justMintedLegendaryId = gobblers.mintLegendaryGobbler(ids);
             //assert that legendaries have the expected ids
             assertEq(nextMintLegendaryId, justMintedLegendaryId);
             nextMintLegendaryId++;
-            console.log(nextMintLegendaryId);
         }
-        console.log("TEST");
     }
 
     /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
@@ -294,7 +292,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(mintedLegendaryId, 9991);
         uint256 cost = gobblers.legendaryGobblerPrice();
 
-        //starting price shoould be 69
+        // Starting price should be 69.
         assertEq(cost, 69);
         setRandomnessAndReveal(cost, "seed");
         for (uint256 i = 1; i <= cost; i++) ids.push(i);
