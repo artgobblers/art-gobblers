@@ -101,7 +101,7 @@ contract PagesTest is DSTestPlus {
     function testPagePricingPricingBeforeSwitch() public {
         // Expected sales rate according to mathematical formula.
         uint256 timeDelta = 60 days;
-        uint256 numMint = 5979;
+        uint256 numMint = 5382;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -120,10 +120,10 @@ contract PagesTest is DSTestPlus {
         assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
     }
 
-    /// @notice Test that page pricing matches expected behavior before switch.
+    /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 11359;
+        uint256 numMint = 10377;
 
         vm.warp(block.timestamp + timeDelta);
 
