@@ -40,14 +40,14 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice Id of the most recently minted page.
     /// @dev Will be 0 if no pages have been minted yet.
-    uint256 public currentId;
+    uint128 public currentId;
 
     /*//////////////////////////////////////////////////////////////
                           COMMUNITY PAGES STATE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The number of pages minted to the community reserve.
-    uint256 public numMintedForCommunity;
+    uint128 public numMintedForCommunity;
 
     /*//////////////////////////////////////////////////////////////
                             PRICING CONSTANTS
@@ -61,7 +61,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// schedule to switch from logistic to the "post switch" translated linear formula.
     /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SOLD_BY_SWITCH_WAD = 9829.328043791893798338e18;
+    int256 internal constant SOLD_BY_SWITCH_WAD = 8847.279967409445363041e18;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -98,7 +98,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
-            9999e18, // Asymptote.
+            9000e18, // Asymptote.
             0.023e18 // Time scale.
         )
         PostSwitchVRGDA(
@@ -149,7 +149,11 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, currentId);
+        unchecked {
+            // The number of pages minted for the community reserve
+            // cannot ever exceed 10% of the total supply of pages.
+            return getPrice(timeSinceStart, currentId - numMintedForCommunity);
+        }
     }
 
     function getTargetSaleDay(int256 tokens) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
@@ -183,7 +187,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             // Mint the pages to the community reserve while updating lastMintedPageId.
             for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
 
-            currentId = lastMintedPageId; // Update currentId with the last minted page id.
+            currentId = uint128(lastMintedPageId); // Update currentId with the last minted page id.
 
             emit CommunityPagesMinted(msg.sender, lastMintedPageId, numPages);
         }

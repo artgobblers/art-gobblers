@@ -89,15 +89,15 @@ contract VRGDAsTest is DSTestPlus {
         }
     }
 
-    function testNoOverflowForFirstTenThousandPages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 10000));
+    function testNoOverflowForFirstNineThousandPages(uint256 timeSinceStart, uint256 sold) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 9000));
     }
 
-    function testGobblerPriceStrictlyIncreasesForTenThousandPages() public {
+    function testGobblerPriceStrictlyIncreasesForNineThousandPages() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 10000) {
+        while (sold <= 9000) {
             uint256 price = pages.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
