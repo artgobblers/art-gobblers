@@ -511,7 +511,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
         unchecked {
-            for (uint256 i = 0; i < numGobblers; i++) {
+            for (uint256 i = 0; i < numGobblers; ++i) {
                 /*//////////////////////////////////////////////////////////////
                                       DETERMINE RANDOM SWAP
                 //////////////////////////////////////////////////////////////*/
@@ -650,8 +650,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // The caller must own the gobbler they're feeding.
         if (owner != msg.sender) revert OwnerMismatch(owner);
 
-        // Increment the number of copies fed to the gobbler.
-        ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
+        unchecked {
+            // Increment the number of copies fed to the gobbler.
+            // Counter overflow is unrealistic on human timescales.
+            ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
+        }
 
         emit ArtFedToGobbler(msg.sender, gobblerId, nft, id);
 
