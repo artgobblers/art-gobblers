@@ -182,7 +182,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
             // Ensure that after this mint pages minted to the reserve won't compromise more than 10% of
             // the sum of the supply of goo minted pages and the supply of pages minted to the reserve.
-            if (newNumMintedForCommunity > (lastMintedPageId + numMintedForCommunity / 10)) revert Unauthorized();
+            if (newNumMintedForCommunity > (lastMintedPageId + numMintedForCommunity) / 10) revert Unauthorized();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
             for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);

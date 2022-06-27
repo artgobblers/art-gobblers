@@ -74,7 +74,7 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(1);
     }
 
-    function testCanMintReserved() public {
+    function testCanMintCommunity() public {
         goo.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
         pages.mintFromGoo(type(uint256).max);
@@ -83,7 +83,7 @@ contract PagesTest is DSTestPlus {
         assertEq(pages.ownerOf(2), address(community));
     }
 
-    function testCanMintMultipleReserved() public {
+    function testCanMintMultipleCommunity() public {
         goo.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
         pages.mintFromGoo(type(uint256).max);
@@ -95,6 +95,19 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(2);
         assertEq(pages.ownerOf(3), address(community));
         assertEq(pages.ownerOf(4), address(community));
+    }
+
+    function testCantMintTooFastCommunity() public {
+        goo.mintForGobblers(user, pages.pagePrice());
+        vm.prank(user);
+        pages.mintFromGoo(type(uint256).max);
+
+        goo.mintForGobblers(user, pages.pagePrice());
+        vm.prank(user);
+        pages.mintFromGoo(type(uint256).max);
+
+        vm.expectRevert(Pages.Unauthorized.selector);
+        pages.mintCommunityPages(3);
     }
 
     /// @notice Test that page pricing matches expected behavior before switch.
