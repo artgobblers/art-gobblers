@@ -165,6 +165,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testPricingBasic() public {
         // VRGDA targets this number of mints at given time.
         uint256 timeDelta = 120 days;
+        // target number is manually computed from vrgda formula.
         uint256 numMint = 2876;
 
         vm.warp(block.timestamp + timeDelta);
