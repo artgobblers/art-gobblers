@@ -176,13 +176,13 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             // Optimistically increment numMintedForCommunity, may be reverted below.
             // Overflow in this calculation is possible but numPages would have to
             // be so large that it would cause the loop to run out of gas quickly.
-            uint256 newNumMintedForCommunity = numMintedForCommunity + numPages;
+            uint256 newNumMintedForCommunity = numMintedForCommunity += uint128(numPages);
 
             lastMintedPageId = currentId; // The last minted page begins as the current page id.
 
             // Ensure that after this mint pages minted to the reserve won't compromise more than 10% of
             // the sum of the supply of goo minted pages and the supply of pages minted to the reserve.
-            if (newNumMintedForCommunity > (lastMintedPageId + numMintedForCommunity) / 10) revert Unauthorized();
+            if (newNumMintedForCommunity > (lastMintedPageId + newNumMintedForCommunity) / 10) revert Unauthorized();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
             for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
