@@ -25,9 +25,9 @@ abstract contract DeployBase is Script {
     string private gobblerUnrevealedUri;
     string private pagesBaseUri;
 
-    //contract deploy nonces, used for address computation. Contract nonces start at 1.
-    uint256 private immutable gobblerNonce = 5;
-    uint256 private immutable pagesNonce = 6;
+    //precomputed contract addresses, based on contract deploy nonces
+    address private immutable gobblerAddress = LibRLP.computeAddress(address(this), 5);
+    address private immutable pageAddress = LibRLP.computeAddress(address(this), 6);
 
     //deploy addresses
     GobblerReserve public teamReserve;
@@ -64,21 +64,15 @@ abstract contract DeployBase is Script {
         vm.startBroadcast();
 
         //deploy team and community reserves, owned by cold wallet.
-        teamReserve = new GobblerReserve(
-            ArtGobblers(LibRLP.computeAddress(address(this), gobblerNonce)),
-            teamColdWallet
-        );
-        communityReserve = new GobblerReserve(
-            ArtGobblers(LibRLP.computeAddress(address(this), gobblerNonce)),
-            teamColdWallet
-        );
+        teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
+        communityReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
 
         //deploy goo contract
         goo = new Goo(
             // Gobblers contract address
-            LibRLP.computeAddress(address(this), gobblerNonce),
+            gobblerAddress,
             // Pages contract address
-            LibRLP.computeAddress(address(this), pagesNonce)
+            pageAddress
         );
 
         //deploy gobblers contract
