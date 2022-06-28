@@ -139,22 +139,50 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that reserved gobblers can be minted under fair circumstances.
     function testCanMintReserved() public {
-        mintGobblerToAddress(users[0], 9);
+        mintGobblerToAddress(users[0], 8);
 
         gobblers.mintReservedGobblers(1);
-        assertEq(gobblers.ownerOf(10), address(team));
-        assertEq(gobblers.ownerOf(11), address(community));
+        assertEq(gobblers.ownerOf(9), address(team));
+        assertEq(gobblers.ownerOf(10), address(community));
     }
 
     /// @notice Test multiple reserved gobblers can be minted under fair circumstances.
     function testCanMintMultipleReserved() public {
-        mintGobblerToAddress(users[0], 19);
+        mintGobblerToAddress(users[0], 18);
 
         gobblers.mintReservedGobblers(2);
+        assertEq(gobblers.ownerOf(19), address(team));
         assertEq(gobblers.ownerOf(20), address(team));
-        assertEq(gobblers.ownerOf(21), address(team));
+        assertEq(gobblers.ownerOf(21), address(community));
         assertEq(gobblers.ownerOf(22), address(community));
-        assertEq(gobblers.ownerOf(23), address(community));
+    }
+
+    /// @notice Test minting reserved gobblers fails if not enough have gobblers been minted.
+    function testCantMintTooFastReserved() public {
+        mintGobblerToAddress(users[0], 18);
+
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintReservedGobblers(3);
+    }
+
+    /// @notice Test minting reserved gobblers fails one by one if not enough have gobblers been minted.
+    function testCantMintTooFastReservedOneByOne() public {
+        mintGobblerToAddress(users[0], 90);
+
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+        gobblers.mintReservedGobblers(1);
+
+        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        gobblers.mintReservedGobblers(1);
     }
 
     /*//////////////////////////////////////////////////////////////
