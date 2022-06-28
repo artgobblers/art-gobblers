@@ -75,7 +75,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error CommunityImbalance();
+    error ReserveImbalance();
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
@@ -136,7 +136,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
 
-            _uncheckedMint(msg.sender, pageId);
+            _mint(msg.sender, pageId);
         }
     }
 
@@ -178,13 +178,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             // be so large that it would cause the loop to run out of gas quickly.
             uint256 newNumMintedForCommunity = numMintedForCommunity += uint128(numPages);
 
-            // Ensure that after this mint pages minted to the reserve won't compromise more than 10% of
-            // the sum of the supply of goo minted pages and the supply of pages minted to the reserve.
-            if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10)
-                revert CommunityImbalance();
+            // Ensure that after this mint pages minted to the community reserve won't compromise more than
+            // 10% of the new total page supply. currentId is equivalent to the current total supply of pages.
+            if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert ReserveImbalance();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
-            for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
+            for (uint256 i = 0; i < numPages; i++) _mint(community, ++lastMintedPageId);
 
             currentId = uint128(lastMintedPageId); // Update currentId with the last minted page id.
 
