@@ -14,7 +14,6 @@ contract DeployRinkeby is DeployBase {
     string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
     string public constant pagesBaseUri = "https://testnet.ag.xyz/api/nfts/pages/";
 
-
     constructor()
         DeployBase(
             //team cold wallet
