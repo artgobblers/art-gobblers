@@ -19,26 +19,26 @@ contract DeployRinkebyTest is DSTestPlus {
         deployScript.run();
     }
 
-    // test page addresses where correctly set
+    /// @notice Test page addresses where correctly set.
     function testPagesAddressCorrectness() public {
         assertEq(address(deployScript.artGobblers()), deployScript.pages().artGobblers());
         assertEq(address(deployScript.goo()), address(deployScript.pages().goo()));
     }
 
-    // test that merkle root was correctly set
+    /// @notice Test that merkle root was correctly set.
     function testMerkleRoot() public {
         vm.warp(deployScript.mintStart());
-        //use merkle root as user to test simple proof
+        // Use merkle root as user to test simple proof.
         address user = deployScript.root();
         bytes32[] memory proof;
         ArtGobblers gobblers = deployScript.artGobblers();
         vm.prank(user);
         gobblers.claimGobbler(proof);
-        // verify gobbler ownership
+        // Verify gobbler ownership.
         assertEq(gobblers.ownerOf(1), user);
     }
 
-    // test cold wallet was appropriately set
+    /// @notice Test cold wallet was appropriately set.
     function testColdWallet() public {
         address coldWallet = deployScript.coldWallet();
         address communityOwner = deployScript.teamReserve().owner();
@@ -47,7 +47,7 @@ contract DeployRinkebyTest is DSTestPlus {
         assertEq(coldWallet, teamOwner);
     }
 
-    // test URIs are correctly set
+    /// @notice Test URIs are correctly set.
     function testURIs() public {
         ArtGobblers gobblers = deployScript.artGobblers();
         assertEq(gobblers.BASE_URI(), deployScript.gobblerBaseUri());

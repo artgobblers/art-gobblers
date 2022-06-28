@@ -2,7 +2,8 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Script.sol";
-import "../../src/ArtGobblers.sol";
+
+import {LibRLP} from "../../src/test/utils/LibRLP.sol";
 
 import {GobblerReserve} from "../../src/utils/GobblerReserve.sol";
 
@@ -10,10 +11,8 @@ import {Goo} from "../../src/Goo.sol";
 import {Pages} from "../../src/Pages.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
-import {LibRLP} from "../../src/test/utils/LibRLP.sol";
-
 abstract contract DeployBase is Script {
-    //environment specific variables
+    // Environment specific variables.
     address private immutable teamColdWallet;
     bytes32 private immutable merkleRoot;
     uint256 private immutable mintStart;
@@ -25,11 +24,11 @@ abstract contract DeployBase is Script {
     string private gobblerUnrevealedUri;
     string private pagesBaseUri;
 
-    //precomputed contract addresses, based on contract deploy nonces
+    // Precomputed contract addresses, based on contract deploy nonces.
     address private immutable gobblerAddress = LibRLP.computeAddress(address(this), 5);
     address private immutable pageAddress = LibRLP.computeAddress(address(this), 6);
 
-    //deploy addresses
+    // Deploy addresses.
     GobblerReserve public teamReserve;
     GobblerReserve public communityReserve;
     Goo public goo;
@@ -63,19 +62,19 @@ abstract contract DeployBase is Script {
     function run() external {
         vm.startBroadcast();
 
-        //deploy team and community reserves, owned by cold wallet.
+        // Deploy team and community reserves, owned by cold wallet.
         teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
         communityReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
 
-        //deploy goo contract
+        // Deploy goo contract.
         goo = new Goo(
-            // Gobblers contract address
+            // Gobblers contract address:
             gobblerAddress,
-            // Pages contract address
+            // Pages contract address:
             pageAddress
         );
 
-        //deploy gobblers contract
+        // Deploy gobblers contract,
         artGobblers = new ArtGobblers(
             merkleRoot,
             mintStart,
@@ -90,7 +89,7 @@ abstract contract DeployBase is Script {
             gobblerUnrevealedUri
         );
 
-        //deploy pages contract
+        // Deploy pages contract.
         pages = new Pages(mintStart, address(artGobblers), goo, pagesBaseUri);
 
         vm.stopBroadcast();
