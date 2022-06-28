@@ -70,7 +70,7 @@ contract PagesTest is DSTestPlus {
     }
 
     function testMintCommunityPagesFailsWithNoMints() public {
-        vm.expectRevert(Pages.CommunityImbalance.selector);
+        vm.expectRevert(Pages.ReserveImbalance.selector);
         pages.mintCommunityPages(1);
     }
 
@@ -92,7 +92,7 @@ contract PagesTest is DSTestPlus {
     function testCantMintTooFastCommunity() public {
         mintPageToAddress(user, 18);
 
-        vm.expectRevert(Pages.CommunityImbalance.selector);
+        vm.expectRevert(Pages.ReserveImbalance.selector);
         pages.mintCommunityPages(3);
     }
 
@@ -110,7 +110,7 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(1);
         pages.mintCommunityPages(1);
 
-        vm.expectRevert(Pages.CommunityImbalance.selector);
+        vm.expectRevert(Pages.ReserveImbalance.selector);
         pages.mintCommunityPages(1);
     }
 
