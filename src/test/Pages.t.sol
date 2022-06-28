@@ -96,6 +96,24 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(3);
     }
 
+    function testCantMintTooFastCommunityMultipleTimes() public {
+        mintPageToAddress(user, 90);
+
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+
+        vm.expectRevert(Pages.Unauthorized.selector);
+        pages.mintCommunityPages(1);
+    }
+
     /// @notice Test that page pricing matches expected behavior before switch.
     function testPagePricingPricingBeforeSwitch() public {
         // Expected sales rate according to mathematical formula.
