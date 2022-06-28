@@ -136,7 +136,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);
 
-            _uncheckedMint(msg.sender, pageId);
+            _mint(msg.sender, pageId);
         }
     }
 
@@ -183,7 +183,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert Unauthorized();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
-            for (uint256 i = 0; i < numPages; i++) _uncheckedMint(community, ++lastMintedPageId);
+            for (uint256 i = 0; i < numPages; i++) _mint(community, ++lastMintedPageId);
 
             currentId = uint128(lastMintedPageId); // Update currentId with the last minted page id.
 
