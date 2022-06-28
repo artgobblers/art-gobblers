@@ -90,7 +90,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             SWITCH_DAY_WAD, // Target switch day.
             10e18 // Pages to target per day.
         )
-        PagesERC721(_artGobblers, "Pages", "PAGES")
+        PagesERC721(_artGobblers, "Pages", "PAGE")
     {
         mintStart = _mintStart;
 
