@@ -161,7 +161,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testCantMintTooFastReserved() public {
         mintGobblerToAddress(users[0], 18);
 
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(3);
     }
 
@@ -181,7 +181,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
         gobblers.mintReservedGobblers(1);
 
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(1);
     }
 
