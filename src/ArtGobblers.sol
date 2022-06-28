@@ -270,7 +270,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Claim from mintlist, using a merkle proof.
     /// @param proof Merkle proof to verify the sender is mintlisted.
-
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
         // If minting has not yet begun or the user has already claimed, revert.
