@@ -742,7 +742,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
-            if (newNumMintedForReserves > (numMintedFromGoo + numMintedForReserves) / 5) revert ReserveImbalance();
+            if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
         // First mint numGobblersEach gobblers to the team reserve.

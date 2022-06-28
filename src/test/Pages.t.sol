@@ -74,27 +74,44 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(1);
     }
 
-    function testCanMintReserved() public {
-        goo.mintForGobblers(user, pages.pagePrice());
-        vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
+    function testCanMintCommunity() public {
+        mintPageToAddress(user, 9);
 
         pages.mintCommunityPages(1);
-        assertEq(pages.ownerOf(2), address(community));
+        assertEq(pages.ownerOf(10), address(community));
     }
 
-    function testCanMintMultipleReserved() public {
-        goo.mintForGobblers(user, pages.pagePrice());
-        vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
-
-        goo.mintForGobblers(user, pages.pagePrice());
-        vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
+    function testCanMintMultipleCommunity() public {
+        mintPageToAddress(user, 18);
 
         pages.mintCommunityPages(2);
-        assertEq(pages.ownerOf(3), address(community));
-        assertEq(pages.ownerOf(4), address(community));
+        assertEq(pages.ownerOf(19), address(community));
+        assertEq(pages.ownerOf(20), address(community));
+    }
+
+    function testCantMintTooFastCommunity() public {
+        mintPageToAddress(user, 18);
+
+        vm.expectRevert(Pages.Unauthorized.selector);
+        pages.mintCommunityPages(3);
+    }
+
+    function testCantMintTooFastCommunityOneByOne() public {
+        mintPageToAddress(user, 90);
+
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+
+        vm.expectRevert(Pages.Unauthorized.selector);
+        pages.mintCommunityPages(1);
     }
 
     /// @notice Test that page pricing matches expected behavior before switch.
@@ -156,9 +173,13 @@ contract PagesTest is DSTestPlus {
         pages.mintFromGoo(cost - 1);
     }
 
-    function mintPage(address _user) internal {
-        goo.mintForGobblers(_user, pages.pagePrice());
-        vm.prank(_user);
-        pages.mintFromGoo(type(uint256).max);
+    /// @notice Mint a number of pages to the given address
+    function mintPageToAddress(address addr, uint256 num) internal {
+        for (uint256 i = 0; i < num; i++) {
+            goo.mintForGobblers(addr, pages.pagePrice());
+
+            vm.prank(addr);
+            pages.mintFromGoo(type(uint256).max);
+        }
     }
 }
