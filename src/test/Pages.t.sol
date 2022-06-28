@@ -96,7 +96,7 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(3);
     }
 
-    function testCantMintTooFastCommunityMultipleTimes() public {
+    function testCantMintTooFastCommunityOneByOne() public {
         mintPageToAddress(user, 90);
 
         pages.mintCommunityPages(1);
