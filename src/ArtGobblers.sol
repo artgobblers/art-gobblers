@@ -243,7 +243,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         string memory _unrevealedUri
     )
         VRGDA(
-            69.420e18, // Initial price.
+            69.42e18, // Initial price.
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(

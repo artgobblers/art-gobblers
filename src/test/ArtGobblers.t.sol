@@ -209,8 +209,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 initialPrice = uint256(gobblers.initialPrice());
         uint256 finalPrice = gobblers.gobblerPrice();
 
-        // Equal within 1 percent.
-        assertRelApproxEq(finalPrice, initialPrice, 0.03e18);
+        // Equal within 3 percent since num mint is rounded from true decimal amount.
+        assertRelApproxEq(initialPrice, finalPrice, 0.03e18);
     }
 
     /*//////////////////////////////////////////////////////////////

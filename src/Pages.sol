@@ -61,7 +61,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// schedule to switch from logistic to the "post switch" translated linear formula.
     /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SOLD_BY_SWITCH_WAD = 8847.279967409445363041e18;
+    int256 internal constant SOLD_BY_SWITCH_WAD = 8059.454661289394153045e18;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
