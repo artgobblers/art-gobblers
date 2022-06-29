@@ -210,7 +210,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 finalPrice = gobblers.gobblerPrice();
 
         // Equal within 1 percent.
-        assertRelApproxEq(finalPrice, initialPrice, 0.01e18);
+        assertRelApproxEq(finalPrice, initialPrice, 0.03e18);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -400,7 +400,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testRevealDelayRecurring() public {
         // Mint and reveal first gobbler
         mintGobblerToAddress(users[0], 1);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 48 minutes);
         setRandomnessAndReveal(1, "seed");
         // Attempt reveal before 24 hours have passed
         mintGobblerToAddress(users[0], 1);
