@@ -93,7 +93,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that an invalid mintlist proof reverts.
     function testMintNotInMintlist() public {
         bytes32[] memory proof;
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.InvalidProof.selector);
         gobblers.claimGobbler(proof);
     }
 
@@ -133,7 +133,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that minting reserved gobblers fails if there are no mints.
     function testMintReservedGobblersFailsWithNoMints() public {
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(1);
     }
 
@@ -161,7 +161,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testCantMintTooFastReserved() public {
         mintGobblerToAddress(users[0], 18);
 
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(3);
     }
 
@@ -181,7 +181,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
         gobblers.mintReservedGobblers(1);
 
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(1);
     }
 
@@ -389,14 +389,14 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                  REVEALS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice cannot request random seed before 24 hours have passed from initial mint
+    /// @notice Cannot request random seed before 24 hours have passed from initial mint.
     function testRevealDelayInitialMint() public {
         mintGobblerToAddress(users[0], 1);
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
         gobblers.getRandomSeed();
     }
 
-    /// @notice cannot request random seed before 24 hours have passed from last reveal
+    /// @notice Cannot request random seed before 24 hours have passed from last reveal,
     function testRevealDelayRecurring() public {
         // Mint and reveal first gobbler
         mintGobblerToAddress(users[0], 1);
@@ -404,17 +404,18 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(1, "seed");
         // Attempt reveal before 24 hours have passed
         mintGobblerToAddress(users[0], 1);
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
         gobblers.getRandomSeed();
     }
 
-    /// @notice Test that seed can't be set without first revealing pending gobblers
+    /// @notice Test that seed can't be set without first revealing pending gobblers.
     function testCantSetRandomSeedWithoutRevealing() public {
         mintGobblerToAddress(users[0], 2);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 1 days);
         // should fail since there is one remaining gobbler to be revealed with seed
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.RevealsPending.selector);
         setRandomnessAndReveal(1, "seed");
     }
 
@@ -455,7 +456,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // verify that we are trying to use the same seed.
         assertEq(firstSeed, secondSeed);
         // try to reveal with same seed, which should fail.
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.SeedPending.selector);
         gobblers.revealGobblers(1);
         assertTrue(true);
     }
@@ -593,7 +594,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mintFromGoo(type(uint256).max);
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.OwnerMismatch.selector, address(0)));
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
     }
@@ -727,7 +728,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         gobblers.mintReservedGobblers(gobblers.RESERVED_SUPPLY() / 2);
 
-        vm.expectRevert(ArtGobblers.Unauthorized.selector);
+        vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(1);
     }
 
