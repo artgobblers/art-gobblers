@@ -15,15 +15,15 @@ contract PageCorrectnessTest is DSTestPlus {
 
     uint256 internal immutable FIVE_YEARS = 5 * 365 days;
 
-    uint256 internal immutable MAX_MINTABLE = 9999;
+    uint256 internal immutable MAX_MINTABLE = 9000;
 
     int256 internal LOGISTIC_SCALE;
 
-    int256 internal immutable INITIAL_PRICE = 4.20e18;
+    int256 internal immutable INITIAL_PRICE = 4.2069e18;
 
     int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
 
-    int256 internal immutable TIME_SCALE = 0.023e18;
+    int256 internal immutable TIME_SCALE = 0.014e18;
 
     int256 internal immutable SWITCHOVER_TIME = 207e18;
 
@@ -58,7 +58,7 @@ contract PageCorrectnessTest is DSTestPlus {
                 SWITCHOVER_TIME
             );
 
-            if (expectedPrice < 10) return; // For really small prices we can't expect them to be equal.
+            if (expectedPrice < 0.0000000000001e18) return; // For really small prices we can't expect them to be equal.
 
             // Equal within 1 percent.
             assertRelApproxEq(actualPrice, expectedPrice, 0.01e18);
