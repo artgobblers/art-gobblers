@@ -75,7 +75,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error Unauthorized();
+    error ReserveImbalance();
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
@@ -180,7 +180,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
             // Ensure that after this mint pages minted to the community reserve won't compromise more than
             // 10% of the new total page supply. currentId is equivalent to the current total supply of pages.
-            if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert Unauthorized();
+            if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert ReserveImbalance();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
             for (uint256 i = 0; i < numPages; i++) _mint(community, ++lastMintedPageId);

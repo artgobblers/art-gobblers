@@ -201,15 +201,25 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error Unauthorized();
+    error InvalidProof();
+    error AlreadyClaimed();
+    error MintStartPending();
+
+    error SeedPending();
+    error RevealsPending();
+    error RequestTooEarly();
+
+    error ReserveImbalance();
+
+    error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
-
     error CannotBurnLegendary(uint256 gobblerId);
+    error IncorrectGobblerAmount(uint256 provided, uint256 needed);
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
-    error IncorrectGobblerAmount(uint256 provided, uint256 needed);
+    error NotEnoughRemainingToBeAssigned(uint256 totalRemainingToBeAssigned);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -272,11 +282,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @param proof Merkle proof to verify the sender is mintlisted.
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
-        // If minting has not yet begun or the user has already claimed, revert.
-        if (mintStart > block.timestamp || hasClaimedMintlistGobbler[msg.sender]) revert Unauthorized();
+        // If minting has not yet begun, revert.
+        if (mintStart > block.timestamp) revert MintStartPending();
+
+        // If the user has already claimed, revert.
+        if (hasClaimedMintlistGobbler[msg.sender]) revert AlreadyClaimed();
 
         // If the user's proof is invalid, revert.
-        if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert Unauthorized();
+        if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert InvalidProof();
 
         hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
 
@@ -437,14 +450,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 nextRevealTimestamp = gobblerRevealsData.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
-        if (block.timestamp < nextRevealTimestamp) revert Unauthorized();
+        if (block.timestamp < nextRevealTimestamp) revert RequestTooEarly();
 
         // A random seed can only be requested when all gobblers from previous seed have been assigned.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (gobblerRevealsData.toBeAssigned != 0) revert Unauthorized();
+        if (gobblerRevealsData.toBeAssigned != 0) revert RevealsPending();
 
         // A new seed cannot be requested while we wait for a new seed.
-        if (gobblerRevealsData.waitingForSeed) revert Unauthorized();
+        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
@@ -486,18 +499,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         uint256 totalRemainingToBeAssigned = gobblerRevealsData.toBeAssigned;
 
-        // Can't reveal more gobblers than were available when seed was generated.
-        if (numGobblers > totalRemainingToBeAssigned) revert Unauthorized();
+        // Can't reveal more gobblers than are currently remaining to be assigned in the seed.
+        if (numGobblers > totalRemainingToBeAssigned) revert NotEnoughRemainingToBeAssigned(totalRemainingToBeAssigned);
 
         // Can't reveal if we're still waiting for a new seed.
-        if (gobblerRevealsData.waitingForSeed) revert Unauthorized();
+        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
 
         emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
         unchecked {
-            for (uint256 i = 0; i < numGobblers; i++) {
+            for (uint256 i = 0; i < numGobblers; ++i) {
                 /*//////////////////////////////////////////////////////////////
                                       DETERMINE RANDOM SWAP
                 //////////////////////////////////////////////////////////////*/
@@ -630,11 +643,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 id,
         bool isERC1155
     ) external {
-        // The caller must own the gobbler they're feeding.
-        if (getGobblerData[gobblerId].owner != msg.sender) revert Unauthorized();
+        // Get the owner of the gobbler to feed.
+        address owner = getGobblerData[gobblerId].owner;
 
-        // Increment the number of copies fed to the gobbler.
-        ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
+        // The caller must own the gobbler they're feeding.
+        if (owner != msg.sender) revert OwnerMismatch(owner);
+
+        unchecked {
+            // Increment the number of copies fed to the gobbler.
+            // Counter overflow is unrealistic on human timescales.
+            ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
+        }
 
         emit ArtFedToGobbler(msg.sender, gobblerId, nft, id);
 
@@ -722,7 +741,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
-            if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert Unauthorized();
+            if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
         // First mint numGobblersEach gobblers to the team reserve.
