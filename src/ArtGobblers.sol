@@ -236,13 +236,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         string memory _unrevealedUri
     )
         VRGDA(
-            6.9e18, // Initial price.
+            69.420e18, // Initial price.
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             // Max mintable gobblers.
             int256(MAX_MINTABLE * 1e18),
-            0.014e18 // Time scale.
+            0.0023e18 // Time scale.
         )
         VRFConsumerBase(_vrfCoordinator, _linkToken)
         Owned(msg.sender) // Deployer starts as owner.

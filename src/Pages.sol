@@ -78,12 +78,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         string memory _baseUri
     )
         VRGDA(
-            4.20e18, // Initial price.
+            4.2069e18, // Initial price.
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             9999e18, // Asymptote.
-            0.023e18 // Time scale.
+            0.014e18 // Time scale.
         )
         PostSwitchVRGDA(
             SOLD_BY_SWITCH_WAD, // Sold by switch.
