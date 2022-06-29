@@ -170,9 +170,10 @@ abstract contract PagesERC721 {
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address to, uint256 id) internal virtual {
-        require(to != address(0), "INVALID_RECIPIENT");
-
-        require(_ownerOf[id] == address(0), "ALREADY_MINTED");
+        // Does not check the token has not been already minted
+        // or is being minted to address(0) because ids in Pages.sol
+        // are set using a monotonically increasing counter and only
+        // minted to known address or msg.sender who cannot be zero.
 
         // Counter overflow is incredibly unrealistic.
         unchecked {
@@ -182,22 +183,5 @@ abstract contract PagesERC721 {
         _ownerOf[id] = to;
 
         emit Transfer(address(0), to, id);
-    }
-
-    function _burn(uint256 id) internal virtual {
-        address owner = _ownerOf[id];
-
-        require(owner != address(0), "NOT_MINTED");
-
-        // Ownership check above ensures no underflow.
-        unchecked {
-            _balanceOf[owner]--;
-        }
-
-        delete _ownerOf[id];
-
-        delete getApproved[id];
-
-        emit Transfer(owner, address(0), id);
     }
 }

@@ -59,25 +59,23 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, address(gobblers), goo, "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
 
         vm.prank(address(gobblers));
         goo.mintForGobblers(address(this), type(uint128).max);
 
-        pages.mintFromGoo(type(uint256).max);
-
         gobblers.addGoo(1e18);
+
+        mintPageToAddress(address(this), 9);
+        mintGobblerToAddress(address(this), gobblers.LEGENDARY_AUCTION_INTERVAL());
 
         vm.warp(block.timestamp + 30 days);
 
-        for (uint256 i = 0; i < 100; i++) gobblers.mintFromGoo(type(uint256).max);
+        legendaryCost = gobblers.legendaryGobblerPrice();
 
         bytes32 requestId = gobblers.getRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
-        //mint to benchmark legendary mint
-        mintGobblerToAddress(address(this), gobblers.LEGENDARY_AUCTION_INTERVAL());
-        legendaryCost = gobblers.legendaryGobblerPrice();
     }
 
     function testPagePrice() public view {
@@ -128,10 +126,20 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintLegendaryGobbler() public {
-        uint256[] memory ids = new uint256[](legendaryCost);
-        for (uint256 i = 0; i < legendaryCost; i++) ids[i] = i + 1;
+        uint256 legendaryGobblerCost = legendaryCost;
+
+        uint256[] memory ids = new uint256[](legendaryGobblerCost);
+        for (uint256 i = 0; i < legendaryGobblerCost; i++) ids[i] = i + 1;
 
         gobblers.mintLegendaryGobbler(ids);
+    }
+
+    function testMintReservedGobblers() public {
+        gobblers.mintReservedGobblers(1);
+    }
+
+    function testMintCommunityPages() public {
+        pages.mintCommunityPages(1);
     }
 
     function mintGobblerToAddress(address addr, uint256 num) internal {
@@ -142,6 +150,17 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
             vm.prank(addr);
             gobblers.mintFromGoo(type(uint256).max);
+        }
+    }
+
+    function mintPageToAddress(address addr, uint256 num) internal {
+        for (uint256 i = 0; i < num; i++) {
+            vm.startPrank(address(gobblers));
+            goo.mintForGobblers(addr, pages.pagePrice());
+            vm.stopPrank();
+
+            vm.prank(addr);
+            pages.mintFromGoo(type(uint256).max);
         }
     }
 }

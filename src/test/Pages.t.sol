@@ -20,6 +20,8 @@ contract PagesTest is DSTestPlus {
     Pages internal pages;
     uint256 mintStart;
 
+    address internal community = address(0xBEEF);
+
     function setUp() public {
         // Avoid starting at timestamp at 0 for ease of testing.
         vm.warp(block.timestamp + 1);
@@ -34,7 +36,7 @@ contract PagesTest is DSTestPlus {
             utils.predictContractAddress(address(this), 1)
         );
 
-        pages = new Pages(block.timestamp, address(this), goo, "");
+        pages = new Pages(block.timestamp, goo, community, address(this), "");
 
         user = users[1];
     }
@@ -67,11 +69,56 @@ contract PagesTest is DSTestPlus {
         assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
     }
 
+    function testMintCommunityPagesFailsWithNoMints() public {
+        vm.expectRevert(Pages.ReserveImbalance.selector);
+        pages.mintCommunityPages(1);
+    }
+
+    function testCanMintCommunity() public {
+        mintPageToAddress(user, 9);
+
+        pages.mintCommunityPages(1);
+        assertEq(pages.ownerOf(10), address(community));
+    }
+
+    function testCanMintMultipleCommunity() public {
+        mintPageToAddress(user, 18);
+
+        pages.mintCommunityPages(2);
+        assertEq(pages.ownerOf(19), address(community));
+        assertEq(pages.ownerOf(20), address(community));
+    }
+
+    function testCantMintTooFastCommunity() public {
+        mintPageToAddress(user, 18);
+
+        vm.expectRevert(Pages.ReserveImbalance.selector);
+        pages.mintCommunityPages(3);
+    }
+
+    function testCantMintTooFastCommunityOneByOne() public {
+        mintPageToAddress(user, 90);
+
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+        pages.mintCommunityPages(1);
+
+        vm.expectRevert(Pages.ReserveImbalance.selector);
+        pages.mintCommunityPages(1);
+    }
+
     /// @notice Test that page pricing matches expected behavior before switch.
     function testPagePricingPricingBeforeSwitch() public {
         // Expected sales rate according to mathematical formula.
         uint256 timeDelta = 60 days;
-        uint256 numMint = 5979;
+        uint256 numMint = 5382;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -90,10 +137,10 @@ contract PagesTest is DSTestPlus {
         assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
     }
 
-    /// @notice Test that page pricing matches expected behavior before switch.
+    /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 11359;
+        uint256 numMint = 10377;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -126,9 +173,13 @@ contract PagesTest is DSTestPlus {
         pages.mintFromGoo(cost - 1);
     }
 
-    function mintPage(address _user) internal {
-        goo.mintForGobblers(_user, pages.pagePrice());
-        vm.prank(_user);
-        pages.mintFromGoo(type(uint256).max);
+    /// @notice Mint a number of pages to the given address
+    function mintPageToAddress(address addr, uint256 num) internal {
+        for (uint256 i = 0; i < num; i++) {
+            goo.mintForGobblers(addr, pages.pagePrice());
+
+            vm.prank(addr);
+            pages.mintFromGoo(type(uint256).max);
+        }
     }
 }
