@@ -192,8 +192,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test VRGDA behavior when selling at target rate.
     function testPricingBasic() public {
         // VRGDA targets this number of mints at given time.
-        uint256 timeDelta = 120 days;
-        uint256 numMint = 4384;
+        uint256 timeDelta = 1 days;
+        uint256 numMint = 220;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -210,7 +210,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 finalPrice = gobblers.gobblerPrice();
 
         // Equal within 1 percent.
-        assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
+        assertRelApproxEq(finalPrice, initialPrice, 0.01e18);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -149,10 +149,14 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
+        // XXX ONLY FOR TESTNET XXX
+        timeSinceStart *= 30; // Speed up 30x.
+        // XXX ONLY FOR TESTNET XXX
+
         unchecked {
             // The number of pages minted for the community reserve
             // cannot ever exceed 10% of the total supply of pages.
-            return getPrice(timeSinceStart * 30, currentId - numMintedForCommunity);
+            return getPrice(timeSinceStart, currentId - numMintedForCommunity);
         }
     }
 

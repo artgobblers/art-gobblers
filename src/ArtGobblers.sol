@@ -271,7 +271,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         legendaryGobblerAuctionData.startPrice = 69;
 
         // Reveal for initial mint must wait 24 hours
-        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 48 minutes);
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -335,7 +339,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart * 30, numMintedFromGoo);
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
+        timeSinceStart *= 30;
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
+
+        return getPrice(timeSinceStart, numMintedFromGoo);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -461,7 +471,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         unchecked {
             // We want at most one batch of reveals every 24 hours.
-            gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
+            // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+            // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+            gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 48 minutes);
+            // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+            // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
 
             // Fix number of gobblers to be revealed from seed.
             gobblerRevealsData.toBeAssigned = uint56(currentNonLegendaryId - gobblerRevealsData.lastRevealedId);
@@ -676,8 +690,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             uint256 lastBalanceWad = getEmissionDataForUser[user].lastBalance;
 
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
-            uint256 daysElapsedWad = (((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) /
-                1 days) * 30;
+            uint256 daysElapsedWad = (((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days);
+
+            // XXX ONLY FOR TESTNET XXX
+            // XXX ONLY FOR TESTNET XXX
+            daysElapsedWad *= 30; // Speed up 30x.
+            // XXX ONLY FOR TESTNET XXX
+            // XXX ONLY FOR TESTNET XXX
 
             uint256 daysElapsedSquaredWad = daysElapsedWad.mulWadDown(daysElapsedWad); // Need to use wad math here.
 
