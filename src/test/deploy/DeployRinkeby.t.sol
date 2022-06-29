@@ -19,10 +19,16 @@ contract DeployRinkebyTest is DSTestPlus {
         deployScript.run();
     }
 
+    /// @notice Test goo addresses where correctly set.
+    function testGooAddressCorrectness() public {
+        assertEq(deployScript.goo().artGobblers(), address(deployScript.artGobblers()));
+        assertEq(address(deployScript.goo().pages()), address(deployScript.pages()));
+    }
+
     /// @notice Test page addresses where correctly set.
     function testPagesAddressCorrectness() public {
-        assertEq(address(deployScript.artGobblers()), deployScript.pages().artGobblers());
-        assertEq(address(deployScript.goo()), address(deployScript.pages().goo()));
+        assertEq(deployScript.pages().artGobblers(), address(deployScript.artGobblers()));
+        assertEq(address(deployScript.pages().goo()), address(deployScript.goo()));
     }
 
     /// @notice Test that merkle root was correctly set.

@@ -11,8 +11,10 @@ contract Goo is ERC20("Goo", "GOO", 18) {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice The address of the Art Gobblers contract.
     address public immutable artGobblers;
 
+    /// @notice The address of the Pages contract.
     address public immutable pages;
 
     /*//////////////////////////////////////////////////////////////
