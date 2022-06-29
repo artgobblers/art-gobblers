@@ -32,7 +32,7 @@ contract PageCorrectnessTest is DSTestPlus {
     Pages internal pages;
 
     function setUp() public {
-        pages = new Pages(block.timestamp, address(0), Goo(address(0)), "");
+        pages = new Pages(block.timestamp, Goo(address(0)), address(0), address(0), "");
 
         LOGISTIC_SCALE = int256(MAX_MINTABLE * 2e18);
     }

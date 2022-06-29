@@ -26,11 +26,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice The address of the Goo ERC20 token contract.
     Goo public immutable goo;
-
-    /*//////////////////////////////////////////////////////////////
-                         RESERVE POOL CONSTANTS
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice The address which receives gobblers reserved for the team.
     address public immutable team;
@@ -191,7 +188,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
-    event ReservedGobblersMinted(address indexed user, uint256 indexed lastMintedGobblerId, uint256 numGobblersEach);
+    event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
     event RandomnessRequested(address indexed user, uint256 toBeAssigned);
     event RandomnessFulfilled(uint256 randomness);
@@ -725,7 +722,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
-            if (newNumMintedForReserves > (numMintedFromGoo + numMintedForReserves) / 5) revert Unauthorized();
+            if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert Unauthorized();
         }
 
         // First mint numGobblersEach gobblers to the team reserve.
