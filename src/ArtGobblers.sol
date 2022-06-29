@@ -335,7 +335,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, numMintedFromGoo);
+        return getPrice(timeSinceStart * 30, numMintedFromGoo);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -676,7 +676,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             uint256 lastBalanceWad = getEmissionDataForUser[user].lastBalance;
 
             // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
-            uint256 daysElapsedWad = ((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) / 1 days;
+            uint256 daysElapsedWad = (((block.timestamp - getEmissionDataForUser[user].lastTimestamp) * 1e18) /
+                1 days) * 30;
 
             uint256 daysElapsedSquaredWad = daysElapsedWad.mulWadDown(daysElapsedWad); // Need to use wad math here.
 

@@ -152,7 +152,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             // The number of pages minted for the community reserve
             // cannot ever exceed 10% of the total supply of pages.
-            return getPrice(timeSinceStart, currentId - numMintedForCommunity);
+            return getPrice(timeSinceStart * 30, currentId - numMintedForCommunity);
         }
     }
 
