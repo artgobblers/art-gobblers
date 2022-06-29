@@ -64,7 +64,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The name displayed for the contract on Etherscan.
-    string public constant name = "Art Gobblers";
+    string public constant name = "Bart Bobblers";
 
     /// @notice URI for gobblers that have yet to be revealed.
     string public UNREVEALED_URI;
