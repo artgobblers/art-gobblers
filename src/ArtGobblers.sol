@@ -434,7 +434,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
-            // If we've minted the full interval, the price has decayed to 0.
+            // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
             else return (startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
