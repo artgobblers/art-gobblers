@@ -504,7 +504,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         uint256 totalRemainingToBeRevealed = gobblerRevealsData.toBeRevealed;
 
-        // Can't reveal more gobblers than are currently remaining to be assigned in the seed.
+        // Can't reveal more gobblers than are currently remaining to be revealed with the seed.
         if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Can't reveal if we're still waiting for a new seed.
