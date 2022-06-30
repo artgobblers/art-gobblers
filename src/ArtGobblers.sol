@@ -446,8 +446,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 VRF LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Get the random seed for revealing gobblers.
-    function getRandomSeed() external returns (bytes32) {
+    /// @notice Request a new random seed for revealing gobblers.
+    /// @dev Can only be called every 24 hours at the earliest.
+    function requestRandomSeed() external returns (bytes32) {
         uint256 nextRevealTimestamp = gobblerRevealsData.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
@@ -472,6 +473,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             gobblerRevealsData.toBeRevealed = uint56(toBeRevealed);
 
             // We want at most one batch of reveals every 24 hours.
+            // Timestamp overflow is impossible on human timescales.
             gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
 
             emit RandomnessRequested(msg.sender, toBeRevealed);

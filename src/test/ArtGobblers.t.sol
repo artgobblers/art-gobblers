@@ -393,7 +393,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testRevealDelayInitialMint() public {
         mintGobblerToAddress(users[0], 1);
         vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
-        gobblers.getRandomSeed();
+        gobblers.requestRandomSeed();
     }
 
     /// @notice Cannot request random seed before 24 hours have passed from last reveal,
@@ -405,7 +405,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // Attempt reveal before 24 hours have passed
         mintGobblerToAddress(users[0], 1);
         vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
-        gobblers.getRandomSeed();
+        gobblers.requestRandomSeed();
     }
 
     /// @notice Test that seed can't be set without first revealing pending gobblers.
@@ -450,7 +450,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         // second mint.
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
-        gobblers.getRandomSeed();
+        gobblers.requestRandomSeed();
         // seed we want to use for second reveal.
         (uint64 secondSeed, , , , ) = gobblers.gobblerRevealsData();
         // verify that we are trying to use the same seed.
@@ -750,7 +750,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Call back vrf with randomness and reveal gobblers.
     function setRandomnessAndReveal(uint256 numReveal, string memory seed) internal {
-        bytes32 requestId = gobblers.getRandomSeed();
+        bytes32 requestId = gobblers.requestRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked(seed)));
         // call back from coordinator
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
