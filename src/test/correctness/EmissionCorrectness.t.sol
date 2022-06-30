@@ -20,7 +20,7 @@ contract EmissionCorrectnessTest is DSTestPlus {
     ) public {
         emissionMultiple = bound(emissionMultiple, 0, 100);
 
-        daysElapsedWad = bound(daysElapsedWad, 0, 720 days * 1e18);
+        daysElapsedWad = bound(daysElapsedWad, 0, 7300 days * 1e18);
 
         lastBalanceWad = bound(lastBalanceWad, 0, 1e36);
 
