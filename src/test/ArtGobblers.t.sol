@@ -80,6 +80,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                MINT TESTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Test that minting from the mintlist before minting starts fails.
+    function testMintFromMintlistBeforeMintingStarts() public {
+        vm.warp(block.timestamp - 1);
+
+        address user = users[0];
+        bytes32[] memory proof;
+        vm.prank(user);
+        vm.expectRevert(ArtGobblers.MintStartPending.selector);
+        gobblers.claimGobbler(proof);
+    }
+
     /// @notice Test that you can mint from mintlist successfully.
     function testMintFromMintlist() public {
         address user = users[0];
@@ -88,6 +99,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
+    }
+
+    /// @notice Test that minting from the mintlist twice fails.
+    function testMintingFromMintlistTwiceFails() public {
+        address user = users[0];
+        bytes32[] memory proof;
+        vm.startPrank(user);
+        gobblers.claimGobbler(proof);
+
+        vm.expectRevert(ArtGobblers.AlreadyClaimed.selector);
+        gobblers.claimGobbler(proof);
     }
 
     /// @notice Test that an invalid mintlist proof reverts.
