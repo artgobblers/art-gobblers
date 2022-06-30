@@ -145,8 +145,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint64 nextRevealTimestamp;
         // Id of latest gobbler which has been revealed so far.
         uint56 lastRevealedId;
-        // Remaining gobblers to be assigned from the current seed.
-        uint56 toBeAssigned;
+        // Remaining gobblers to be revealed with the current seed.
+        uint56 toBeRevealed;
         // Whether we are waiting to receive a seed from Chainlink.
         bool waitingForSeed;
     }
@@ -190,7 +190,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
     event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
-    event RandomnessRequested(address indexed user, uint256 toBeAssigned);
+    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
     event RandomnessFulfilled(uint256 randomness);
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
@@ -208,7 +208,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error SeedPending();
     error RevealsPending();
     error RequestTooEarly();
-    error ZeroToBeAssigned();
+    error ZeroToBeRevealed();
 
     error ReserveImbalance();
 
@@ -220,7 +220,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
 
-    error NotEnoughRemainingToBeAssigned(uint256 totalRemainingToBeAssigned);
+    error NotEnoughRemainingToBeRevealed(uint256 totalRemainingToBeRevealed);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -453,28 +453,28 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // A new random seed cannot be requested before the next reveal timestamp.
         if (block.timestamp < nextRevealTimestamp) revert RequestTooEarly();
 
-        // A random seed can only be requested when all gobblers from previous seed have been assigned.
+        // A random seed can only be requested when all gobblers from previous seed have been revealed.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (gobblerRevealsData.toBeAssigned != 0) revert RevealsPending();
+        if (gobblerRevealsData.toBeRevealed != 0) revert RevealsPending();
 
         unchecked {
-            // We want at most one batch of reveals every 24 hours.
-            gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
-
-            // Compute the number of gobblers to be assigned in the reveal.
-            uint256 toBeAssigned = currentNonLegendaryId - gobblerRevealsData.lastRevealedId;
-
-            // Ensure that there are more than 0 gobblers to be assigned,
-            // otherwise the contract could waste LINK revealing nothing.
-            if (toBeAssigned == 0) revert ZeroToBeAssigned();
-
-            // Lock in the number of gobblers to be revealed from seed.
-            gobblerRevealsData.toBeAssigned = uint56(toBeAssigned);
-
             // Prevent revealing while we wait for the seed.
             gobblerRevealsData.waitingForSeed = true;
 
-            emit RandomnessRequested(msg.sender, toBeAssigned);
+            // Compute the number of gobblers to be revealed with the seed.
+            uint256 toBeRevealed = currentNonLegendaryId - gobblerRevealsData.lastRevealedId;
+
+            // Ensure that there are more than 0 gobblers to be revealed,
+            // otherwise the contract could waste LINK revealing nothing.
+            if (toBeRevealed == 0) revert ZeroToBeRevealed();
+
+            // Lock in the number of gobblers to be revealed from seed.
+            gobblerRevealsData.toBeRevealed = uint56(toBeRevealed);
+
+            // We want at most one batch of reveals every 24 hours.
+            gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
+
+            emit RandomnessRequested(msg.sender, toBeRevealed);
         }
 
         // Will revert if we don't have enough LINK to afford the request.
@@ -502,10 +502,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         uint256 lastRevealedId = gobblerRevealsData.lastRevealedId;
 
-        uint256 totalRemainingToBeAssigned = gobblerRevealsData.toBeAssigned;
+        uint256 totalRemainingToBeRevealed = gobblerRevealsData.toBeRevealed;
 
         // Can't reveal more gobblers than are currently remaining to be assigned in the seed.
-        if (numGobblers > totalRemainingToBeAssigned) revert NotEnoughRemainingToBeAssigned(totalRemainingToBeAssigned);
+        if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert SeedPending();
@@ -599,7 +599,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // Update all relevant reveal state state.
             gobblerRevealsData.randomSeed = uint64(randomSeed);
             gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
-            gobblerRevealsData.toBeAssigned = uint56(totalRemainingToBeAssigned - numGobblers);
+            gobblerRevealsData.toBeRevealed = uint56(totalRemainingToBeRevealed - numGobblers);
 
             emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
         }
