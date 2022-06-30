@@ -208,6 +208,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error SeedPending();
     error RevealsPending();
     error RequestTooEarly();
+    error ZeroToBeAssigned();
 
     error ReserveImbalance();
 
@@ -456,15 +457,19 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (gobblerRevealsData.toBeAssigned != 0) revert RevealsPending();
 
-        // A new seed cannot be requested while we wait for a new seed.
-        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
-
         unchecked {
             // We want at most one batch of reveals every 24 hours.
             gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
 
-            // Fix number of gobblers to be revealed from seed.
-            gobblerRevealsData.toBeAssigned = uint56(currentNonLegendaryId - gobblerRevealsData.lastRevealedId);
+            // Compute the number of gobblers to be assigned in the reveal.
+            uint256 toBeAssigned = currentNonLegendaryId - gobblerRevealsData.lastRevealedId;
+
+            // Ensure that there are more than 0 gobblers to be assigned,
+            // otherwise the contract could waste LINK revealing nothing.
+            if (toBeAssigned == 0) revert ZeroToBeAssigned();
+
+            // Lock in the number of gobblers to be revealed from seed.
+            gobblerRevealsData.toBeAssigned = uint56(toBeAssigned);
 
             // Prevent revealing while we wait for the seed.
             gobblerRevealsData.waitingForSeed = true;
@@ -504,8 +509,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert SeedPending();
-
-        emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
@@ -597,6 +600,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             gobblerRevealsData.randomSeed = uint64(randomSeed);
             gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
             gobblerRevealsData.toBeAssigned = uint56(totalRemainingToBeAssigned - numGobblers);
+
+            emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
         }
     }
 
