@@ -473,9 +473,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // Prevent revealing while we wait for the seed.
             gobblerRevealsData.waitingForSeed = true;
-        }
 
-        emit RandomnessRequested(msg.sender, gobblerRevealsData.toBeAssigned);
+            emit RandomnessRequested(msg.sender, toBeAssigned);
+        }
 
         // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
