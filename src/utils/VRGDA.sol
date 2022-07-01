@@ -1,9 +1,11 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {wadExp, wadLn, wadMul, unsafeWadMul, toWadUnsafe} from "./SignedWadMath.sol";
 
 /// @title Variable Rate Gradual Dutch Auction
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Sell tokens roughly according to an issuance schedule.
 abstract contract VRGDA {
     /*//////////////////////////////////////////////////////////////
