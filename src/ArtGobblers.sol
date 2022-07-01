@@ -16,10 +16,6 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goo} from "./Goo.sol";
 
-// TODO: make sure remco math is up to date
-// TODO: custom tyeps for wad math?
-// TODO: remove other todos
-
 /// @title Art Gobblers NFT
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
