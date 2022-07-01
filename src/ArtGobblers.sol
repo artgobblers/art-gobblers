@@ -735,9 +735,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        emit GooRemoved(msg.sender, gooAmount);
-
         goo.mintForGobblers(msg.sender, gooAmount);
+
+        emit GooRemoved(msg.sender, gooAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
