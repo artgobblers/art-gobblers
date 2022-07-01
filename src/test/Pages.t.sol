@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
@@ -140,7 +140,7 @@ contract PagesTest is DSTestPlus {
     /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 9589;
+        uint256 numMint = 9498;
 
         vm.warp(block.timestamp + timeDelta);
 

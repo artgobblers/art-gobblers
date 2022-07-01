@@ -1,10 +1,12 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
 /// @title Goo Token (GOO)
-/// @notice Goo is an in-game token for ArtGobblers. It's a standard ERC20
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
+/// @notice Goo is the in-game token for ArtGobblers. It's a standard ERC20
 /// token that can be burned and minted by the gobblers and pages contract.
 contract Goo is ERC20("Goo", "GOO", 18) {
     /*//////////////////////////////////////////////////////////////
