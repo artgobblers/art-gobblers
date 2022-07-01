@@ -142,7 +142,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost, cost - 1));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost));
         gobblers.mintFromGoo(cost - 1);
     }
 
@@ -383,7 +383,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         ids.push(9999999);
 
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.IncorrectGobblerAmount.selector, ids.length, cost));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.IncorrectGobblerAmount.selector, cost));
         gobblers.mintLegendaryGobbler(ids);
     }
 
@@ -523,6 +523,22 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], 1);
         vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
         gobblers.requestRandomSeed();
+    }
+
+    /// @notice Cannot reveal more gobblers than remaining to be revealed.
+    function testCannotRevealMoreGobblersThanRemainingToBeRevealed() public {
+        mintGobblerToAddress(users[0], 1);
+
+        vm.warp(block.timestamp + 24 hours);
+
+        bytes32 requestId = gobblers.requestRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+
+        mintGobblerToAddress(users[0], 2);
+
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.NotEnoughRemainingToBeRevealed.selector, 1));
+        gobblers.revealGobblers(2);
     }
 
     /// @notice Cannot request random seed before 24 hours have passed from last reveal,

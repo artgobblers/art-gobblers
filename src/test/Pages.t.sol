@@ -169,7 +169,7 @@ contract PagesTest is DSTestPlus {
         uint256 cost = pages.pagePrice();
         goo.mintForGobblers(user, cost);
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(Pages.PriceExceededMax.selector, cost, cost - 1));
+        vm.expectRevert(abi.encodeWithSelector(Pages.PriceExceededMax.selector, cost));
         pages.mintFromGoo(cost - 1);
     }
 

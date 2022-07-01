@@ -16,6 +16,10 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 
 import {Goo} from "./Goo.sol";
 
+// TODO: make sure remco math is up to date
+// TODO: custom tyeps for wad math?
+// TODO: remove other todos
+
 /// @title Art Gobblers NFT
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
@@ -215,10 +219,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
+    error IncorrectGobblerAmount(uint256 cost);
     error CannotBurnLegendary(uint256 gobblerId);
-    error IncorrectGobblerAmount(uint256 provided, uint256 needed);
 
-    error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
+    error PriceExceededMax(uint256 currentPrice);
 
     error NotEnoughRemainingToBeRevealed(uint256 totalRemainingToBeRevealed);
 
@@ -315,7 +319,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
-        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         goo.burnForGobblers(msg.sender, currentPrice);
 
@@ -355,7 +359,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
 
-        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(gobblerIds.length, cost);
+        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
 
         // Overflow in here should not occur, as most math is on emission multiples, which are inherently small.
         unchecked {
