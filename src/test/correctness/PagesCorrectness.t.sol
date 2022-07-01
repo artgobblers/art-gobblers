@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
@@ -13,7 +13,7 @@ contract PageCorrectnessTest is DSTestPlus {
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    uint256 internal immutable FIVE_YEARS = 5 * 365 days;
+    uint256 internal immutable TWENTY_YEARS = 7300 days;
 
     uint256 internal immutable MAX_MINTABLE = 9000;
 
@@ -41,8 +41,8 @@ contract PageCorrectnessTest is DSTestPlus {
         // Limit num sold to max mint.
         numSold = bound(numSold, 0, 10000);
 
-        // Limit mint time to 5 years.
-        timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
+        // Limit mint time to 20 years.
+        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
 
         // Calculate actual price from VRGDA.
         try pages.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {

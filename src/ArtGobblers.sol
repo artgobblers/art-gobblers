@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
@@ -21,6 +21,8 @@ import {Goo} from "./Goo.sol";
 // TODO: remove other todos
 
 /// @title Art Gobblers NFT
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
@@ -567,8 +569,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
                 assembly {
                     // prettier-ignore
-                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple,
-                        lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
+                    newCurrentIdMultiple := sub(sub(sub(
+                        newCurrentIdMultiple,
+                        lt(swapIndex, 7964)),
+                        lt(swapIndex, 5673)),
+                        lt(swapIndex, 3055)
                     )
                 }
 

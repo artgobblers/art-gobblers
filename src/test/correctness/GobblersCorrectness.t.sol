@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
@@ -10,7 +10,7 @@ import {Goo} from "../../Goo.sol";
 contract GobblersCorrectnessTest is DSTestPlus {
     using LibString for uint256;
 
-    uint256 internal immutable FIVE_YEARS = 365 days * 5;
+    uint256 internal immutable TWENTY_YEARS = 7300 days;
 
     uint256 internal MAX_MINTABLE;
 
@@ -49,8 +49,8 @@ contract GobblersCorrectnessTest is DSTestPlus {
         // Limit num sold to max mint.
         numSold = bound(numSold, 0, MAX_MINTABLE);
 
-        // Limit mint time to 5 years.
-        timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
+        // Limit mint time to 20 years.
+        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
 
         // Calculate actual price from VRGDA.
         try gobblers.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {

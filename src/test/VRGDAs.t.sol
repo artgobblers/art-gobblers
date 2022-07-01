@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
@@ -96,15 +96,15 @@ contract VRGDAsTest is DSTestPlus {
         }
     }
 
-    function testNoOverflowForFirst8480Pages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 8480));
+    function testNoOverflowForFirst8465Pages(uint256 timeSinceStart, uint256 sold) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 8465));
     }
 
-    function testGobblerPriceStrictlyIncreasesFor8480Pages() public {
+    function testPagePriceStrictlyIncreasesFor8465Pages() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 8480) {
+        while (sold <= 8465) {
             uint256 price = pages.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
