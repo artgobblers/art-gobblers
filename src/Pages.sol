@@ -10,6 +10,8 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 import {Goo} from "./Goo.sol";
 
 /// @title Pages NFT
+/// @author FrankieIsLost
+/// @author transmissions11 
 /// @notice Pages is an ERC721 that can hold custom art.
 contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     using LibString for uint256;
