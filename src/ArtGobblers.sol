@@ -760,13 +760,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
-        // First mint numGobblersEach gobblers to the team reserve.
+        // Mint numGobblersEach gobblers to both the team and community reserve.
         lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
+        lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "");
 
-        // Then mint numGobblersEach gobblers to the community reserve, and update currentNonLegendaryId.
-        currentNonLegendaryId = uint128(
-            lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "")
-        );
+        // Note: There is reentrancy here. The _batchMint calls above can enable an
+        // adversary to reenter before currentNonLegendaryId is updated, but since we
+        // assume the reserves are both trusted addresses, we can safely ignore this risk.
+        currentNonLegendaryId = uint128(lastMintedGobblerId); // Set currentNonLegendaryId.
 
         emit ReservedGobblersMinted(msg.sender, lastMintedGobblerId, numGobblersEach);
     }
