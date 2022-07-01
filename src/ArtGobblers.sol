@@ -18,7 +18,7 @@ import {Goo} from "./Goo.sol";
 
 /// @title Art Gobblers NFT
 /// @author FrankieIsLost
-/// @author transmissions11 
+/// @author transmissions11
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
