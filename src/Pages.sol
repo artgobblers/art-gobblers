@@ -77,7 +77,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     error ReserveImbalance();
 
-    error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
+    error PriceExceededMax(uint256 currentPrice);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -129,7 +129,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         uint256 currentPrice = pagePrice();
 
         // If the current price is above the user's specified max, revert.
-        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         goo.burnForPages(msg.sender, currentPrice);
 

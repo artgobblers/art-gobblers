@@ -80,6 +80,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                MINT TESTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Test that minting from the mintlist before minting starts fails.
+    function testMintFromMintlistBeforeMintingStarts() public {
+        vm.warp(block.timestamp - 1);
+
+        address user = users[0];
+        bytes32[] memory proof;
+        vm.prank(user);
+        vm.expectRevert(ArtGobblers.MintStartPending.selector);
+        gobblers.claimGobbler(proof);
+    }
+
     /// @notice Test that you can mint from mintlist successfully.
     function testMintFromMintlist() public {
         address user = users[0];
@@ -88,6 +99,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
+    }
+
+    /// @notice Test that minting from the mintlist twice fails.
+    function testMintingFromMintlistTwiceFails() public {
+        address user = users[0];
+        bytes32[] memory proof;
+        vm.startPrank(user);
+        gobblers.claimGobbler(proof);
+
+        vm.expectRevert(ArtGobblers.AlreadyClaimed.selector);
+        gobblers.claimGobbler(proof);
     }
 
     /// @notice Test that an invalid mintlist proof reverts.
@@ -120,7 +142,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost, cost - 1));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost));
         gobblers.mintFromGoo(cost - 1);
     }
 
@@ -235,8 +257,18 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that auction ends at a price of 0.
     function testLegendaryGobblerFinalPrice() public {
-        // Mint two full intervals.
+        // Mint 2 full intervals.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        // Auction price should be 0 after full interval decay.
+        assertEq(cost, 0);
+    }
+
+    /// @notice Test that auction ends at a price of 0 even after the interval.
+    function testLegendaryGobblerPastFinalPrice() public {
+        // Mint 3 full intervals.
+        vm.warp(block.timestamp + 600 days);
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 3);
         uint256 cost = gobblers.legendaryGobblerPrice();
         // Auction price should be 0 after full interval decay.
         assertEq(cost, 0);
@@ -294,6 +326,93 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
     }
 
+    /// @notice Test that Legendary Gobblers can be minted at 0 cost.
+    function testMintFreeLegendaryGobbler() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+
+        // Mint 2 full intervals to send price to zero.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
+
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 0);
+
+        vm.prank(users[0]);
+        uint256 mintedLegendaryId = gobblers.mintLegendaryGobbler(ids);
+
+        assertEq(gobblers.ownerOf(mintedLegendaryId), users[0]);
+        assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), 0);
+    }
+
+    /// @notice Test that Legendary Gobblers can be minted at 0 cost.
+    function testMintFreeLegendaryGobblerPastInterval() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+
+        // Mint 3 full intervals to send price to zero.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 3);
+
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 0);
+
+        vm.prank(users[0]);
+        uint256 mintedLegendaryId = gobblers.mintLegendaryGobbler(ids);
+
+        assertEq(gobblers.ownerOf(mintedLegendaryId), users[0]);
+        assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), 0);
+    }
+
+    /// @notice Test that legendary gobblers can't be minted with the wrong ids length.
+    function testMintLegendaryGobblerWithWrongLength() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+        uint256 emissionMultipleSum;
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+            emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
+        }
+
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
+
+        ids.push(9999999);
+
+        vm.prank(users[0]);
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.IncorrectGobblerAmount.selector, cost));
+        gobblers.mintLegendaryGobbler(ids);
+    }
+
+    /// @notice Test that legendary gobblers can't be minted if the user doesn't own one of the ids.
+    function testMintLegendaryGobblerWithUnownedId() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+        uint256 emissionMultipleSum;
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+            emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
+        }
+
+        assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
+
+        ids.pop();
+        ids.push(999);
+
+        vm.prank(users[0]);
+        vm.expectRevert("WRONG_FROM");
+        gobblers.mintLegendaryGobbler(ids);
+    }
+
     /// @notice Test that legendary gobblers have expected ids.
     function testMintLegendaryGobblersExpectedIds() public {
         // We expect the first legendary to have this id.
@@ -308,6 +427,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             assertEq(nextMintLegendaryId, justMintedLegendaryId);
             nextMintLegendaryId++;
         }
+
+        // Minting any more should fail.
+        vm.expectRevert(ArtGobblers.NoRemainingLegendaryGobblers.selector);
+        gobblers.mintLegendaryGobbler(ids);
     }
 
     /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
@@ -389,11 +512,33 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
                                  REVEALS
     //////////////////////////////////////////////////////////////*/
 
+    function testDoesNotAllowRevealingZero() public {
+        vm.warp(block.timestamp + 24 hours);
+        vm.expectRevert(ArtGobblers.ZeroToBeRevealed.selector);
+        gobblers.requestRandomSeed();
+    }
+
     /// @notice Cannot request random seed before 24 hours have passed from initial mint.
     function testRevealDelayInitialMint() public {
         mintGobblerToAddress(users[0], 1);
         vm.expectRevert(ArtGobblers.RequestTooEarly.selector);
         gobblers.requestRandomSeed();
+    }
+
+    /// @notice Cannot reveal more gobblers than remaining to be revealed.
+    function testCannotRevealMoreGobblersThanRemainingToBeRevealed() public {
+        mintGobblerToAddress(users[0], 1);
+
+        vm.warp(block.timestamp + 24 hours);
+
+        bytes32 requestId = gobblers.requestRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+
+        mintGobblerToAddress(users[0], 2);
+
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.NotEnoughRemainingToBeRevealed.selector, 1));
+        gobblers.revealGobblers(2);
     }
 
     /// @notice Cannot request random seed before 24 hours have passed from last reveal,
