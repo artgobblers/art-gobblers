@@ -1,67 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-// TODO: fuzz remco stuff against bal and PRB
-
-// TODO: fuzz!
-/// @dev NOT OVERFLOW SAFE! ONLY USE WHERE OVERFLOW IS NOT POSSIBLE!
-function toWadUnsafe(uint256 x) pure returns (int256 z) {
+function wadMul(int256 x, int256 y) pure returns (int256 r) {
     assembly {
-        z := mul(x, 1000000000000000000)
-    }
-}
-
-function wadMul(int256 x, int256 y) pure returns (int256 z) {
-    assembly {
-        // Store x * y in z for now.
-        z := mul(x, y)
+        // Store x * y in r for now.
+        r := mul(x, y)
 
         // Equivalent to require(x == 0 || (x * y) / x == y)
-        if iszero(or(iszero(x), eq(sdiv(z, x), y))) {
+        if iszero(or(iszero(x), eq(sdiv(r, x), y))) {
             revert(0, 0)
         }
 
         // Scale the result down by 1e18.
-        z := sdiv(z, 1000000000000000000)
+        r := sdiv(r, 1000000000000000000)
     }
 }
 
-function wadDiv(int256 x, int256 y) pure returns (int256 z) {
+function wadDiv(int256 x, int256 y) pure returns (int256 r) {
     assembly {
-        // Store x * 1e18 in z for now.
-        z := mul(x, 1000000000000000000)
+        // Store x * 1e18 in r for now.
+        r := mul(x, 1000000000000000000)
 
         // Equivalent to require(y != 0 && ((x * 1e18) / 1e18 == x))
-        if iszero(and(iszero(iszero(y)), eq(sdiv(z, 1000000000000000000), x))) {
+        if iszero(and(iszero(iszero(y)), eq(sdiv(r, 1000000000000000000), x))) {
             revert(0, 0)
         }
 
-        // Divide z by y.
-        z := sdiv(z, y)
-    }
-}
-
-/// @dev NOT OVERFLOW SAFE! ONLY USE WHERE OVERFLOW IS NOT POSSIBLE!
-function unsafeWadMul(int256 x, int256 y) pure returns (int256 z) {
-    assembly {
-        // Multiply x by y and divide by 1e18.
-        z := sdiv(mul(x, y), 1000000000000000000)
-    }
-}
-
-/// @dev Note: Will return 0 instead of reverting if y is zero.
-/// @dev NOT OVERFLOW SAFE! ONLY USE WHERE OVERFLOW IS NOT POSSIBLE!
-function unsafeWadDiv(int256 x, int256 y) pure returns (int256 z) {
-    assembly {
-        // Multiply x by 1e18 and divide it by y.
-        z := sdiv(mul(x, 1000000000000000000), y)
-    }
-}
-
-/// @dev Note: Will return 0 instead of reverting if y is zero.
-function unsafeDiv(int256 x, int256 y) pure returns (int256 z) {
-    assembly {
-        z := sdiv(x, y)
+        // Divide r by y.
+        r := sdiv(r, y)
     }
 }
 
@@ -191,5 +157,36 @@ function wadLn(int256 x) pure returns (int256 r) {
         r += 600920179829731861736702779321621459595472258049074101567377883020018308;
         // base conversion: mul 2**18 / 2**192
         r >>= 174;
+    }
+}
+
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+function unsafeWadMul(int256 x, int256 y) pure returns (int256 r) {
+    assembly {
+        // Multiply x by y and divide by 1e18.
+        r := sdiv(mul(x, y), 1000000000000000000)
+    }
+}
+
+/// @dev Will return 0 instead of reverting if y is zero and will
+/// not revert on overflow, only use where overflow is not possible.
+function unsafeWadDiv(int256 x, int256 y) pure returns (int256 r) {
+    assembly {
+        // Multiply x by 1e18 and divide it by y.
+        r := sdiv(mul(x, 1000000000000000000), y)
+    }
+}
+
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+function toWadUnsafe(uint256 x) pure returns (int256 r) {
+    assembly {
+        r := mul(x, 1000000000000000000)
+    }
+}
+
+/// @dev Will return 0 instead of reverting if y is zero.
+function unsafeDiv(int256 x, int256 y) pure returns (int256 r) {
+    assembly {
+        r := sdiv(x, y)
     }
 }
