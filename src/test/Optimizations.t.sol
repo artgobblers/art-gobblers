@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
@@ -12,7 +12,7 @@ contract OptimizationsTest is DSTestPlus {
         uint256 newCurrentIdMultipleBranchless = 9; // For beyond 7963.
         assembly {
             // prettier-ignore
-            newCurrentIdMultipleBranchless := sub(sub(sub(newCurrentIdMultipleBranchless, 
+            newCurrentIdMultipleBranchless := sub(sub(sub(newCurrentIdMultipleBranchless,
                 lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
             )
         }

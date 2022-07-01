@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
@@ -17,8 +17,8 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 import {Goo} from "./Goo.sol";
 
 /// @title Art Gobblers NFT
-/// @author FrankieIsLost<frankie@paradigm.xyz>
-/// @author transmissions11<t11s@paradigm.xyz>
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;

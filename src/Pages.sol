@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {VRGDA} from "./utils/VRGDA.sol";
@@ -10,8 +10,8 @@ import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
 import {Goo} from "./Goo.sol";
 
 /// @title Pages NFT
-/// @author FrankieIsLost<frankie@paradigm.xyz>
-/// @author transmissions11<t11s@paradigm.xyz>
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Pages is an ERC721 that can hold custom art.
 contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     using LibString for uint256;

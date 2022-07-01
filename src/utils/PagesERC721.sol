@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
 
 /// @notice ERC721 implementation optimized for Pages by pre-approving them to the ArtGobblers contract.
-/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+/// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
 abstract contract PagesERC721 {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS

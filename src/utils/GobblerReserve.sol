@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
@@ -7,6 +7,8 @@ import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {ArtGobblers} from "../ArtGobblers.sol";
 
 /// @title Gobbler Reserve
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Reserves gobblers for an owner while keeping any goo produced.
 contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /*//////////////////////////////////////////////////////////////
