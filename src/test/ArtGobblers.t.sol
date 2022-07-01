@@ -127,7 +127,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that initial gobbler price is what we expect.
     function testInitialGobblerPrice() public {
         uint256 cost = gobblers.gobblerPrice();
-        uint256 maxDelta = 10; // 0.00000000000000001
+        uint256 maxDelta = 0.000000000000000070e18;
         assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
     }
 
@@ -193,7 +193,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testPricingBasic() public {
         // VRGDA targets this number of mints at given time.
         uint256 timeDelta = 120 days;
-        uint256 numMint = 4384;
+        uint256 numMint = 877;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -209,8 +209,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 initialPrice = uint256(gobblers.initialPrice());
         uint256 finalPrice = gobblers.gobblerPrice();
 
-        // Equal within 1 percent.
-        assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
+        // Equal within 3 percent since num mint is rounded from true decimal amount.
+        assertRelApproxEq(initialPrice, finalPrice, 0.03e18);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -300,7 +300,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 nextMintLegendaryId = 9991;
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         for (int256 i = 0; i < 10; i++) {
-            vm.warp(block.timestamp + 40 days);
+            vm.warp(block.timestamp + 400 days);
 
             mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
             uint256 justMintedLegendaryId = gobblers.mintLegendaryGobbler(ids);

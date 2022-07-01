@@ -20,13 +20,15 @@ contract EmissionCorrectnessTest is DSTestPlus {
     ) public {
         emissionMultiple = bound(emissionMultiple, 0, 100);
 
-        daysElapsedWad = bound(daysElapsedWad, 0, 720 days * 1e18);
+        daysElapsedWad = bound(daysElapsedWad, 0, 7300 days * 1e18);
 
         lastBalanceWad = bound(lastBalanceWad, 0, 1e36);
 
         uint256 expectedBalance = calculateBalance(daysElapsedWad, lastBalanceWad, emissionMultiple);
 
         uint256 actualBalance = gooCalculator.computeGooBalance(emissionMultiple, lastBalanceWad, daysElapsedWad);
+
+        if (expectedBalance < 0.0000000000001e18) return; // For really small balances we can't expect them to be equal.
 
         // Equal within 1 percent.
         assertRelApproxEq(actualBalance, expectedBalance, 0.01e18);

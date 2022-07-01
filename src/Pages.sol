@@ -55,13 +55,13 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @dev The day the switch from a logistic to translated linear VRGDA is targeted to occur.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SWITCH_DAY_WAD = 207e18;
+    int256 internal constant SWITCH_DAY_WAD = 270e18;
 
     /// @notice The minimum amount of pages that must be sold for the VRGDA issuance
     /// schedule to switch from logistic to the "post switch" translated linear formula.
     /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal constant SOLD_BY_SWITCH_WAD = 8847.279967409445363041e18;
+    int256 internal constant SOLD_BY_SWITCH_WAD = 8598.35810341741976233e18;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -94,12 +94,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         string memory _baseUri
     )
         VRGDA(
-            4.20e18, // Initial price.
+            4.2069e18, // Initial price.
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             9000e18, // Asymptote.
-            0.023e18 // Time scale.
+            0.014e18 // Time scale.
         )
         PostSwitchVRGDA(
             SOLD_BY_SWITCH_WAD, // Sold by switch.

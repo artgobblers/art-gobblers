@@ -243,13 +243,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         string memory _unrevealedUri
     )
         VRGDA(
-            6.9e18, // Initial price.
+            69.42e18, // Initial price.
             0.31e18 // Per period price decrease.
         )
         LogisticVRGDA(
             // Max mintable gobblers.
             int256(MAX_MINTABLE * 1e18),
-            0.014e18 // Time scale.
+            0.0023e18 // Time scale.
         )
         VRFConsumerBase(_vrfCoordinator, _linkToken)
         Owned(msg.sender) // Deployer starts as owner.
@@ -348,7 +348,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
         gobblerId = FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold; // Assign id.
 
-        // If the current id is greater than the max supply, there are no remaining legendaries.
+        // If the gobbler id would be greater than the max supply, there are no remaining legendaries.
         if (gobblerId > MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
@@ -558,8 +558,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
                 assembly {
                     // prettier-ignore
-                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple,
-                        lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
+                    newCurrentIdMultiple := sub(sub(sub(
+                        newCurrentIdMultiple,
+                        lt(swapIndex, 7964)),
+                        lt(swapIndex, 5673)),
+                        lt(swapIndex, 3055)
                     )
                 }
 

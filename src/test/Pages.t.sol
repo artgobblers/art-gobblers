@@ -118,7 +118,7 @@ contract PagesTest is DSTestPlus {
     function testPagePricingPricingBeforeSwitch() public {
         // Expected sales rate according to mathematical formula.
         uint256 timeDelta = 60 days;
-        uint256 numMint = 5382;
+        uint256 numMint = 3572;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -140,7 +140,7 @@ contract PagesTest is DSTestPlus {
     /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 10377;
+        uint256 numMint = 9498;
 
         vm.warp(block.timestamp + timeDelta);
 

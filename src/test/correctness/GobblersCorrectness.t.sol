@@ -10,17 +10,17 @@ import {Goo} from "../../Goo.sol";
 contract GobblersCorrectnessTest is DSTestPlus {
     using LibString for uint256;
 
-    uint256 internal immutable FIVE_YEARS = 365 days * 5;
+    uint256 internal immutable TWENTY_YEARS = 7300 days;
 
     uint256 internal MAX_MINTABLE;
 
     int256 internal LOGISTIC_SCALE;
 
-    int256 internal immutable INITIAL_PRICE = 6.9e18;
+    int256 internal immutable INITIAL_PRICE = 69.42e18;
 
     int256 internal immutable PER_PERIOD_PRICE_DECREASE = 0.31e18;
 
-    int256 internal immutable TIME_SCALE = 0.014e18;
+    int256 internal immutable TIME_SCALE = 0.0023e18;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
@@ -49,8 +49,8 @@ contract GobblersCorrectnessTest is DSTestPlus {
         // Limit num sold to max mint.
         numSold = bound(numSold, 0, MAX_MINTABLE);
 
-        // Limit mint time to 5 years.
-        timeSinceStart = bound(timeSinceStart, 0, FIVE_YEARS);
+        // Limit mint time to 20 years.
+        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
 
         // Calculate actual price from VRGDA.
         try gobblers.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
@@ -64,7 +64,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
                 TIME_SCALE
             );
 
-            if (expectedPrice < 10) return; // For really small prices we can't expect them to be equal.
+            if (expectedPrice < 0.0000000000001e18) return; // For really small prices we can't expect them to be equal.
 
             // Equal within 1 percent.
             assertRelApproxEq(actualPrice, expectedPrice, 0.01e18);
