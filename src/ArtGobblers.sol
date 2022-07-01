@@ -160,7 +160,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct data info required for goo emission reward calculations.
+    /// @notice Struct holding data required for goo emission reward calculations.
     struct EmissionData {
         // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
