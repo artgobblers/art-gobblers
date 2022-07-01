@@ -512,11 +512,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         uint256 totalRemainingToBeRevealed = gobblerRevealsData.toBeRevealed;
 
-        // Can't reveal more gobblers than are currently remaining to be revealed with the seed.
-        if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
-
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert SeedPending();
+
+        // Can't reveal more gobblers than are currently remaining to be revealed with the seed.
+        if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
