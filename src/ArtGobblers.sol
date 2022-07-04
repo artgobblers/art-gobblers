@@ -499,7 +499,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                           GOBBLER REVEAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
+    /// @notice Knuth shuffle to progressively reveal
+    /// new gobblers using entropy from a random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) external {
         uint256 randomSeed = gobblerRevealsData.randomSeed;
