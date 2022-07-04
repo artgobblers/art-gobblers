@@ -359,7 +359,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
 
-        // Overflow in here should not occur, as most math is on emission multiples, which are inherently small.
+        // Overflow should not occur in here, as most math is on emission multiples, which are inherently small.
         unchecked {
             uint256 burnedMultipleTotal; // The legendary's emissionMultiple will be 2x the sum of the gobblers burned.
 
@@ -456,7 +456,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // A new random seed cannot be requested before the next reveal timestamp.
         if (block.timestamp < nextRevealTimestamp) revert RequestTooEarly();
 
-        // A random seed can only be requested when all gobblers from previous seed have been revealed.
+        // A random seed can only be requested when all gobblers from the previous seed have been revealed.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (gobblerRevealsData.toBeRevealed != 0) revert RevealsPending();
 
