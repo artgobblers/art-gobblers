@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {LibString} from "../../src/utils/LibString.sol";
+import {LibString} from "../../src/utils/libs/LibString.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 import {Goo} from "../../src/Goo.sol";
 

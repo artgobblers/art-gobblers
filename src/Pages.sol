@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {VRGDA} from "./utils/VRGDA.sol";
-import {LibString} from "./utils/LibString.sol";
-import {PagesERC721} from "./utils/PagesERC721.sol";
-import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
-import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
+import {VRGDA} from "./utils/vrgda/VRGDA.sol";
+import {LibString} from "./utils/libs/LibString.sol";
+import {PagesERC721} from "./utils/tokens/PagesERC721.sol";
+import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
+import {PostSwitchVRGDA} from "./utils/vrgda/PostSwitchVRGDA.sol";
 
 import {Goo} from "./Goo.sol";
 

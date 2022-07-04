@@ -1,6 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// @title Signed Wad Math
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
+/// @notice Efficient signed wad arithmetic.
+
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+function toWadUnsafe(uint256 x) pure returns (int256 r) {
+    assembly {
+        // Multiply x by 1e18.
+        r := mul(x, 1000000000000000000)
+    }
+}
+
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+function unsafeWadMul(int256 x, int256 y) pure returns (int256 r) {
+    assembly {
+        // Multiply x by y and divide by 1e18.
+        r := sdiv(mul(x, y), 1000000000000000000)
+    }
+}
+
+/// @dev Will return 0 instead of reverting if y is zero and will
+/// not revert on overflow, only use where overflow is not possible.
+function unsafeWadDiv(int256 x, int256 y) pure returns (int256 r) {
+    assembly {
+        // Multiply x by 1e18 and divide it by y.
+        r := sdiv(mul(x, 1000000000000000000), y)
+    }
+}
+
 function wadMul(int256 x, int256 y) pure returns (int256 r) {
     assembly {
         // Store x * y in r for now.
@@ -160,33 +190,10 @@ function wadLn(int256 x) pure returns (int256 r) {
     }
 }
 
-/// @dev Will not revert on overflow, only use where overflow is not possible.
-function unsafeWadMul(int256 x, int256 y) pure returns (int256 r) {
-    assembly {
-        // Multiply x by y and divide by 1e18.
-        r := sdiv(mul(x, y), 1000000000000000000)
-    }
-}
-
-/// @dev Will return 0 instead of reverting if y is zero and will
-/// not revert on overflow, only use where overflow is not possible.
-function unsafeWadDiv(int256 x, int256 y) pure returns (int256 r) {
-    assembly {
-        // Multiply x by 1e18 and divide it by y.
-        r := sdiv(mul(x, 1000000000000000000), y)
-    }
-}
-
-/// @dev Will not revert on overflow, only use where overflow is not possible.
-function toWadUnsafe(uint256 x) pure returns (int256 r) {
-    assembly {
-        r := mul(x, 1000000000000000000)
-    }
-}
-
 /// @dev Will return 0 instead of reverting if y is zero.
 function unsafeDiv(int256 x, int256 y) pure returns (int256 r) {
     assembly {
+        // Divide x by y.
         r := sdiv(x, y)
     }
 }

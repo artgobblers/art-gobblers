@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {unsafeWadDiv} from "./SignedWadMath.sol";
+import {unsafeWadDiv} from "../libs/SignedWadMath.sol";
 
 import {VRGDA} from "./VRGDA.sol";
 
