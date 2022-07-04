@@ -61,7 +61,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice The minimum amount of pages that must be sold for the VRGDA issuance
     /// schedule to switch from logistic to the "post switch" translated linear formula.
-    /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
+    /// @dev Computed off-chain by plugging SWITCH_DAY_WAD into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal constant SOLD_BY_SWITCH_WAD = 8598.35810341741976233e18;
 
@@ -153,21 +153,21 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
         unchecked {
             // The number of pages minted for the community reserve
-            // cannot ever exceed 10% of the total supply of pages.
+            // should never exceed 10% of the total supply of pages.
             return getPrice(timeSinceStart, currentId - numMintedForCommunity);
         }
     }
 
-    function getTargetDayForNextSale(int256 tokens)
+    function getTargetDayForNextSale(int256 sold)
         internal
         view
         override(LogisticVRGDA, PostSwitchVRGDA)
         returns (int256)
     {
-        return
-            tokens < SOLD_BY_SWITCH_WAD
-                ? LogisticVRGDA.getTargetDayForNextSale(tokens)
-                : PostSwitchVRGDA.getTargetDayForNextSale(tokens);
+        // prettier-ignore
+        return sold < SOLD_BY_SWITCH_WAD
+            ? LogisticVRGDA.getTargetDayForNextSale(sold)
+            : PostSwitchVRGDA.getTargetDayForNextSale(sold);
     }
 
     /*//////////////////////////////////////////////////////////////
