@@ -705,7 +705,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // XXX ONLY FOR TESTNET XXX
             // XXX ONLY FOR TESTNET XXX
-            daysElapsedWad *= 30; // Speed up 30x.
+            daysElapsedWad *= 30;
             // XXX ONLY FOR TESTNET XXX
             // XXX ONLY FOR TESTNET XXX
 

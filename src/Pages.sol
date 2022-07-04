@@ -152,7 +152,9 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         uint256 timeSinceStart = block.timestamp - mintStart;
 
         // XXX ONLY FOR TESTNET XXX
-        timeSinceStart *= 30; // Speed up 30x.
+        // XXX ONLY FOR TESTNET XXX
+        timeSinceStart *= 30;
+        // XXX ONLY FOR TESTNET XXX
         // XXX ONLY FOR TESTNET XXX
 
         unchecked {
