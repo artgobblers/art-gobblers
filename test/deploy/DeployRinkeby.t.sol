@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {DeployRinkeby} from "../../../script/deploy/DeployRinkeby.s.sol";
+import {DeployRinkeby} from "../../script/deploy/DeployRinkeby.s.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {console} from "forge-std/console.sol";
 
-import {ArtGobblers} from "../../ArtGobblers.sol";
-import {Pages} from "../../Pages.sol";
+import {Pages} from "../../src/Pages.sol";
+import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
 contract DeployRinkebyTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);

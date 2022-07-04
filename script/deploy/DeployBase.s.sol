@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Script.sol";
 
-import {LibRLP} from "../../src/test/utils/LibRLP.sol";
+import {LibRLP} from "../../test/utils/LibRLP.sol";
 
 import {GobblerReserve} from "../../src/utils/GobblerReserve.sol";
 

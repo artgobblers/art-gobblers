@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 
-import {MerkleProofLib} from "../utils/MerkleProofLib.sol";
+import {MerkleProofLib} from "../src/utils/MerkleProofLib.sol";
 
 contract MerkleProofLibTest is DSTestPlus {
     function testVerifyEmptyMerkleProofSuppliedLeafAndRootSame() public {

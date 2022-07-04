@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 
-import {LibString} from "../utils/LibString.sol";
+import {LibString} from "../src/utils/LibString.sol";
 
 contract LibStringTest is DSTestPlus {
     function testToString() public {
