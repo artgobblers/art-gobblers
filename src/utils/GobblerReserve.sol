@@ -14,6 +14,7 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
+
     ArtGobblers public artGobblers;
 
     constructor(ArtGobblers _artGobblers, address _owner) Owned(_owner) {
