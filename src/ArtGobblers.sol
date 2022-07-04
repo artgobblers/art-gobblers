@@ -9,10 +9,10 @@ import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/vrgda/VRGDA.sol";
-import {LibString} from "./utils/libs/LibString.sol";
+import {LibString} from "./utils/lib/LibString.sol";
 import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
-import {MerkleProofLib} from "./utils/libs/MerkleProofLib.sol";
-import {GobblersERC1155B} from "./utils/tokens/GobblersERC1155B.sol";
+import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
+import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
 
 import {Goo} from "./Goo.sol";
 

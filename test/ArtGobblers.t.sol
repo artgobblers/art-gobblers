@@ -15,7 +15,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
-import {LibString} from "../src/utils/libs/LibString.sol";
+import {LibString} from "../src/utils/lib/LibString.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
 contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {

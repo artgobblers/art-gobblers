@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {MockGooCalculator} from "../utils/mocks/MockGooCalculator.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {LibString} from "../../src/utils/libs/LibString.sol";
+import {LibString} from "../../src/utils/lib/LibString.sol";
 
 contract EmissionCorrectnessTest is DSTestPlus {
     using LibString for uint256;
