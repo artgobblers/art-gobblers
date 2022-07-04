@@ -158,11 +158,16 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
-    function getTargetSaleDay(int256 tokens) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
+    function getTargetDayForNextSale(int256 tokens)
+        internal
+        view
+        override(LogisticVRGDA, PostSwitchVRGDA)
+        returns (int256)
+    {
         return
             tokens < SOLD_BY_SWITCH_WAD
-                ? LogisticVRGDA.getTargetSaleDay(tokens)
-                : PostSwitchVRGDA.getTargetSaleDay(tokens);
+                ? LogisticVRGDA.getTargetDayForNextSale(tokens)
+                : PostSwitchVRGDA.getTargetDayForNextSale(tokens);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -12,7 +12,7 @@ abstract contract VRGDA {
                             VRGDA PARAMETERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Initial price of NFTs, to be scaled according to sales rate.
+    /// @notice Initial price of each token, to be scaled according to sales rate.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 public immutable initialPrice;
 
@@ -39,14 +39,14 @@ abstract contract VRGDA {
             return uint256(wadMul(initialPrice, wadExp(unsafeWadMul(decayConstant,
                 // Theoretically calling toWadUnsafe with timeSinceStart and sold can overflow without
                 // detection, but under any reasonable circumstance they will never be large enough.
-                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold))
+                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetDayForNextSale(toWadUnsafe(sold))
             ))));
         }
     }
 
-    /// @dev Given a number of tokens, return the target day they should all be sold by.
-    /// @param tokens The number of tokens to get the target sale day for, scaled by 1e18.
-    /// @return The target day that the tokens should all be sold by, scaled by 1e18, where the
-    /// day is relative, such that 0 means the tokens should be sold on the first day of auctions.
-    function getTargetSaleDay(int256 tokens) internal view virtual returns (int256);
+    /// @dev Given the number of tokens sold so far, return the target day the next token should be sold by.
+    /// @param sold The number of tokens that have been sold so far, where 0 means none, scaled by 1e18.
+    /// @return The target day that the next token should be sold by, scaled by 1e18, where the day
+    /// is relative, such that 0 means the token should be sold immediately when auctions begin.
+    function getTargetDayForNextSale(int256 sold) internal view virtual returns (int256);
 }
