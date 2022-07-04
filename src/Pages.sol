@@ -106,7 +106,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         PostSwitchVRGDA(
             SOLD_BY_SWITCH_WAD, // Sold by switch.
             SWITCH_DAY_WAD, // Target switch day.
-            10e18 // Pages to target per day.
+            9e18 // Pages to target per day.
         )
         PagesERC721(_artGobblers, "Pages", "PAGE")
     {
