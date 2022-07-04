@@ -1,15 +1,9 @@
 {
-    "editor.formatOnSave": true,
-    "solidity.formatter": "prettier",
-    "[solidity]": {
-        "editor.defaultFormatter": "JuanBlanco.solidity"
-    },
-    "solidity.packageDefaultDependenciesContractsDirectory": "src",
-    "solidity.packageDefaultDependenciesDirectory": "lib",
-    "solidity.compileUsingRemoteVersion": "v0.8.10",
-    "search.exclude": { "lib": true },
-    "files.associations": {
-      ".dapprc": "shellscript",
-      ".gas-snapshot": "julia"
-    }
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": "lib",
+  "solidity.compileUsingRemoteVersion": "v0.8.13",
+  "search.exclude": { "lib": true },
+  "files.associations": {
+    ".gas-snapshot": "julia"
+  }
 }
