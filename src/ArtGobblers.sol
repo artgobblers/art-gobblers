@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
@@ -17,6 +17,8 @@ import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
 import {Goo} from "./Goo.sol";
 
 /// @title Art Gobblers NFT
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
@@ -145,8 +147,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint64 nextRevealTimestamp;
         // Id of latest gobbler which has been revealed so far.
         uint56 lastRevealedId;
-        // Remaining gobblers to be assigned from the current seed.
-        uint56 toBeAssigned;
+        // Remaining gobblers to be revealed with the current seed.
+        uint56 toBeRevealed;
         // Whether we are waiting to receive a seed from Chainlink.
         bool waitingForSeed;
     }
@@ -158,7 +160,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct data info required for goo emission reward calculations.
+    /// @notice Struct holding data required for goo emission calculations.
     struct EmissionData {
         // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
@@ -190,7 +192,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
     event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
-    event RandomnessRequested(address indexed user, uint256 toBeAssigned);
+    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
     event RandomnessFulfilled(uint256 randomness);
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
@@ -208,18 +210,19 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error SeedPending();
     error RevealsPending();
     error RequestTooEarly();
+    error ZeroToBeRevealed();
 
     error ReserveImbalance();
 
     error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
+    error IncorrectGobblerAmount(uint256 cost);
     error CannotBurnLegendary(uint256 gobblerId);
-    error IncorrectGobblerAmount(uint256 provided, uint256 needed);
 
-    error PriceExceededMax(uint256 currentPrice, uint256 maxPrice);
+    error PriceExceededMax(uint256 currentPrice);
 
-    error NotEnoughRemainingToBeAssigned(uint256 totalRemainingToBeAssigned);
+    error NotEnoughRemainingToBeRevealed(uint256 totalRemainingToBeRevealed);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -318,7 +321,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
-        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice, maxPrice);
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         goo.burnForGobblers(msg.sender, currentPrice);
 
@@ -358,13 +361,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
         gobblerId = FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold; // Assign id.
 
-        // If the current id is greater than the max supply, there are no remaining legendaries.
+        // If the gobbler id would be greater than the max supply, there are no remaining legendaries.
         if (gobblerId > MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
 
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
 
-        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(gobblerIds.length, cost);
+        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
 
         // Overflow in here should not occur, as most math is on emission multiples, which are inherently small.
         unchecked {
@@ -444,8 +447,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
-            // If we've minted more than the full interval, the price has decayed to 0.
-            if (numMintedSinceStart > LEGENDARY_AUCTION_INTERVAL) return 0;
+            // If we've minted the full interval or beyond it, the price has decayed to 0.
+            if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
             else return (startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
         }
@@ -455,21 +458,32 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                 VRF LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Get the random seed for revealing gobblers.
-    function getRandomSeed() external returns (bytes32) {
+    /// @notice Request a new random seed for revealing gobblers.
+    /// @dev Can only be called every 24 hours at the earliest.
+    function requestRandomSeed() external returns (bytes32) {
         uint256 nextRevealTimestamp = gobblerRevealsData.nextRevealTimestamp;
 
         // A new random seed cannot be requested before the next reveal timestamp.
         if (block.timestamp < nextRevealTimestamp) revert RequestTooEarly();
 
-        // A random seed can only be requested when all gobblers from previous seed have been assigned.
+        // A random seed can only be requested when all gobblers from previous seed have been revealed.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
-        if (gobblerRevealsData.toBeAssigned != 0) revert RevealsPending();
-
-        // A new seed cannot be requested while we wait for a new seed.
-        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
+        if (gobblerRevealsData.toBeRevealed != 0) revert RevealsPending();
 
         unchecked {
+            // Prevent revealing while we wait for the seed.
+            gobblerRevealsData.waitingForSeed = true;
+
+            // Compute the number of gobblers to be revealed with the seed.
+            uint256 toBeRevealed = currentNonLegendaryId - gobblerRevealsData.lastRevealedId;
+
+            // Ensure that there are more than 0 gobblers to be revealed,
+            // otherwise the contract could waste LINK revealing nothing.
+            if (toBeRevealed == 0) revert ZeroToBeRevealed();
+
+            // Lock in the number of gobblers to be revealed from seed.
+            gobblerRevealsData.toBeRevealed = uint56(toBeRevealed);
+
             // We want at most one batch of reveals every 24 hours.
             // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
             // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
@@ -477,14 +491,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
             // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
 
-            // Fix number of gobblers to be revealed from seed.
-            gobblerRevealsData.toBeAssigned = uint56(currentNonLegendaryId - gobblerRevealsData.lastRevealedId);
-
-            // Prevent revealing while we wait for the seed.
-            gobblerRevealsData.waitingForSeed = true;
+            emit RandomnessRequested(msg.sender, toBeRevealed);
         }
-
-        emit RandomnessRequested(msg.sender, gobblerRevealsData.toBeAssigned);
 
         // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
@@ -511,15 +519,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         uint256 lastRevealedId = gobblerRevealsData.lastRevealedId;
 
-        uint256 totalRemainingToBeAssigned = gobblerRevealsData.toBeAssigned;
-
-        // Can't reveal more gobblers than are currently remaining to be assigned in the seed.
-        if (numGobblers > totalRemainingToBeAssigned) revert NotEnoughRemainingToBeAssigned(totalRemainingToBeAssigned);
+        uint256 totalRemainingToBeRevealed = gobblerRevealsData.toBeRevealed;
 
         // Can't reveal if we're still waiting for a new seed.
         if (gobblerRevealsData.waitingForSeed) revert SeedPending();
 
-        emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
+        // Can't reveal more gobblers than are currently remaining to be revealed with the seed.
+        if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Implements a Knuth shuffle. If something in
         // here can overflow we've got bigger problems.
@@ -572,8 +578,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 // else if (swapIndex <= 7963) newCurrentIdMultiple = 8;
                 assembly {
                     // prettier-ignore
-                    newCurrentIdMultiple := sub(sub(sub(newCurrentIdMultiple,
-                        lt(swapIndex, 7964)), lt(swapIndex, 5673)), lt(swapIndex, 3055)
+                    newCurrentIdMultiple := sub(sub(sub(
+                        newCurrentIdMultiple,
+                        lt(swapIndex, 7964)),
+                        lt(swapIndex, 5673)),
+                        lt(swapIndex, 3055)
                     )
                 }
 
@@ -610,7 +619,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // Update all relevant reveal state state.
             gobblerRevealsData.randomSeed = uint64(randomSeed);
             gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
-            gobblerRevealsData.toBeAssigned = uint56(totalRemainingToBeAssigned - numGobblers);
+            gobblerRevealsData.toBeRevealed = uint56(totalRemainingToBeRevealed - numGobblers);
+
+            emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
         }
     }
 
@@ -739,9 +750,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        emit GooRemoved(msg.sender, gooAmount);
-
         goo.mintForGobblers(msg.sender, gooAmount);
+
+        emit GooRemoved(msg.sender, gooAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -764,13 +775,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
-        // First mint numGobblersEach gobblers to the team reserve.
+        // Mint numGobblersEach gobblers to both the team and community reserve.
         lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
+        lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "");
 
-        // Then mint numGobblersEach gobblers to the community reserve, and update currentNonLegendaryId.
-        currentNonLegendaryId = uint128(
-            lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "")
-        );
+        // Note: There is reentrancy here. The _batchMint calls above can enable an
+        // adversary to reenter before currentNonLegendaryId is updated, but since we
+        // assume the reserves are both trusted addresses, we can safely ignore this risk.
+        currentNonLegendaryId = uint128(lastMintedGobblerId); // Set currentNonLegendaryId.
 
         emit ReservedGobblersMinted(msg.sender, lastMintedGobblerId, numGobblersEach);
     }

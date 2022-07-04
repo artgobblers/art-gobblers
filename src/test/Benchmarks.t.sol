@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
 import {DSTest} from "ds-test/test.sol";
@@ -73,7 +73,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
         legendaryCost = gobblers.legendaryGobblerPrice();
 
-        bytes32 requestId = gobblers.getRandomSeed();
+        bytes32 requestId = gobblers.requestRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
     }

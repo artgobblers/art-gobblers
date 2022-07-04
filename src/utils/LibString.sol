@@ -1,6 +1,8 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// @notice Efficient library for creating string representations of integers.
+/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/utils/LibString.sol)
 library LibString {
     function toString(uint256 n) internal pure returns (string memory str) {
         if (n == 0) return "0"; // Otherwise it'd output an empty string for 0.

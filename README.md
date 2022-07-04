@@ -1,6 +1,6 @@
 <img align="right" width="150" height="150" top="100" src="./assets/gobbler.png">
 
-# Art Gobblers • [![CI](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/tests.yml/badge.svg)](https://github.com/FrankieIsLost/art-gobblers/actions/workflows/CI.yml)
+# Art Gobblers • [![CI](https://github.com/artgobblers/art-gobblers/actions/workflows/tests.yml/badge.svg)](https://github.com/artgobblers/art-gobblers/actions/workflows/CI.yml)
 
 Art Gobblers scan the cosmos in search of art producing life.
 
@@ -15,7 +15,7 @@ You will need a copy of [Foundry](https://github.com/foundry-rs/foundry) install
 ### Setup
 
 ```sh
-git clone https://github.com/FrankieIsLost/art-gobblers.git
+git clone https://github.com/artgobblers/art-gobblers.git
 cd art-gobblers
 ```
 
