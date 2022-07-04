@@ -23,13 +23,13 @@ contract DeployRinkeby is DeployBase {
             // Mint start:
             mintStart,
             // VRF coordinator:
-            address(0x6168499c0cFfCaCD319c818142124B7A15E857ab),
+            address(0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B),
             // LINK token:
             address(0x01BE23585060835E02B77ef475b0Cc51aA1e0709),
             // Chainlink hash:
-            0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc,
+            0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311,
             // Chainlink fee:
-            0.25e18,
+            0.1e18,
             // Gobbler base URI:
             gobblerBaseUri,
             // Gobbler unrevealed URI:
