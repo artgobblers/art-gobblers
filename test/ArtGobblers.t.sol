@@ -7,15 +7,15 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {ArtGobblers} from "../ArtGobblers.sol";
-import {Goo} from "../Goo.sol";
-import {Pages} from "../Pages.sol";
-import {GobblerReserve} from "../utils/GobblerReserve.sol";
+import {ArtGobblers} from "../src/ArtGobblers.sol";
+import {Goo} from "../src/Goo.sol";
+import {Pages} from "../src/Pages.sol";
+import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
-import {LibString} from "../utils/LibString.sol";
+import {LibString} from "../src/utils/lib/LibString.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
 contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {

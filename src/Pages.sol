@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {VRGDA} from "./utils/VRGDA.sol";
-import {LibString} from "./utils/LibString.sol";
-import {PagesERC721} from "./utils/PagesERC721.sol";
-import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
-import {PostSwitchVRGDA} from "./utils/PostSwitchVRGDA.sol";
+import {VRGDA} from "./utils/vrgda/VRGDA.sol";
+import {LibString} from "./utils/lib/LibString.sol";
+import {PagesERC721} from "./utils/token/PagesERC721.sol";
+import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
+import {PostSwitchVRGDA} from "./utils/vrgda/PostSwitchVRGDA.sol";
 
 import {Goo} from "./Goo.sol";
 
@@ -61,7 +61,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice The minimum amount of pages that must be sold for the VRGDA issuance
     /// schedule to switch from logistic to the "post switch" translated linear formula.
-    /// @dev Computed off-chain by plugging the switch day into the uninverted pacing formula.
+    /// @dev Computed off-chain by plugging SWITCH_DAY_WAD into the uninverted pacing formula.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal constant SOLD_BY_SWITCH_WAD = 8598.35810341741976233e18;
 
@@ -106,7 +106,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         PostSwitchVRGDA(
             SOLD_BY_SWITCH_WAD, // Sold by switch.
             SWITCH_DAY_WAD, // Target switch day.
-            10e18 // Pages to target per day.
+            9e18 // Pages to target per day.
         )
         PagesERC721(_artGobblers, "Blankies", "BLANK")
     {
@@ -159,16 +159,21 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
         unchecked {
             // The number of pages minted for the community reserve
-            // cannot ever exceed 10% of the total supply of pages.
+            // should never exceed 10% of the total supply of pages.
             return getPrice(timeSinceStart, currentId - numMintedForCommunity);
         }
     }
 
-    function getTargetSaleDay(int256 tokens) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
-        return
-            tokens < SOLD_BY_SWITCH_WAD
-                ? LogisticVRGDA.getTargetSaleDay(tokens)
-                : PostSwitchVRGDA.getTargetSaleDay(tokens);
+    function getTargetDayForNextSale(int256 sold)
+        internal
+        view
+        override(LogisticVRGDA, PostSwitchVRGDA)
+        returns (int256)
+    {
+        // prettier-ignore
+        return sold < SOLD_BY_SWITCH_WAD
+            ? LogisticVRGDA.getTargetDayForNextSale(sold)
+            : PostSwitchVRGDA.getTargetDayForNextSale(sold);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -6,9 +6,9 @@ import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {ArtGobblers} from "../ArtGobblers.sol";
-import {Goo} from "../Goo.sol";
-import {Pages} from "../Pages.sol";
+import {ArtGobblers} from "../src/ArtGobblers.sol";
+import {Goo} from "../src/Goo.sol";
+import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 

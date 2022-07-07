@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 
-import {wadMul, wadDiv} from "../utils/SignedWadMath.sol";
+import {wadMul, wadDiv} from "../src/utils/lib/SignedWadMath.sol";
 
 contract SignedWadMathTest is DSTestPlus {
     function testWadMul(

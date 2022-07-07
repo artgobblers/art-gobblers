@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {unsafeWadDiv} from "./SignedWadMath.sol";
+import {unsafeWadDiv} from "../lib/SignedWadMath.sol";
 
 import {VRGDA} from "./VRGDA.sol";
 
@@ -40,9 +40,9 @@ abstract contract PostSwitchVRGDA is VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getTargetSaleDay(int256 tokens) internal view virtual override returns (int256) {
+    function getTargetDayForNextSale(int256 sold) internal view virtual override returns (int256) {
         unchecked {
-            return unsafeWadDiv(tokens - soldBySwitch, perDay) + switchDay;
+            return unsafeWadDiv(sold - soldBySwitch, perDay) + switchDay;
         }
     }
 }

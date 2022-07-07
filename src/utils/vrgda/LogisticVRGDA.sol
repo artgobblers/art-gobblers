@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {wadExp, wadLn, unsafeDiv, unsafeWadDiv} from "./SignedWadMath.sol";
+import {wadExp, wadLn, unsafeDiv, unsafeWadDiv} from "../lib/SignedWadMath.sol";
 
 import {VRGDA} from "./VRGDA.sol";
 
@@ -15,7 +15,7 @@ abstract contract LogisticVRGDA is VRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Controls the curve's maximum value which
-    /// controls the maximum number of NFTs to be issued.
+    /// controls the maximum number of tokens to sell.
     /// @dev Represented as a 36 decimal fixed point number.
     int256 internal immutable logisticScale;
 
@@ -42,9 +42,9 @@ abstract contract LogisticVRGDA is VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getTargetSaleDay(int256 tokens) internal view virtual override returns (int256 day) {
+    function getTargetDayForNextSale(int256 sold) internal view virtual override returns (int256) {
         unchecked {
-            return -unsafeWadDiv(wadLn(unsafeDiv(logisticScale, tokens + initialLogisticValue) - 1e18), timeScale);
+            return -unsafeWadDiv(wadLn(unsafeDiv(logisticScale, sold + initialLogisticValue) - 1e18), timeScale);
         }
     }
 }

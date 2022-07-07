@@ -173,7 +173,7 @@ abstract contract PagesERC721 {
         // Does not check the token has not been already minted
         // or is being minted to address(0) because ids in Pages.sol
         // are set using a monotonically increasing counter and only
-        // minted to known address or msg.sender who cannot be zero.
+        // minted to safe addresses or msg.sender who cannot be zero.
 
         // Counter overflow is incredibly unrealistic.
         unchecked {

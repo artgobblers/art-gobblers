@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 /// @notice ERC1155B implementation optimized for ArtGobblers by using the ownerOf storage slot to store attribute data.
-/// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC1155B.sol)
+/// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/v7/src/tokens/ERC1155B.sol)
 abstract contract GobblersERC1155B {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS

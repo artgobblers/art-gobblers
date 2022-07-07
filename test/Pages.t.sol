@@ -5,8 +5,8 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {Goo} from "../Goo.sol";
-import {Pages} from "../Pages.sol";
+import {Goo} from "../src/Goo.sol";
+import {Pages} from "../src/Pages.sol";
 import {console} from "./utils/Console.sol";
 
 contract PagesTest is DSTestPlus {
@@ -140,7 +140,7 @@ contract PagesTest is DSTestPlus {
     /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 12 days;
-        uint256 numMint = 9589;
+        uint256 numMint = 9408;
 
         vm.warp(block.timestamp + timeDelta);
 

@@ -5,7 +5,7 @@ import {DSTest} from "ds-test/test.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {Goo} from "../Goo.sol";
+import {Goo} from "../src/Goo.sol";
 
 contract GooTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);

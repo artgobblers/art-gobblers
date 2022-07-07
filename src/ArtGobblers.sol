@@ -8,11 +8,11 @@ import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
-import {VRGDA} from "./utils/VRGDA.sol";
-import {LibString} from "./utils/LibString.sol";
-import {LogisticVRGDA} from "./utils/LogisticVRGDA.sol";
-import {MerkleProofLib} from "./utils/MerkleProofLib.sol";
-import {GobblersERC1155B} from "./utils/GobblersERC1155B.sol";
+import {VRGDA} from "./utils/vrgda/VRGDA.sol";
+import {LibString} from "./utils/lib/LibString.sol";
+import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
+import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
+import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
 
 import {Goo} from "./Goo.sol";
 
@@ -369,7 +369,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
 
-        // Overflow in here should not occur, as most math is on emission multiples, which are inherently small.
+        // Overflow should not occur in here, as most math is on emission multiples, which are inherently small.
         unchecked {
             uint256 burnedMultipleTotal; // The legendary's emissionMultiple will be 2x the sum of the gobblers burned.
 
@@ -466,7 +466,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // A new random seed cannot be requested before the next reveal timestamp.
         if (block.timestamp < nextRevealTimestamp) revert RequestTooEarly();
 
-        // A random seed can only be requested when all gobblers from previous seed have been revealed.
+        // A random seed can only be requested when all gobblers from the previous seed have been revealed.
         // This prevents a user from requesting additional randomness in hopes of a more favorable outcome.
         if (gobblerRevealsData.toBeRevealed != 0) revert RevealsPending();
 
@@ -512,7 +512,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                           GOBBLER REVEAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Knuth shuffle to progressively reveal gobblers using entropy from random seed.
+    /// @notice Knuth shuffle to progressively reveal
+    /// new gobblers using entropy from a random seed.
     /// @param numGobblers The number of gobblers to reveal.
     function revealGobblers(uint256 numGobblers) external {
         uint256 randomSeed = gobblerRevealsData.randomSeed;
