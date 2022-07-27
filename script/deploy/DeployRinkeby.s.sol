@@ -6,9 +6,10 @@ import {DeployBase} from "./DeployBase.s.sol";
 contract DeployRinkeby is DeployBase {
     address public immutable coldWallet = 0x126620598A797e6D9d2C280b5dB91b46F27A8330;
 
-    address public immutable root = 0x1D18077167c1177253555e45B4b5448B11E30b4b;
+    address public immutable root = 0xaaa76bdE9753FC1Bd99EDdE226B15c5C27E390c7;
 
-    uint256 public immutable mintStart = 1656369768;
+    // 1658959200 for mev contest - Wed Jul 27 2022 18:00:00 GMT-0400 (Eastern Daylight Time) (6pm)
+    uint256 public immutable mintStart = 1658959200;
 
     string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
     string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";

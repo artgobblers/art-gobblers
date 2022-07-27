@@ -293,12 +293,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         if (mintStart > block.timestamp) revert MintStartPending();
 
         // If the user has already claimed, revert.
-        if (hasClaimedMintlistGobbler[msg.sender]) revert AlreadyClaimed();
+        // if (hasClaimedMintlistGobbler[msg.sender]) revert AlreadyClaimed();
 
         // If the user's proof is invalid, revert.
         if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert InvalidProof();
 
-        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
+        // hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
 
         unchecked {
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
