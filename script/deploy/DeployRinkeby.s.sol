@@ -8,8 +8,8 @@ contract DeployRinkeby is DeployBase {
 
     address public immutable root = 0xaaa76bdE9753FC1Bd99EDdE226B15c5C27E390c7;
 
-    // 1658959200 for mev contest - Wed Jul 27 2022 18:00:00 GMT-0400 (Eastern Daylight Time) (6pm)
-    uint256 public immutable mintStart = 1658959200;
+    // 1658959200 for mev contest - Wed Jul 27 2022 15:00:00 GMT-0400 (Eastern Daylight Time) (3pm EST 7/27)
+    uint256 public immutable mintStart = 1658948400;
 
     string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
     string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
