@@ -123,7 +123,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
-    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted.
+    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted from goop.
     /// @dev We add 1 to LEGENDARY_SUPPLY because legendary auctions begin only after the first interval.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / (LEGENDARY_SUPPLY + 1);
 
@@ -167,9 +167,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     struct EmissionData {
         // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
-        // Balance at time of last deposit or withdrawal.
+        // Balance at time of last checkpointing.
         uint128 lastBalance;
-        // Timestamp of last deposit or withdrawal.
+        // Timestamp of last checkpointing.
         uint64 lastTimestamp;
     }
 
@@ -400,7 +400,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // The shift right by 1 is equivalent to multiplication by 2, used to make
             // the legendary's emissionMultiple 2x the sum of the multiples of the gobblers burned.
-            // Must be done before minting as the transfer hook will update the user's emissionMultiple.
             getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal << 1);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
@@ -879,7 +878,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                               HELPER LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Transfer an amount of a user's emission multiple to another user.
+    /// @dev Transfer an amount of a user's emission multiple to another user, and checkpoint
+    /// lastBalance and lastTimestap for correct computation of balances. 
     /// @dev Should be done whenever a gobbler is transferred between two users.
     /// @param from The user to transfer the amount of emission multiple from.
     /// @param to The user to transfer the amount of emission multiple to.
