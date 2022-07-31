@@ -81,6 +81,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     error PriceExceededMax(uint256 currentPrice);
 
+    error InvalidId();
+
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -205,7 +207,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// @notice Returns a pages's URI if it has been minted.
     /// @param pageId The id of the page to get the URI for.
     function tokenURI(uint256 pageId) public view virtual override returns (string memory) {
-        if (pageId > currentId) return "";
+        if (pageId == 0 || pageId > currentId) revert InvalidId();
 
         return string(abi.encodePacked(BASE_URI, pageId.toString()));
     }
