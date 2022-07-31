@@ -28,7 +28,7 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /// @notice Withdraw gobblers from the reserve.
     /// @param to The address to transfer the gobblers to.
     /// @param ids The ids of the gobblers to transfer.
-    function withdraw(address to, uint256[] calldata ids) public onlyOwner {
+    function withdraw(address to, uint256[] calldata ids) external onlyOwner {
         unchecked {
             // Generating this in memory is pretty expensive
             // but this is not a hot path so we can afford it.
