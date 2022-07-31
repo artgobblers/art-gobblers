@@ -117,6 +117,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                      LEGENDARY GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initial legendary gobbler audtion price.
+    uint256 public constant LEGENDARY_GOBBLER_INITIAL_START_PRICE = 69;
+
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
@@ -272,7 +275,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         UNREVEALED_URI = _unrevealedUri;
 
         // Starting price for legendary gobblers is 69 gobblers.
-        legendaryGobblerAuctionData.startPrice = 69;
+        legendaryGobblerAuctionData.startPrice = uint128(LEGENDARY_GOBBLER_INITIAL_START_PRICE);
 
         // Reveal for initial mint must wait 24 hours
         gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
@@ -283,7 +286,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Claim from mintlist, using a merkle proof.
-    /// @dev Function does not directly enforce MINTLIST_SUPPLY limit for gas efficiency.This limit 
+    /// @dev Function does not directly enforce MINTLIST_SUPPLY limit for gas efficiency.This limit
     /// will be enforced during the creation of the merkle proof (which will be shared publicly).
     /// @param proof Merkle proof to verify the sender is mintlisted.
     /// @return gobblerId The id of the gobbler that was claimed.
@@ -408,7 +411,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
             // New start price is the max of 69 and cost * 2. Left shift by 1 is like multiplication by 2.
-            legendaryGobblerAuctionData.startPrice = uint120(cost < 35 ? 69 : cost << 1);
+            legendaryGobblerAuctionData.startPrice = uint120(
+                cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost << 1
+            );
             legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
@@ -664,7 +669,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // The caller must own the gobbler they're feeding.
         if (owner != msg.sender) revert OwnerMismatch(owner);
-        // Gobblers can't eat other gobblers. 
+        // Gobblers can't eat other gobblers.
         if (nft == address(this)) revert Cannibalism();
 
         unchecked {

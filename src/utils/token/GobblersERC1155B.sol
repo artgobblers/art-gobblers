@@ -128,7 +128,6 @@ abstract contract GobblersERC1155B {
             interfaceId == 0x0e89341c; // ERC165 Interface ID for ERC1155MetadataURI
     }
 
-
     /*//////////////////////////////////////////////////////////////
                            INTERNAL MINT LOGIC
     //////////////////////////////////////////////////////////////*/
