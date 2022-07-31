@@ -87,6 +87,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Set VRGDA parameters, mint start, relevant addresses, and uri base. 
+    /// @param _mintStart Timestamp for the start of the VRGDA mint.
+    /// @param _goo Address of the Goo contract.
+    /// @param _community Address of community reserve.
+    /// @param _artGobblers Address of ArtGobblers contract. 
+    /// @param _baseUri Base URI for token metadata. 
     constructor(
         // Mint config:
         uint256 _mintStart,
@@ -160,6 +166,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
+    /// @notice Get target date for a specific number of sales 
+    /// @param sold number of sales for which we want to find target date
     function getTargetDayForNextSale(int256 sold)
         internal
         view
