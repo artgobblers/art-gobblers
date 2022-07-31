@@ -20,6 +20,10 @@ abstract contract VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
+    /// @notice Set initial price and per period price decay for VRGDA.
+    /// @param _initialPrice Initial price of each token.
+    /// @param periodPriceDecrease daily percent price decrease, 
+    /// represented as an 18 decimal fixed point number.
     constructor(int256 _initialPrice, int256 periodPriceDecrease) {
         initialPrice = _initialPrice;
 

@@ -87,12 +87,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Set VRGDA parameters, mint start, relevant addresses, and uri base. 
+    /// @notice Set VRGDA parameters, mint start, relevant addresses, and uri base.
     /// @param _mintStart Timestamp for the start of the VRGDA mint.
     /// @param _goo Address of the Goo contract.
     /// @param _community Address of community reserve.
-    /// @param _artGobblers Address of ArtGobblers contract. 
-    /// @param _baseUri Base URI for token metadata. 
+    /// @param _artGobblers Address of ArtGobblers contract.
+    /// @param _baseUri Base URI for token metadata.
     constructor(
         // Mint config:
         uint256 _mintStart,
@@ -166,8 +166,10 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
-    /// @notice Get target date for a specific number of sales 
-    /// @param sold number of sales for which we want to find target date
+    /// @dev Given the number of tokens sold so far, return the target day the next token should be sold by.
+    /// @param sold The number of tokens that have been sold so far, where 0 means none, scaled by 1e18.
+    /// @return The target day that the next token should be sold by, scaled by 1e18, where the day
+    /// is relative, such that 0 means the token should be sold immediately when the VRGDA begins.
     function getTargetDayForNextSale(int256 sold)
         internal
         view

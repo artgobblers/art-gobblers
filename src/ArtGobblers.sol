@@ -879,7 +879,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Transfer an amount of a user's emission multiple to another user, and checkpoint
-    /// lastBalance and lastTimestap for correct computation of balances. 
+    /// lastBalance and lastTimestap for correct computation of balances.
     /// @dev Should be done whenever a gobbler is transferred between two users.
     /// @param from The user to transfer the amount of emission multiple from.
     /// @param to The user to transfer the amount of emission multiple to.
