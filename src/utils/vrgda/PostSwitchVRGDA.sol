@@ -26,7 +26,7 @@ abstract contract PostSwitchVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable perDay;
 
-    /// @notice Set relevant pricing parameters. 
+    /// @notice Set relevant pricing parameters.
     constructor(
         int256 _soldBySwitch,
         int256 _switchDay,

@@ -78,8 +78,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                               VRF CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Public key against which randomness is generated.
     bytes32 internal immutable chainlinkKeyHash;
 
+    /// @notice Fee required to fulfill a VRF request.
     uint256 internal immutable chainlinkFee;
 
     /*//////////////////////////////////////////////////////////////
@@ -339,6 +341,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Gobbler pricing in terms of goo.
     /// @dev Will revert if called before minting starts
     /// or after all gobblers have been minted via VRGDA.
+    /// @return Current price of a gobbler in terms of goo.  
     function gobblerPrice() public view returns (uint256) {
         // We need checked math here to cause overflow
         // before minting has begun, preventing mints.
@@ -426,6 +429,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @dev The price of a legendary gobbler decays as gobblers are minted. The first legendary auction begins when
     /// 1 LEGENDARY_AUCTION_INTERVAL worth of gobblers are minted, and the price decays linearly while the next interval of
     /// gobblers are minted. Every time an additional interval is minted, a new auction begins until all legendaries have been sold.
+    /// @return price of legendary gobbler, in terms of gobblers. 
     function legendaryGobblerPrice() public view returns (uint256) {
         // Retrieve and cache the auction's startPrice and numSold on the stack.
         uint256 startPrice = legendaryGobblerAuctionData.startPrice;
