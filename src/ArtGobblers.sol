@@ -215,6 +215,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error ReserveImbalance();
 
     error OwnerMismatch(address owner);
+    error Cannibalism();
 
     error NoRemainingLegendaryGobblers();
     error IncorrectGobblerAmount(uint256 cost);
@@ -282,6 +283,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Claim from mintlist, using a merkle proof.
+    /// @dev Function does not directly enforce MINTLIST_SUPPLY limit for gas efficiency.This limit 
+    /// will be enforced during the creation of the merkle proof (which will be shared publicly).
     /// @param proof Merkle proof to verify the sender is mintlisted.
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
@@ -661,6 +664,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // The caller must own the gobbler they're feeding.
         if (owner != msg.sender) revert OwnerMismatch(owner);
+        // Gobblers can't eat other gobblers. 
+        if (nft == address(this)) revert Cannibalism();
 
         unchecked {
             // Increment the number of copies fed to the gobbler.

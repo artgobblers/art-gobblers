@@ -24,6 +24,8 @@ abstract contract VRGDA {
         initialPrice = _initialPrice;
 
         decayConstant = wadLn(1e18 - periodPriceDecrease);
+        //sanity check to make sure that decay constant is negative
+        assert(decayConstant < 0);
     }
 
     /*//////////////////////////////////////////////////////////////
