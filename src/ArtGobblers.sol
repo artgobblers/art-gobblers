@@ -330,6 +330,34 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         }
     }
 
+    /// @notice Mint a gobbler with goo, paying directly from the user's goo balance.
+    /// @param maxPrice Maximum price to pay to mint the gobbler.
+    /// @return gobblerId The id of the gobbler that was minted.
+    function mintFromGooBalance(uint256 maxPrice) external returns (uint256 gobblerId) {
+        // No need to check mint cap, gobblerPrice()
+        // will revert due to overflow if we reach it.
+        // It will also revert prior to the mint start.
+        uint256 currentPrice = gobblerPrice();
+
+        // If the current price is above the user's specified max, revert.
+        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
+
+        // Remove goo directly from user's balace
+        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
+        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - currentPrice);
+        getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
+
+        emit GooRemoved(msg.sender, currentPrice);
+
+        unchecked {
+            ++numMintedFromGoo; // Before mint to prevent reentrancy.
+
+            emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
+
+            _mint(msg.sender, gobblerId, "");
+        }
+    }
+
     /// @notice Gobbler pricing in terms of goo.
     /// @dev Will revert if called before minting starts
     /// or after all gobblers have been minted via VRGDA.

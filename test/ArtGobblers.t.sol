@@ -136,6 +136,42 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintFromGoo(type(uint256).max);
     }
 
+    /// @notice Test that you can successfully mint from goo.
+    function testMintFromGooBalance() public {
+        uint256 cost = gobblers.gobblerPrice();
+        //mint initial gobbler
+        vm.prank(address(gobblers));
+        goo.mintForGobblers(users[0], cost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoo(type(uint256).max);
+        //warp for reveals
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        //warp until balance is larger than cost
+        vm.warp(block.timestamp + 3 days);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 gobblerPrice = gobblers.gobblerPrice();
+        assertTrue(initialBalance > gobblerPrice);
+        console.log("newPrice", gobblerPrice);
+        console.log("balance", initialBalance);
+        //mint from balance
+        vm.prank(users[0]);
+        gobblers.mintFromGooBalance(type(uint256).max);
+        //asert owner is correct
+        assertEq(gobblers.ownerOf(2), users[0]);
+        //asert balance went down by expected amount
+        uint256 finalBalance = gobblers.gooBalance(users[0]);
+        uint256 paidGoo = initialBalance - finalBalance;
+        assertEq(paidGoo, gobblerPrice);
+    }
+
+    /// @notice Test that you can't mint with insufficient balance
+    function testMintFromBalanceInsufficient() public {
+        vm.prank(users[0]);
+        vm.expectRevert(stdError.arithmeticError);
+        gobblers.mintFromGooBalance(type(uint256).max);
+    }
+
     /// @notice Test that if mint price exceeds max it reverts.
     function testMintPriceExceededMax() public {
         uint256 cost = gobblers.gobblerPrice();
