@@ -754,6 +754,16 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.stopPrank();
     }
 
+    /// @notice Test that gobblers can't eat other gobblers 
+    function testCantFeedGobblers() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 2);
+        vm.startPrank(user);
+        vm.expectRevert(ArtGobblers.Cannibalism.selector);
+        gobblers.feedArt(1, address(gobblers), 2, true);
+        vm.stopPrank();
+    }    
+
     function testCantFeed721As1155() public {
         address user = users[0];
         mintGobblerToAddress(user, 1);
