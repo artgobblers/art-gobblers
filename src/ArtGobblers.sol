@@ -217,7 +217,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
-    error IncorrectGobblerAmount(uint256 cost);
+    error InsufficientGobblerAmount(uint256 cost);
     error CannotBurnLegendary(uint256 gobblerId);
 
     error PriceExceededMax(uint256 currentPrice);
@@ -357,7 +357,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
 
-        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
+        if (gobblerIds.length < cost) revert InsufficientGobblerAmount(cost);
 
         // Overflow should not occur in here, as most math is on emission multiples, which are inherently small.
         unchecked {
@@ -367,12 +367,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                     BATCH BURN LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // Generate an amounts array locally to use in the event below.
-            uint256[] memory amounts = new uint256[](gobblerIds.length);
+            // Generate arrays locally to use in the event below.
+            uint256[] memory amounts = new uint256[](cost);
+            uint256[] memory ids = new uint256[](cost);
 
             uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
-            for (uint256 i = 0; i < gobblerIds.length; ++i) {
+            for (uint256 i = 0; i < cost; ++i) {
                 id = gobblerIds[i];
 
                 if (id >= FIRST_LEGENDARY_GOBBLER_ID) revert CannotBurnLegendary(id);
@@ -384,9 +385,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 getGobblerData[id].owner = address(0);
 
                 amounts[i] = 1;
+                ids[i] = id;
             }
 
-            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
+            emit TransferBatch(msg.sender, msg.sender, address(0), ids, amounts);
 
             /*//////////////////////////////////////////////////////////////
                                  LEGENDARY MINTING LOGIC
@@ -409,7 +411,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
-            emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
+            emit LegendaryGobblerMinted(msg.sender, gobblerId, ids);
 
             _mint(msg.sender, gobblerId, "");
         }
