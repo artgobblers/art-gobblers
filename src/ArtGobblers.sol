@@ -51,7 +51,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
     /// @notice Maximum amount of gobblers split between the reserves.
-    /// @dev Set to compromise 20% of the sum of goo mintable gobblers + reserved gobblers.
+    /// @dev Set to comprise 20% of the sum of goo mintable gobblers + reserved gobblers.
     uint256 public constant RESERVED_SUPPLY = (MAX_SUPPLY - MINTLIST_SUPPLY - LEGENDARY_SUPPLY) / 5;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
@@ -418,7 +418,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to a linear decay function.
     /// @dev The price of a legendary gobbler decays as gobblers are minted. The first legendary auction begins when
     /// 1 LEGENDARY_AUCTION_INTERVAL worth of gobblers are minted, and the price decays linearly while the next interval of
-    /// gobblers is minted. Every time an additional interval is minted, a new auction begins until all legendaries been sold.
+    /// gobblers are minted. Every time an additional interval is minted, a new auction begins until all legendaries have been sold.
     function legendaryGobblerPrice() public view returns (uint256) {
         // Retrieve and cache the auction's startPrice and numSold on the stack.
         uint256 startPrice = legendaryGobblerAuctionData.startPrice;
@@ -432,8 +432,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
         }
 
-        // How many gobblers where minted since auction began. Cannot be
-        // unchecked, we want this to revert if auction has not yet started.
+        // How many gobblers were minted since auction began. Cannot be
+        // unchecked, we want this to revert if the auction has not yet started.
         uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
@@ -516,7 +516,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Implements a Knuth shuffle. If something in
-        // here can overflow we've got bigger problems.
+        // here can overflow, we've got bigger problems.
         unchecked {
             for (uint256 i = 0; i < numGobblers; ++i) {
                 /*//////////////////////////////////////////////////////////////
@@ -604,7 +604,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 }
             }
 
-            // Update all relevant reveal state state.
+            // Update all relevant reveal state.
             gobblerRevealsData.randomSeed = uint64(randomSeed);
             gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
             gobblerRevealsData.toBeRevealed = uint56(totalRemainingToBeRevealed - numGobblers);
@@ -743,7 +743,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Mint a number of gobblers to the reserves.
     /// @param numGobblersEach The number of gobblers to mint to each reserve.
-    /// @dev Gobblers minted to reserves cannot compromise more than 20% of the sum of
+    /// @dev Gobblers minted to reserves cannot comprise more than 20% of the sum of
     /// the supply of goo minted gobblers and the supply of gobblers minted to reserves.
     function mintReservedGobblers(uint256 numGobblersEach) external returns (uint256 lastMintedGobblerId) {
         unchecked {
@@ -752,7 +752,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // loop in _batchMint to run out of gas quickly. Shift left by 1 is equivalent to multiplying by 2.
             uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach << 1);
 
-            // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
+            // Ensure that after this mint gobblers minted to reserves won't comprise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
@@ -773,13 +773,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                           CONVENIENCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Convenience function to get emission emissionMultiple for a gobbler.
+    /// @notice Convenience function to get emissionMultiple for a gobbler.
     /// @param gobblerId The gobbler to get emissionMultiple for.
     function getGobblerEmissionMultiple(uint256 gobblerId) external view returns (uint256) {
         return getGobblerData[gobblerId].emissionMultiple;
     }
 
-    /// @notice Convenience function to get emission emissionMultiple for a user.
+    /// @notice Convenience function to get emissionMultiple for a user.
     /// @param user The user to get emissionMultiple for.
     function getUserEmissionMultiple(address user) external view returns (uint256) {
         return getEmissionDataForUser[user].emissionMultiple;
@@ -869,7 +869,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                               HELPER LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Transfer an amount of a user's emission's multiple to another user.
+    /// @dev Transfer an amount of a user's emission multiple to another user.
     /// @dev Should be done whenever a gobbler is transferred between two users.
     /// @param from The user to transfer the amount of emission multiple from.
     /// @param to The user to transfer the amount of emission multiple to.

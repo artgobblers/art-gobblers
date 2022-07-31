@@ -20,7 +20,7 @@ abstract contract LogisticVRGDA is VRGDA {
     int256 internal immutable logisticScale;
 
     /// @dev Time scale controls the steepness of the logistic curve,
-    /// which effects how quickly we will reach the curve's asymptote.
+    /// which affects how quickly we will reach the curve's asymptote.
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable timeScale;
 
