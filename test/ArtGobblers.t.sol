@@ -388,7 +388,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintLegendaryGobbler(ids);
     }
 
-    /// @notice Test that legendary gobblers can be minted with slippage. 
+    /// @notice Test that legendary gobblers can be minted with slippage.
     function testMintLegendaryGobblerWithSplippage() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
@@ -408,16 +408,15 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
 
-        //check full cost was burned 
+        //check full cost was burned
         for (uint256 curId = 1; curId <= cost; curId++) {
             assertEq(gobblers.ownerOf(curId), address(0));
         }
         //check extra tokens were not burned
-         for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {
+        for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {
             assertEq(gobblers.ownerOf(curId), users[0]);
         }
     }
-
 
     /// @notice Test that legendary gobblers can't be minted if the user doesn't own one of the ids.
     function testMintLegendaryGobblerWithUnownedId() public {
