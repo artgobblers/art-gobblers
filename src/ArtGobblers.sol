@@ -369,7 +369,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
             // Generate arrays locally to use in the event below.
             uint256[] memory amounts = new uint256[](cost);
-            uint256[] memory ids = new uint256[](cost);
 
             uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
@@ -385,10 +384,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 getGobblerData[id].owner = address(0);
 
                 amounts[i] = 1;
-                ids[i] = id;
             }
 
-            emit TransferBatch(msg.sender, msg.sender, address(0), ids, amounts);
+            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds[:cost], amounts);
 
             /*//////////////////////////////////////////////////////////////
                                  LEGENDARY MINTING LOGIC
@@ -411,7 +409,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
-            emit LegendaryGobblerMinted(msg.sender, gobblerId, ids);
+            emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds[:cost]);
 
             _mint(msg.sender, gobblerId, "");
         }
