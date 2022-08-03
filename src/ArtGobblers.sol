@@ -125,7 +125,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
-    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted from goop.
+    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted from goo.
     /// @dev We add 1 to LEGENDARY_SUPPLY because legendary auctions begin only after the first interval.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / (LEGENDARY_SUPPLY + 1);
 
@@ -401,9 +401,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                  LEGENDARY MINTING LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // The shift right by 1 is equivalent to multiplication by 2, used to make
-            // the legendary's emissionMultiple 2x the sum of the multiples of the gobblers burned.
-            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal << 1);
+            // The legendary's emissionMultiple 2x the sum of the multiples of the gobblers burned.
+            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal * 2);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -412,9 +411,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
-            // New start price is the max of 69 and cost * 2. Left shift by 1 is like multiplication by 2.
+            // New start price is the max of 69 and cost * 2.
             legendaryGobblerAuctionData.startPrice = uint120(
-                cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost << 1
+                cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost * 2
             );
             legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
