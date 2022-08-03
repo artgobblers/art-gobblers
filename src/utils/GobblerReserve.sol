@@ -36,9 +36,8 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
         unchecked {
             // Generating this in memory is pretty expensive
             // but this is not a hot path so we can afford it.
-            uint256 numIds = ids.length;
-            uint256[] memory amounts = new uint256[](numIds);
-            for (uint256 i = 0; i < numIds; i++) amounts[i] = 1;
+            uint256[] memory amounts = new uint256[](ids.length);
+            for (uint256 i = 0; i < ids.length; i++) amounts[i] = 1;
 
             artGobblers.safeBatchTransferFrom(address(this), to, ids, amounts, "");
         }
