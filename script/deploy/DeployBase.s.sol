@@ -6,6 +6,8 @@ import "forge-std/Script.sol";
 import {LibRLP} from "../../test/utils/LibRLP.sol";
 
 import {GobblerReserve} from "../../src/utils/GobblerReserve.sol";
+import {RandProvider} from "../../src/utils/random/RandProviderInterface.sol";
+import {ChainlinkV1RandProvider} from "../../src/utils/random/ChainlinkV1RandProvider.sol";
 
 import {Goo} from "../../src/Goo.sol";
 import {Pages} from "../../src/Pages.sol";
@@ -28,6 +30,7 @@ abstract contract DeployBase is Script {
     GobblerReserve public teamReserve;
     GobblerReserve public communityReserve;
     Goo public goo;
+    RandProvider public randProvider;
     ArtGobblers public artGobblers;
     Pages public pages;
 
@@ -60,12 +63,19 @@ abstract contract DeployBase is Script {
 
         // Precomputed contract addresses, based on contract deploy nonces.
         // tx.origin is the address who will actually broadcast the contract creations below.
-        address gobblerAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 3);
-        address pageAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 4);
+        address gobblerAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 4);
+        address pageAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 5);
 
         // Deploy team and community reserves, owned by cold wallet.
         teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
         communityReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
+        randProvider = new ChainlinkV1RandProvider(
+            vrfCoordinator,
+            linkToken,
+            chainlinkKeyHash,
+            chainlinkFee,
+            ArtGobblers(gobblerAddress)
+        );
 
         // Deploy goo contract.
         goo = new Goo(
@@ -82,10 +92,7 @@ abstract contract DeployBase is Script {
             goo,
             address(teamReserve),
             address(communityReserve),
-            vrfCoordinator,
-            linkToken,
-            chainlinkKeyHash,
-            chainlinkFee,
+            randProvider,
             gobblerBaseUri,
             gobblerUnrevealedUri
         );

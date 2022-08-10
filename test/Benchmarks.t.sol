@@ -7,6 +7,8 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {ArtGobblers} from "../src/ArtGobblers.sol";
+import {RandProvider} from "../src/utils/random/RandProviderInterface.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
@@ -21,9 +23,9 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     ArtGobblers private gobblers;
     VRFCoordinatorMock private vrfCoordinator;
     LinkToken private linkToken;
-
-    Goo goo;
-    Pages pages;
+    RandProvider private randProvider;
+    Goo private goo;
+    Pages private pages;
 
     uint256 legendaryCost;
 
@@ -38,12 +40,19 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        goo = new Goo(
-            // Gobblers:
-            utils.predictContractAddress(address(this), 1),
-            // Pages:
-            utils.predictContractAddress(address(this), 2)
+        //gobblers contract will be deployed after 2 contract deploys, and pages after 3
+        address gobblerAddress = utils.predictContractAddress(address(this), 2);
+        address pageAddress = utils.predictContractAddress(address(this), 3);
+
+        randProvider = new ChainlinkV1RandProvider(
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            ArtGobblers(gobblerAddress)
         );
+
+        goo = new Goo(gobblerAddress, pageAddress);
 
         gobblers = new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
@@ -51,10 +60,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             goo,
             address(0xBEEF),
             address(0xBEEF),
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
+            randProvider,
             "base",
             ""
         );
@@ -75,7 +81,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
 
         bytes32 requestId = gobblers.requestRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
-        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
     }
 
     function testPagePrice() public view {

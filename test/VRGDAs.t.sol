@@ -10,6 +10,8 @@ import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
+import {RandProvider} from "../src/utils/random/RandProviderInterface.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
 
 contract VRGDAsTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -25,6 +27,7 @@ contract VRGDAsTest is DSTestPlus {
 
     Goo goo;
     Pages pages;
+    RandProvider randProvider;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -35,12 +38,19 @@ contract VRGDAsTest is DSTestPlus {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        goo = new Goo(
-            // Gobblers:
-            utils.predictContractAddress(address(this), 1),
-            // Pages:
-            utils.predictContractAddress(address(this), 2)
+        //gobblers contract will be deployed after 2 contract deploys, and pages after 3
+        address gobblerAddress = utils.predictContractAddress(address(this), 2);
+        address pagesAddress = utils.predictContractAddress(address(this), 3);
+
+        randProvider = new ChainlinkV1RandProvider(
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee,
+            ArtGobblers(gobblerAddress)
         );
+
+        goo = new Goo(gobblerAddress, pagesAddress);
 
         gobblers = new ArtGobblers(
             "root",
@@ -48,10 +58,7 @@ contract VRGDAsTest is DSTestPlus {
             goo,
             address(0xBEEF),
             address(0xBEEF),
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
+            randProvider,
             "base",
             ""
         );
