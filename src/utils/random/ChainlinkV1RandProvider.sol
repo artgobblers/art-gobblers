@@ -7,17 +7,16 @@ import {ArtGobblers} from "../../ArtGobblers.sol";
 
 /// @notice RandProvider wrapper around Chainlink VRF V1
 contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
-
-    /// @notice Public key to generate randomness against. 
+    /// @notice Public key to generate randomness against.
     bytes32 internal immutable chainlinkKeyHash;
 
-    /// @notice Fee required to fulfill a VRF request. 
+    /// @notice Fee required to fulfill a VRF request.
     uint256 internal immutable chainlinkFee;
 
     /// @notice ArtGobblers contract address.
     ArtGobblers internal immutable artGobblers;
 
-    /// @notice Error thrown when a request is sent from a non-gobblers address. 
+    /// @notice Error thrown when a request is sent from a non-gobblers address.
     error NotGobblers();
 
     /// @notice Requires caller address to be gobblers contract.
@@ -45,7 +44,7 @@ contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
-    /// @notice Handle VRF response by calling back to ArtGobblers contract. 
+    /// @notice Handle VRF response by calling back to ArtGobblers contract.
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         emit RandomBytesReturned(requestId, randomness);
         artGobblers.acceptRandomSeed(requestId, randomness);
