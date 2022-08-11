@@ -208,7 +208,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     error RevealsPending();
     error RequestTooEarly();
     error ZeroToBeRevealed();
-    error Unauthorized();
+    error NotRandProvider();
 
     error ReserveImbalance();
 
@@ -472,18 +472,18 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             emit RandomnessRequested(msg.sender, toBeRevealed);
         }
 
-        // Call out to randomness provider
+        // Call out to the randomness provider.
         return randProvider.requestRandomBytes();
     }
 
-    /// @notice Requires caller address to match rand provider address.
+    /// @notice Requires the caller address to match the rand provider address.
     modifier onlyRandProvider() {
-        if (msg.sender != address(randProvider)) revert Unauthorized();
+        if (msg.sender != address(randProvider)) revert NotRandProvider();
 
         _;
     }
 
-    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by rand provider.
+    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
     function acceptRandomSeed(bytes32, uint256 randomness) external onlyRandProvider {
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
@@ -493,13 +493,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         emit RandomnessFulfilled(randomness);
     }
 
-    /// @notice upgrade rand provider contract. Useful in case of VRF deprecation
-    function upgradeRandProvider(RandProvider _randProvider) external onlyOwner {
-        //revert if waiting for seed, so that we don't interrupt requests in flight.
-        if (gobblerRevealsData.waitingForSeed == true) {
-            revert Unauthorized();
-        }
-        randProvider = _randProvider;
+    /// @notice Upgrade the rand provider contract. Useful if current VRF is sunset.
+    function upgradeRandProvider(RandProvider newRandProvider) external onlyOwner {
+        //Revert if waiting for seed, so that we don't interrupt requests in flight.
+        if (gobblerRevealsData.waitingForSeed == true) revert SeedPending();
+        randProvider = newRandProvider;
     }
 
     /*//////////////////////////////////////////////////////////////
