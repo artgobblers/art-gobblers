@@ -119,7 +119,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                      LEGENDARY GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Initial legendary gobbler audtion price.
+    /// @notice Initial legendary gobbler auction price.
     uint256 public constant LEGENDARY_GOBBLER_INITIAL_START_PRICE = 69;
 
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
@@ -401,7 +401,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                  LEGENDARY MINTING LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // The legendary's emissionMultiple 2x the sum of the multiples of the gobblers burned.
+            // The legendary's emissionMultiple is 2x the sum of the multiples of the gobblers burned.
             getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal * 2);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
