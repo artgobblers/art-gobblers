@@ -39,7 +39,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     address public immutable community;
 
     /// @notice The address of a randomness provider. This provider will initially be
-    /// a wrapper around Chainlink VRF v1, but is upgradable in case it becomes deprecated.
+    /// a wrapper around Chainlink VRF v1, but is upgradable in case it is fully sunset.
     RandProvider public randProvider;
 
     /*//////////////////////////////////////////////////////////////
