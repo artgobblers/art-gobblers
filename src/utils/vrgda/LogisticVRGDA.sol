@@ -28,9 +28,9 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable initialLogisticValue;
 
-    /// @notice Set pricing parameters for VRGDA.
-    /// @param _maxMintable Maximum number of tokens that can be minted.
-    /// @param _timeScale Control parameters for the steepness of logistic curve.
+    /// @notice Sets pricing parameters for the VRGDA.
+    /// @param _maxMintable The maximum number of tokens that can be minted.
+    /// @param _timeScale The steepness of the logistic curve.
     constructor(int256 _maxMintable, int256 _timeScale) {
         // We need to double _maxMintable to account for initialLogisticValue
         // and use 18 decimals to avoid wad multiplication in getTargetSaleDay.

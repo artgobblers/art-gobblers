@@ -29,6 +29,9 @@ contract Goo is ERC20("Goo", "GOO", 18) {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Sets the addresses of relevant contracts.
+    /// @param _artGobblers Address of the ArtGobblers contract.
+    /// @param _pages Address of the Pages contract.
     constructor(address _artGobblers, address _pages) {
         artGobblers = _artGobblers;
         pages = _pages;

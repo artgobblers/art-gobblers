@@ -20,16 +20,15 @@ abstract contract VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
-    /// @notice Set initial price and per period price decay for VRGDA.
+    /// @notice Sets initial price and per period price decay for VRGDA.
     /// @param _initialPrice Initial price of each token.
     /// @param periodPriceDecrease daily percent price decrease,
     /// represented as an 18 decimal fixed point number.
     constructor(int256 _initialPrice, int256 periodPriceDecrease) {
         initialPrice = _initialPrice;
 
+        // Note that this will always be zero or negative.
         decayConstant = wadLn(1e18 - periodPriceDecrease);
-        //sanity check to make sure that decay constant is negative
-        assert(decayConstant < 0);
     }
 
     /*//////////////////////////////////////////////////////////////

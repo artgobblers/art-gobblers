@@ -68,7 +68,6 @@ abstract contract PagesERC721 {
 
     mapping(address => mapping(address => bool)) internal _isApprovedForAll;
 
-    ///@dev ArtGobblers contract is pre-approved for all.
     function isApprovedForAll(address owner, address operator) public view virtual returns (bool isApproved) {
         if (operator == artGobblers) return true; // Skip approvals for the ArtGobblers contract.
 

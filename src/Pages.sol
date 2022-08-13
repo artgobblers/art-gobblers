@@ -77,21 +77,21 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error InvalidId();
+
     error ReserveImbalance();
 
     error PriceExceededMax(uint256 currentPrice);
-
-    error InvalidId();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Set VRGDA parameters, mint start, relevant addresses, and uri base.
+    /// @notice Sets VRGDA parameters, mint start, relevant addresses, and base URI.
     /// @param _mintStart Timestamp for the start of the VRGDA mint.
     /// @param _goo Address of the Goo contract.
-    /// @param _community Address of community reserve.
-    /// @param _artGobblers Address of ArtGobblers contract.
+    /// @param _community Address of the community reserve.
+    /// @param _artGobblers Address of the ArtGobblers contract.
     /// @param _baseUri Base URI for token metadata.
     constructor(
         // Mint config:

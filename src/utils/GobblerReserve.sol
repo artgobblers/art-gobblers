@@ -15,7 +15,7 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Art Gobblers contract address
+    /// @notice Art Gobblers contract address.
     ArtGobblers public immutable artGobblers;
 
     /// @notice Set relevant contract addresses.
