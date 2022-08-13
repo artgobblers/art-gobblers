@@ -288,7 +288,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
 
-        // Starting price for legendary gobblers is 69 gobblers.
+        // Set the starting price for the first legendary gobbler auction.
         legendaryGobblerAuctionData.startPrice = uint128(LEGENDARY_GOBBLER_INITIAL_START_PRICE);
 
         // Reveal for initial mint must wait a day from the start of the mint.
