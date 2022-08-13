@@ -18,9 +18,9 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /// @notice Art Gobblers contract address.
     ArtGobblers public immutable artGobblers;
 
-    /// @notice Set relevant contract addresses.
-    /// @param _artGobblers ArtGobblers contract.
-    /// @param _owner owner of Gobbler Reserve.
+    /// @notice Sets the addresses of relevant contracts and users.
+    /// @param _artGobblers The address of the ArtGobblers contract.
+    /// @param _owner The address of the owner of Gobbler Reserve.
     constructor(ArtGobblers _artGobblers, address _owner) Owned(_owner) {
         artGobblers = _artGobblers;
     }
