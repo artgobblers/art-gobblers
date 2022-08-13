@@ -451,6 +451,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         unchecked {
             // The number of gobblers minted at the start of the auction is computed by multiplying the # of
             // intervals that must pass before the next auction begins by the number of gobblers in each interval.
+            // We use numSold + 1 to get the number of gobblers needed to start the next legendary gobbler's auction.
             numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
         }
 
