@@ -36,7 +36,9 @@ abstract contract PostSwitchVRGDA is VRGDA {
         int256 _perDay
     ) {
         soldBySwitch = _soldBySwitch;
+
         switchDay = _switchDay;
+
         perDay = _perDay;
     }
 

@@ -150,7 +150,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testInitialGobblerPrice() public {
         uint256 cost = gobblers.gobblerPrice();
         uint256 maxDelta = 0.000000000000000070e18;
-        assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
+        assertApproxEq(cost, uint256(gobblers.targetPrice()), maxDelta);
     }
 
     /// @notice Test that minting reserved gobblers fails if there are no mints.
@@ -228,11 +228,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             gobblers.mintFromGoo(price);
         }
 
-        uint256 initialPrice = uint256(gobblers.initialPrice());
+        uint256 targetPrice = uint256(gobblers.targetPrice());
         uint256 finalPrice = gobblers.gobblerPrice();
 
         // Equal within 3 percent since num mint is rounded from true decimal amount.
-        assertRelApproxEq(initialPrice, finalPrice, 0.03e18);
+        assertRelApproxEq(targetPrice, finalPrice, 0.03e18);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -247,7 +247,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /// @notice Test that Legendary Gobbler initial price is what we expect.
-    function testLegendaryGobblerInitialPrice() public {
+    function testLegendaryGobblerTargetPrice() public {
         // Start of initial auction after initial interval is minted.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
