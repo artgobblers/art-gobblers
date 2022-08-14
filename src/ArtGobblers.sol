@@ -367,7 +367,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                     BATCH BURN LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // Generate arrays locally to use in the event below.
+            // Generate an amounts array locally to use in the event below.
             uint256[] memory amounts = new uint256[](cost);
 
             uint256 id; // Storing outside the loop saves ~7 gas per iteration.
