@@ -7,7 +7,7 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {ArtGobblers} from "../src/ArtGobblers.sol";
+import {ArtGobblers, unsafeDivUp} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
@@ -160,7 +160,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testInitialGobblerPrice() public {
         uint256 cost = gobblers.gobblerPrice();
         uint256 maxDelta = 0.000000000000000070e18;
-        assertApproxEq(cost, uint256(gobblers.initialPrice()), maxDelta);
+        assertApproxEq(cost, uint256(gobblers.targetPrice()), maxDelta);
     }
 
     /// @notice Test that minting reserved gobblers fails if there are no mints.
@@ -238,11 +238,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             gobblers.mintFromGoo(price);
         }
 
-        uint256 initialPrice = uint256(gobblers.initialPrice());
+        uint256 targetPrice = uint256(gobblers.targetPrice());
         uint256 finalPrice = gobblers.gobblerPrice();
 
         // Equal within 3 percent since num mint is rounded from true decimal amount.
-        assertRelApproxEq(initialPrice, finalPrice, 0.03e18);
+        assertRelApproxEq(targetPrice, finalPrice, 0.03e18);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -257,7 +257,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /// @notice Test that Legendary Gobbler initial price is what we expect.
-    function testLegendaryGobblerInitialPrice() public {
+    function testLegendaryGobblerTargetPrice() public {
         // Start of initial auction after initial interval is minted.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
         uint256 cost = gobblers.legendaryGobblerPrice();
@@ -287,10 +287,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
         // Mint first interval and half of second interval.
-        mintGobblerToAddress(users[0], (gobblers.LEGENDARY_AUCTION_INTERVAL() * 3) / 2);
+        mintGobblerToAddress(users[0], unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
         uint256 cost = gobblers.legendaryGobblerPrice();
         // Auction price should be cut by half mid way through auction.
-        assertEq(cost, 34);
+        assertEq(cost, 35);
     }
 
     /// @notice Test that initial price does't fall below what we expect.
@@ -372,8 +372,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), 0);
     }
 
-    /// @notice Test that legendary gobblers can't be minted with the wrong ids length.
-    function testMintLegendaryGobblerWithWrongLength() public {
+    /// @notice Test that legendary gobblers can't be minted with insufficient payment.
+    function testMintLegendaryGobblerWithInsufficientCost() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
         // Mint full interval to kick off first auction.
@@ -390,11 +390,42 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
 
-        ids.push(9999999);
+        //remove one id such that payment is insufficient
+        ids.pop();
 
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.IncorrectGobblerAmount.selector, cost));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.InsufficientGobblerAmount.selector, cost));
         gobblers.mintLegendaryGobbler(ids);
+    }
+
+    /// @notice Test that legendary gobblers can be minted with slippage.
+    function testMintLegendaryGobblerWithSplippage() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+        uint256 emissionMultipleSum;
+        //add more ids than necessary
+        for (uint256 curId = 1; curId <= cost + 10; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+            emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
+        }
+
+        vm.prank(users[0]);
+        gobblers.mintLegendaryGobbler(ids);
+
+        //check full cost was burned
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            assertEq(gobblers.ownerOf(curId), address(0));
+        }
+        //check extra tokens were not burned
+        for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {
+            assertEq(gobblers.ownerOf(curId), users[0]);
+        }
     }
 
     /// @notice Test that legendary gobblers can't be minted if the user doesn't own one of the ids.
@@ -761,6 +792,16 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         vm.expectRevert("WRONG_FROM");
         gobblers.feedArt(1, address(pages), 1, false);
+        vm.stopPrank();
+    }
+
+    /// @notice Test that gobblers can't eat other gobblers
+    function testCantFeedGobblers() public {
+        address user = users[0];
+        mintGobblerToAddress(user, 2);
+        vm.startPrank(user);
+        vm.expectRevert(ArtGobblers.Cannibalism.selector);
+        gobblers.feedArt(1, address(gobblers), 2, true);
         vm.stopPrank();
     }
 

@@ -26,13 +26,19 @@ abstract contract PostSwitchVRGDA is VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable perDay;
 
+    /// @notice Sets pricing parameters for the VRGDA.
+    /// @param _soldBySwitch The number of tokens sold at the time of the switch.
+    /// @param _switchDay The day soldBySwitch tokens were targeted to sell by.
+    /// @param _perDay The total number of tokens to target selling each day.
     constructor(
         int256 _soldBySwitch,
         int256 _switchDay,
         int256 _perDay
     ) {
         soldBySwitch = _soldBySwitch;
+
         switchDay = _switchDay;
+
         perDay = _perDay;
     }
 
@@ -40,6 +46,11 @@ abstract contract PostSwitchVRGDA is VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Given the number of tokens sold so far, return the target day the next token should be sold by.
+    /// @dev Note: Assumes this function is only called when sold > soldBySwitch, otherwise it will underflow.
+    /// @param sold The number of tokens that have been sold so far, where 0 means none, scaled by 1e18.
+    /// @return The target day that the next token should be sold by, scaled by 1e18, where the day
+    /// is relative, such that 0 means the token should be sold immediately when the VRGDA begins.
     function getTargetDayForNextSale(int256 sold) internal view virtual override returns (int256) {
         unchecked {
             return unsafeWadDiv(sold - soldBySwitch, perDay) + switchDay;
