@@ -362,8 +362,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), 0);
     }
 
-    /// @notice Test that legendary gobblers can't be minted with the wrong ids length.
-    function testMintLegendaryGobblerWithWrongLength() public {
+    /// @notice Test that legendary gobblers can't be minted with insufficient payment.
+    function testMintLegendaryGobblerWithInsufficientCost() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
         // Mint full interval to kick off first auction.
@@ -380,11 +380,42 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), emissionMultipleSum);
 
-        ids.push(9999999);
+        //remove one id such that payment is insufficient
+        ids.pop();
 
         vm.prank(users[0]);
-        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.IncorrectGobblerAmount.selector, cost));
+        vm.expectRevert(abi.encodeWithSelector(ArtGobblers.InsufficientGobblerAmount.selector, cost));
         gobblers.mintLegendaryGobbler(ids);
+    }
+
+    /// @notice Test that legendary gobblers can be minted with slippage.
+    function testMintLegendaryGobblerWithSplippage() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+        uint256 emissionMultipleSum;
+        //add more ids than necessary
+        for (uint256 curId = 1; curId <= cost + 10; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+            emissionMultipleSum += gobblers.getGobblerEmissionMultiple(curId);
+        }
+
+        vm.prank(users[0]);
+        gobblers.mintLegendaryGobbler(ids);
+
+        //check full cost was burned
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            assertEq(gobblers.ownerOf(curId), address(0));
+        }
+        //check extra tokens were not burned
+        for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {
+            assertEq(gobblers.ownerOf(curId), users[0]);
+        }
     }
 
     /// @notice Test that legendary gobblers can't be minted if the user doesn't own one of the ids.
