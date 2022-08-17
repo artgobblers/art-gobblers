@@ -5,6 +5,8 @@ import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {LibString} from "../../src/utils/lib/LibString.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
+import {RandProvider} from "../../src/utils/random/RandProvider.sol";
+
 import {Goo} from "../../src/Goo.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
@@ -33,10 +35,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
             Goo(address(0)),
             address(0),
             address(0),
-            address(0),
-            address(0),
-            0,
-            0,
+            RandProvider(address(0)),
             "",
             ""
         );
