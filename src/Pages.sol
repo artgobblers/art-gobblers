@@ -219,6 +219,6 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     function tokenURI(uint256 pageId) public view virtual override returns (string memory) {
         if (pageId == 0 || pageId > currentId) revert InvalidId();
 
-        return string(abi.encodePacked(BASE_URI, pageId.toString()));
+        return string.concat(BASE_URI, pageId.toString());
     }
 }

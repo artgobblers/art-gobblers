@@ -650,7 +650,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString()));
+            return string.concat(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString());
         }
 
         // Between lastRevealed + 1 and currentNonLegendaryId are minted but not revealed.
@@ -661,7 +661,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // Between FIRST_LEGENDARY_GOBBLER_ID and FIRST_LEGENDARY_GOBBLER_ID + numSold are minted legendaries.
         if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold)
-            return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
+            return string.concat(BASE_URI, gobblerId.toString());
 
         return ""; // Unminted legendaries and invalid token ids.
     }
