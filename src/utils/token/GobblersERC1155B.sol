@@ -141,7 +141,7 @@ abstract contract GobblersERC1155B {
 
         // Does not check if the token was already minted or the recipient is address(0)
         // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
-        // double mint and will onl mints to safe addresses or msg.sender who cannot be zero.
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
@@ -162,7 +162,7 @@ abstract contract GobblersERC1155B {
     ) internal returns (uint256) {
         // Doesn't check if the tokens were already minted or the recipient is address(0)
         // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
-        // double mint and will onl mints to safe addresses or msg.sender who cannot be zero.
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
 
         // Allocate arrays before entering the loop.
         uint256[] memory ids = new uint256[](amount);
