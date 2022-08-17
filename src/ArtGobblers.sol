@@ -357,7 +357,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// or after all gobblers have been minted via VRGDA.
     /// @return Current price of a gobbler in terms of goo.
     function gobblerPrice() public view returns (uint256) {
-        // We need checked math here to cause overflow
+        // We need checked math here to cause underflow
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
