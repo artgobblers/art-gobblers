@@ -494,15 +494,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         return randProvider.requestRandomBytes();
     }
 
-    /// @notice Requires the caller address to match the rand provider address.
-    modifier onlyRandProvider() {
+    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
+    function acceptRandomSeed(bytes32, uint256 randomness) external {
+        // The caller must be the randomness provider, revert in the case it's not.
         if (msg.sender != address(randProvider)) revert NotRandProvider();
 
-        _;
-    }
-
-    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
-    function acceptRandomSeed(bytes32, uint256 randomness) external onlyRandProvider {
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
 
