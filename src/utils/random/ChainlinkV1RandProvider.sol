@@ -69,7 +69,7 @@ contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
-    /// @dev Handle VRF response by calling back into the ArtGobblers contract.
+    /// @dev Handles VRF response by calling back into the ArtGobblers contract.
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         emit RandomBytesReturned(requestId, randomness);
 
