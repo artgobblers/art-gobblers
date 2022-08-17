@@ -10,6 +10,7 @@ import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
 
 import {VRGDA} from "./utils/vrgda/VRGDA.sol";
 import {LibString} from "./utils/lib/LibString.sol";
+import {unsafeDivUp} from "./utils/lib/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
@@ -314,7 +315,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // If the user's proof is invalid, revert.
         if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert InvalidProof();
 
-        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
+        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to mitigate reentrancy.
 
         unchecked {
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
@@ -331,9 +332,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
-        // No need to check mint cap, gobblerPrice()
-        // will revert due to overflow if we reach it.
-        // It will also revert prior to the mint start.
+        // No need to check if we're at MAX_MINTABLE,
+        // gobblerPrice() will revert due to overflow if we
+        // reach it. It will also revert prior to the mint start.
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
@@ -460,10 +461,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
+            // prettier-ignore
             // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
-            else return (startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
+            else return unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
         }
     }
 
@@ -705,7 +707,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate a user's staked goo balance.
+    /// @notice Calculate a user's goo emission balance.
     /// @param user The user to query balance for.
     function gooBalance(address user) public view returns (uint256) {
         // If a user's goo balance is greater than
@@ -908,6 +910,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     ) internal {
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
+            // We decrease their balance before updating their emission multiple to avoid
+            // penalizing them by retroactively applying the new lower emission multiple.
             getEmissionDataForUser[from].lastBalance = uint128(gooBalance(from));
             getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;

@@ -197,3 +197,12 @@ function unsafeDiv(int256 x, int256 y) pure returns (int256 r) {
         r := sdiv(x, y)
     }
 }
+
+/// @dev Will return 0 instead of reverting if y is zero.
+function unsafeDivUp(uint256 x, uint256 y) pure returns (uint256 z) {
+    assembly {
+        // Add 1 to x * y if x % y > 0.
+        // TODO: would iszeroiszero be faster?
+        z := add(gt(mod(x, y), 0), div(x, y))
+    }
+}

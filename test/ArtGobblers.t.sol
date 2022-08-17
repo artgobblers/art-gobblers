@@ -7,7 +7,7 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {ArtGobblers} from "../src/ArtGobblers.sol";
+import {ArtGobblers, unsafeDivUp} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
@@ -277,10 +277,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
         // Mint first interval and half of second interval.
-        mintGobblerToAddress(users[0], (gobblers.LEGENDARY_AUCTION_INTERVAL() * 3) / 2);
+        mintGobblerToAddress(users[0], unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
         uint256 cost = gobblers.legendaryGobblerPrice();
         // Auction price should be cut by half mid way through auction.
-        assertEq(cost, 34);
+        assertEq(cost, 35);
     }
 
     /// @notice Test that initial price does't fall below what we expect.
