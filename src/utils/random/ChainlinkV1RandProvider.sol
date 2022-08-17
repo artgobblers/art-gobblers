@@ -1,52 +1,79 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {RandProvider} from "./RandProviderInterface.sol";
 import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
+
 import {ArtGobblers} from "../../ArtGobblers.sol";
 
-/// @notice RandProvider wrapper around Chainlink VRF V1
+import {RandProvider} from "./RandProvider.sol";
+
+/// @title Chainlink V1 Randomness Provider.
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author transmissions11 <t11s@paradigm.xyz>
+/// @dev RandProvider wrapper around Chainlink VRF v1.
 contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
-    /// @notice Public key to generate randomness against.
+    /*//////////////////////////////////////////////////////////////
+                                ADDRESSES
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The address of the Art Gobblers contract.
+    ArtGobblers public immutable artGobblers;
+
+    /*//////////////////////////////////////////////////////////////
+                            VRF CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Public key to generate randomness against.
     bytes32 internal immutable chainlinkKeyHash;
 
-    /// @notice Fee required to fulfill a VRF request.
+    /// @dev Fee required to fulfill a VRF request.
     uint256 internal immutable chainlinkFee;
 
-    /// @notice ArtGobblers contract address.
-    ArtGobblers internal immutable artGobblers;
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Error thrown when a request is sent from a non-gobblers address.
     error NotGobblers();
 
-    /// @notice Requires caller address to be gobblers contract.
-    modifier onlyGobblers() {
-        if (msg.sender != address(artGobblers)) revert NotGobblers();
-        _;
-    }
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
+    /// @notice Sets relevant addresses and VRF parameters.
+    /// @param _artGobblers Address of the ArtGobblers contract.
+    /// @param _vrfCoordinator Address of the VRF coordinator.
+    /// @param _linkToken Address of the LINK token contract.
+    /// @param _chainlinkKeyHash Public key to generate randomness against.
+    /// @param _chainlinkFee Fee required to fulfill a VRF request.
     constructor(
+        ArtGobblers _artGobblers,
         address _vrfCoordinator,
         address _linkToken,
         bytes32 _chainlinkKeyHash,
-        uint256 _chainlinkFee,
-        ArtGobblers _artGobblers
+        uint256 _chainlinkFee
     ) VRFConsumerBase(_vrfCoordinator, _linkToken) {
+        artGobblers = _artGobblers;
+
         chainlinkKeyHash = _chainlinkKeyHash;
         chainlinkFee = _chainlinkFee;
-        artGobblers = _artGobblers;
     }
 
-    /// @notice Request random bytes from Chainlink VRF. Can only by called by gobblers contract
-    function requestRandomBytes() external onlyGobblers returns (bytes32 requestId) {
+    /// @notice Request random bytes from Chainlink VRF. Can only by called by the ArtGobblers contract.
+    function requestRandomBytes() external returns (bytes32 requestId) {
+        // The caller must be the ArtGobblers contract, revert otherwise.
+        if (msg.sender != address(artGobblers)) revert NotGobblers();
+
         emit RandomBytesRequested(requestId);
+
         // Will revert if we don't have enough LINK to afford the request.
         return requestRandomness(chainlinkKeyHash, chainlinkFee);
     }
 
-    /// @notice Handle VRF response by calling back to ArtGobblers contract.
+    /// @dev Handle VRF response by calling back into the ArtGobblers contract.
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         emit RandomBytesReturned(requestId, randomness);
+
         artGobblers.acceptRandomSeed(requestId, randomness);
     }
 }

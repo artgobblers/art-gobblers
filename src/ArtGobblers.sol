@@ -12,7 +12,7 @@ import {unsafeDivUp} from "./utils/lib/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
-import {RandProvider} from "./utils/random/RandProviderInterface.sol";
+import {RandProvider} from "./utils/random/RandProvider.sol";
 
 import {Goo} from "./Goo.sol";
 

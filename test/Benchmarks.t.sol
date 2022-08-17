@@ -7,7 +7,7 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {ArtGobblers} from "../src/ArtGobblers.sol";
-import {RandProvider} from "../src/utils/random/RandProviderInterface.sol";
+import {RandProvider} from "../src/utils/random/RandProvider.sol";
 import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";

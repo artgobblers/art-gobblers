@@ -11,7 +11,7 @@ import {ArtGobblers} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
-import {RandProvider} from "../src/utils/random/RandProviderInterface.sol";
+import {RandProvider} from "../src/utils/random/RandProvider.sol";
 import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
