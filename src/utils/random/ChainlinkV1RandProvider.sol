@@ -10,7 +10,7 @@ import {RandProvider} from "./RandProvider.sol";
 /// @title Chainlink V1 Randomness Provider.
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
-/// @dev RandProvider wrapper around Chainlink VRF v1.
+/// @notice RandProvider wrapper around Chainlink VRF v1.
 contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
@@ -33,7 +33,6 @@ contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Error thrown when a request is sent from a non-gobblers address.
     error NotGobblers();
 
     /*//////////////////////////////////////////////////////////////
