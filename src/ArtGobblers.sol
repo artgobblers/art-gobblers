@@ -317,8 +317,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
         // No need to check if we're at MAX_MINTABLE,
-        // gobblerPrice() will revert due to overflow if we
-        // reach it. It will also revert prior to the mint start.
+        // gobblerPrice() will revert once we reach it due to its
+        // logistic nature. It will also revert prior to the mint start.
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
