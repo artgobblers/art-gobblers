@@ -241,7 +241,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that attempting to mint before start time reverts.
     function testLegendaryGobblerMintBeforeStart() public {
-        vm.expectRevert(stdError.arithmeticError);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ArtGobblers.LegendaryAuctionNotStarted.selector,
+                gobblers.LEGENDARY_AUCTION_INTERVAL()
+            )
+        );
         vm.prank(users[0]);
         gobblers.mintLegendaryGobbler(ids);
     }
