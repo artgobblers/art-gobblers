@@ -60,11 +60,11 @@ contract RandProviderTest is DSTestPlus {
         team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         randProvider = new ChainlinkV1RandProvider(
+            ArtGobblers(gobblerAddress),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            ArtGobblers(gobblerAddress)
+            fee
         );
 
         goo = new Goo(
@@ -120,7 +120,7 @@ contract RandProviderTest is DSTestPlus {
     }
 
     function testRandomnessIsOnlyUpgradableByOwner() public {
-        RandProvider newProvider = new ChainlinkV1RandProvider(address(0), address(0), 0, 0, ArtGobblers(address(0)));
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
         vm.expectRevert("UNAUTHORIZED");
         vm.prank(address(0xBEEFBABE));
         gobblers.upgradeRandProvider(newProvider);
@@ -130,7 +130,7 @@ contract RandProviderTest is DSTestPlus {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
         gobblers.requestRandomSeed();
-        RandProvider newProvider = new ChainlinkV1RandProvider(address(0), address(0), 0, 0, ArtGobblers(address(0)));
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
         vm.expectRevert(ArtGobblers.SeedPending.selector);
         gobblers.upgradeRandProvider(newProvider);
     }
@@ -141,7 +141,7 @@ contract RandProviderTest is DSTestPlus {
         //initial address is correct
         assertEq(address(gobblers.randProvider()), address(randProvider));
 
-        RandProvider newProvider = new ChainlinkV1RandProvider(address(0), address(0), 0, 0, ArtGobblers(address(0)));
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
         gobblers.upgradeRandProvider(newProvider);
         //final address is correct
         assertEq(address(gobblers.randProvider()), address(newProvider));

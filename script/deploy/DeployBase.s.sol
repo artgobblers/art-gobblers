@@ -70,11 +70,11 @@ abstract contract DeployBase is Script {
         teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
         communityReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
         randProvider = new ChainlinkV1RandProvider(
+            ArtGobblers(gobblerAddress),
             vrfCoordinator,
             linkToken,
             chainlinkKeyHash,
-            chainlinkFee,
-            ArtGobblers(gobblerAddress)
+            chainlinkFee
         );
 
         // Deploy goo contract.

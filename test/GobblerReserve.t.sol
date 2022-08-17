@@ -58,11 +58,11 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         randProvider = new ChainlinkV1RandProvider(
+            ArtGobblers(gobblerAddress),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            ArtGobblers(gobblerAddress)
+            fee
         );
 
         goo = new Goo(

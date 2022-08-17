@@ -43,11 +43,11 @@ contract VRGDAsTest is DSTestPlus {
         address pagesAddress = utils.predictContractAddress(address(this), 3);
 
         randProvider = new ChainlinkV1RandProvider(
+            ArtGobblers(gobblerAddress),
             address(vrfCoordinator),
             address(linkToken),
             keyHash,
-            fee,
-            ArtGobblers(gobblerAddress)
+            fee
         );
 
         goo = new Goo(gobblerAddress, pagesAddress);
