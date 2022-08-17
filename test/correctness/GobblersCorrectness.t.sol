@@ -76,7 +76,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
     function calculatePrice(
         uint256 _timeSinceStart,
         uint256 _numSold,
-        int256 _initialPrice,
+        int256 _targetPrice,
         int256 _perPeriodPriceDecrease,
         int256 _logisticScale,
         int256 _timeScale
@@ -90,7 +90,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
         inputs[5] = "--num_sold";
         inputs[6] = _numSold.toString();
         inputs[7] = "--initial_price";
-        inputs[8] = uint256(_initialPrice).toString();
+        inputs[8] = uint256(_targetPrice).toString();
         inputs[9] = "--per_period_price_decrease";
         inputs[10] = uint256(_perPeriodPriceDecrease).toString();
         inputs[11] = "--logistic_scale";

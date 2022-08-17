@@ -77,6 +77,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error InvalidId();
+
     error ReserveImbalance();
 
     error PriceExceededMax(uint256 currentPrice);
@@ -85,6 +87,12 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Sets VRGDA parameters, mint start, relevant addresses, and base URI.
+    /// @param _mintStart Timestamp for the start of the VRGDA mint.
+    /// @param _goo Address of the Goo contract.
+    /// @param _community Address of the community reserve.
+    /// @param _artGobblers Address of the ArtGobblers contract.
+    /// @param _baseUri Base URI for token metadata.
     constructor(
         // Mint config:
         uint256 _mintStart,
@@ -158,6 +166,10 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
+    /// @dev Given the number of tokens sold so far, return the target day the next token should be sold by.
+    /// @param sold The number of tokens that have been sold so far, where 0 means none, scaled by 1e18.
+    /// @return The target day that the next token should be sold by, scaled by 1e18, where the day
+    /// is relative, such that 0 means the token should be sold immediately when the VRGDA begins.
     function getTargetDayForNextSale(int256 sold)
         internal
         view
@@ -176,7 +188,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice Mint a number of pages to the community reserve.
     /// @param numPages The number of pages to mint to the reserve.
-    /// @dev Pages minted to the reserve cannot compromise more than 10% of the sum of the
+    /// @dev Pages minted to the reserve cannot comprise more than 10% of the sum of the
     /// supply of goo minted pages and the supply of pages minted to the community reserve.
     function mintCommunityPages(uint256 numPages) external returns (uint256 lastMintedPageId) {
         unchecked {
@@ -185,7 +197,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             // be so large that it would cause the loop to run out of gas quickly.
             uint256 newNumMintedForCommunity = numMintedForCommunity += uint128(numPages);
 
-            // Ensure that after this mint pages minted to the community reserve won't compromise more than
+            // Ensure that after this mint pages minted to the community reserve won't comprise more than
             // 10% of the new total page supply. currentId is equivalent to the current total supply of pages.
             if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert ReserveImbalance();
 
@@ -202,11 +214,11 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
                              TOKEN URI LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns a pages's URI if it has been minted.
+    /// @notice Returns a page's URI if it has been minted.
     /// @param pageId The id of the page to get the URI for.
     function tokenURI(uint256 pageId) public view virtual override returns (string memory) {
-        if (pageId > currentId) return "";
+        if (pageId == 0 || pageId > currentId) revert InvalidId();
 
-        return string(abi.encodePacked(BASE_URI, pageId.toString()));
+        return string.concat(BASE_URI, pageId.toString());
     }
 }

@@ -15,8 +15,12 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/
 
-    ArtGobblers public artGobblers;
+    /// @notice Art Gobblers contract address.
+    ArtGobblers public immutable artGobblers;
 
+    /// @notice Sets the addresses of relevant contracts and users.
+    /// @param _artGobblers The address of the ArtGobblers contract.
+    /// @param _owner The address of the owner of Gobbler Reserve.
     constructor(ArtGobblers _artGobblers, address _owner) Owned(_owner) {
         artGobblers = _artGobblers;
     }
@@ -28,7 +32,7 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /// @notice Withdraw gobblers from the reserve.
     /// @param to The address to transfer the gobblers to.
     /// @param ids The ids of the gobblers to transfer.
-    function withdraw(address to, uint256[] calldata ids) public onlyOwner {
+    function withdraw(address to, uint256[] calldata ids) external onlyOwner {
         unchecked {
             // Generating this in memory is pretty expensive
             // but this is not a hot path so we can afford it.
