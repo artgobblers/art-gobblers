@@ -6,8 +6,6 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
-import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
-
 import {RandProvider} from "./utils/random/RandProviderInterface.sol";
 import {VRGDA} from "./utils/vrgda/VRGDA.sol";
 import {LibString} from "./utils/lib/LibString.sol";
