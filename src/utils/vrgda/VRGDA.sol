@@ -46,7 +46,7 @@ abstract contract VRGDA {
                 // Theoretically calling toWadUnsafe with timeSinceStart/sold can overflow without
                 // detection, but under any reasonable circumstance they will never be large enough.
                 // Use ++sold as ASTRO's n param represents the nth token, whereas sold is the n-1th token.
-                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(++sold)) // todo: is + 1 cheaper
+                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold + 1))
             ))));
         }
     }
