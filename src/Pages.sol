@@ -108,7 +108,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
             0.31e18 // Price decrease percent.
         )
         LogisticVRGDA(
-            9000e18, // Asymptote.
+            9000e18, // Max sellable.
             0.014e18 // Time scale.
         )
         PostSwitchVRGDA(
