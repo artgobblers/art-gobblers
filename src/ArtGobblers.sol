@@ -140,7 +140,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     /// @notice Struct holding data required for gobbler reveals.
     struct GobblerRevealsData {
-        // Last random seed obtained from VRF.
+        // Last randomness obtained from the rand provider.
         uint64 randomSeed;
         // Next reveal cannot happen before this timestamp.
         uint64 nextRevealTimestamp;
@@ -191,8 +191,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
     event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
-    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
     event RandomnessFulfilled(uint256 randomness);
+    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
+    event RandProviderUpgraded(address indexed user, RandProvider indexed newRandProvider);
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
@@ -454,7 +455,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /*//////////////////////////////////////////////////////////////
-                                VRF LOGIC
+                            RANDOMNESS LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request a new random seed for revealing gobblers.
@@ -515,6 +516,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         if (gobblerRevealsData.waitingForSeed) revert SeedPending();
 
         randProvider = newRandProvider; // Update the randomness provider.
+
+        emit RandProviderUpgraded(msg.sender, newRandProvider);
     }
 
     /*//////////////////////////////////////////////////////////////
