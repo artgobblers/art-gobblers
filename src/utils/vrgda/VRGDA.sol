@@ -12,18 +12,24 @@ abstract contract VRGDA {
                             VRGDA PARAMETERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Initial price of each token, to be scaled according to sales rate.
+    /// @notice Target price for a token, to be scaled according to sales pace.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 public immutable initialPrice;
+    int256 public immutable targetPrice;
 
     /// @dev Precomputed constant that allows us to rewrite a pow() as an exp().
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
-    constructor(int256 _initialPrice, int256 periodPriceDecrease) {
-        initialPrice = _initialPrice;
+    /// @notice Sets initial price and per period price decay for VRGDA.
+    /// @param _targetPrice The target price for a token if sold on pace.
+    /// @param _priceDecreasePercent Percent price decrease per unit of time.
+    constructor(int256 _targetPrice, int256 _priceDecreasePercent) {
+        targetPrice = _targetPrice;
 
-        decayConstant = wadLn(1e18 - periodPriceDecrease);
+        decayConstant = wadLn(1e18 - _priceDecreasePercent);
+
+        // The decay constant must be negative for VRGDAs to work.
+        require(decayConstant < 0, "NON_NEGATIVE_DECAY_CONSTANT");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -31,12 +37,12 @@ abstract contract VRGDA {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the price of a token according to the VRGDA formula.
-    /// @param timeSinceStart The time since actions began, in seconds.
+    /// @param timeSinceStart The time since auctions began, in seconds.
     /// @param sold The number of tokens that have been sold so far.
     function getPrice(uint256 timeSinceStart, uint256 sold) public view returns (uint256) {
         unchecked {
             // prettier-ignore
-            return uint256(wadMul(initialPrice, wadExp(unsafeWadMul(decayConstant,
+            return uint256(wadMul(targetPrice, wadExp(unsafeWadMul(decayConstant,
                 // Theoretically calling toWadUnsafe with timeSinceStart and sold can overflow without
                 // detection, but under any reasonable circumstance they will never be large enough.
                 (toWadUnsafe(timeSinceStart) / 1 days) - getTargetDayForNextSale(toWadUnsafe(sold))

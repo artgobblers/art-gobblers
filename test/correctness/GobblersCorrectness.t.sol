@@ -5,6 +5,8 @@ import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {LibString} from "../../src/utils/lib/LibString.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
+import {RandProvider} from "../../src/utils/random/RandProvider.sol";
+
 import {Goo} from "../../src/Goo.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
@@ -33,10 +35,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
             Goo(address(0)),
             address(0),
             address(0),
-            address(0),
-            address(0),
-            0,
-            0,
+            RandProvider(address(0)),
             "",
             ""
         );
@@ -76,7 +75,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
     function calculatePrice(
         uint256 _timeSinceStart,
         uint256 _numSold,
-        int256 _initialPrice,
+        int256 _targetPrice,
         int256 _perPeriodPriceDecrease,
         int256 _logisticScale,
         int256 _timeScale
@@ -90,7 +89,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
         inputs[5] = "--num_sold";
         inputs[6] = _numSold.toString();
         inputs[7] = "--initial_price";
-        inputs[8] = uint256(_initialPrice).toString();
+        inputs[8] = uint256(_targetPrice).toString();
         inputs[9] = "--per_period_price_decrease";
         inputs[10] = uint256(_perPeriodPriceDecrease).toString();
         inputs[11] = "--logistic_scale";

@@ -6,13 +6,13 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
-import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
-
 import {VRGDA} from "./utils/vrgda/VRGDA.sol";
 import {LibString} from "./utils/lib/LibString.sol";
+import {unsafeDivUp} from "./utils/lib/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
+import {RandProvider} from "./utils/random/RandProvider.sol";
 
 import {Goo} from "./Goo.sol";
 
@@ -20,7 +20,7 @@ import {Goo} from "./Goo.sol";
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -37,6 +37,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice The address which receives gobblers reserved for the community.
     address public immutable community;
 
+    /// @notice The address of a randomness provider. This provider will initially be
+    /// a wrapper around Chainlink VRF v1, but can be changed in case it is fully sunset.
+    RandProvider public randProvider;
+
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -51,7 +55,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     uint256 public constant LEGENDARY_SUPPLY = 10;
 
     /// @notice Maximum amount of gobblers split between the reserves.
-    /// @dev Set to compromise 20% of the sum of goo mintable gobblers + reserved gobblers.
+    /// @dev Set to comprise 20% of the sum of goo mintable gobblers + reserved gobblers.
     uint256 public constant RESERVED_SUPPLY = (MAX_SUPPLY - MINTLIST_SUPPLY - LEGENDARY_SUPPLY) / 5;
 
     /// @notice Maximum amount of gobblers that can be minted via VRGDA.
@@ -73,14 +77,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
-
-    /*//////////////////////////////////////////////////////////////
-                              VRF CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 internal immutable chainlinkKeyHash;
-
-    uint256 internal immutable chainlinkFee;
 
     /*//////////////////////////////////////////////////////////////
                              MINTLIST STATE
@@ -117,10 +113,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                      LEGENDARY GOBBLER AUCTION STATE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initial legendary gobbler auction price.
+    uint256 public constant LEGENDARY_GOBBLER_INITIAL_START_PRICE = 69;
+
     /// @notice The last LEGENDARY_SUPPLY ids are reserved for legendary gobblers.
     uint256 public constant FIRST_LEGENDARY_GOBBLER_ID = MAX_SUPPLY - LEGENDARY_SUPPLY + 1;
 
-    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted.
+    /// @notice Legendary auctions begin each time a multiple of these many gobblers have been minted from goo.
     /// @dev We add 1 to LEGENDARY_SUPPLY because legendary auctions begin only after the first interval.
     uint256 public constant LEGENDARY_AUCTION_INTERVAL = MAX_MINTABLE / (LEGENDARY_SUPPLY + 1);
 
@@ -164,9 +163,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     struct EmissionData {
         // The sum of the multiples of all gobblers the user holds.
         uint64 emissionMultiple;
-        // Balance at time of last deposit or withdrawal.
+        // Balance at time of last checkpointing.
         uint128 lastBalance;
-        // Timestamp of last deposit or withdrawal.
+        // Timestamp of last checkpointing.
         uint64 lastTimestamp;
     }
 
@@ -211,13 +210,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error RevealsPending();
     error RequestTooEarly();
     error ZeroToBeRevealed();
+    error NotRandProvider();
 
     error ReserveImbalance();
 
+    error Cannibalism();
     error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
-    error IncorrectGobblerAmount(uint256 cost);
+    error InsufficientGobblerAmount(uint256 cost);
     error CannotBurnLegendary(uint256 gobblerId);
 
     error PriceExceededMax(uint256 currentPrice);
@@ -228,6 +229,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Sets VRGDA parameters, mint config, relevant addresses, and URIs.
+    /// @param _merkleRoot Merkle root of mint mintlist.
+    /// @param _mintStart Timestamp for the start of the VRGDA mint.
+    /// @param _goo Address of the Goo contract.
+    /// @param _team Address of the team reserve.
+    /// @param _community Address of the community reserve.
+    /// @param _randProvider Address of the randomness provider.
+    /// @param _baseUri Base URI for revealed gobblers.
+    /// @param _unrevealedUri URI for unrevealed gobblers.
     constructor(
         // Mint config:
         bytes32 _merkleRoot,
@@ -236,11 +246,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         Goo _goo,
         address _team,
         address _community,
-        // Chainlink:
-        address _vrfCoordinator,
-        address _linkToken,
-        bytes32 _chainlinkKeyHash,
-        uint256 _chainlinkFee,
+        RandProvider _randProvider,
         // URIs:
         string memory _baseUri,
         string memory _unrevealedUri
@@ -254,7 +260,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             int256(MAX_MINTABLE * 1e18),
             0.0023e18 // Time scale.
         )
-        VRFConsumerBase(_vrfCoordinator, _linkToken)
         Owned(msg.sender) // Deployer starts as owner.
     {
         mintStart = _mintStart;
@@ -263,17 +268,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         goo = _goo;
         team = _team;
         community = _community;
-
-        chainlinkKeyHash = _chainlinkKeyHash;
-        chainlinkFee = _chainlinkFee;
+        randProvider = _randProvider;
 
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
 
-        // Starting price for legendary gobblers is 69 gobblers.
-        legendaryGobblerAuctionData.startPrice = 69;
+        // Set the starting price for the first legendary gobbler auction.
+        legendaryGobblerAuctionData.startPrice = uint128(LEGENDARY_GOBBLER_INITIAL_START_PRICE);
 
-        // Reveal for initial mint must wait 24 hours
+        // Reveal for initial mint must wait a day from the start of the mint.
         gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
     }
 
@@ -282,6 +285,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Claim from mintlist, using a merkle proof.
+    /// @dev Function does not directly enforce the MINTLIST_SUPPLY limit for gas efficiency. The
+    /// limit is enforced during the creation of the merkle proof, which will be shared publicly.
     /// @param proof Merkle proof to verify the sender is mintlisted.
     /// @return gobblerId The id of the gobbler that was claimed.
     function claimGobbler(bytes32[] calldata proof) external returns (uint256 gobblerId) {
@@ -294,7 +299,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // If the user's proof is invalid, revert.
         if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert InvalidProof();
 
-        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to prevent reentrancy.
+        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to mitigate reentrancy.
 
         unchecked {
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
@@ -311,9 +316,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
-        // No need to check mint cap, gobblerPrice()
-        // will revert due to overflow if we reach it.
-        // It will also revert prior to the mint start.
+        // No need to check if we're at MAX_MINTABLE,
+        // gobblerPrice() will revert once we reach it due to its
+        // logistic nature. It will also revert prior to the mint start.
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
@@ -322,7 +327,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoo; // Before mint to prevent reentrancy.
+            ++numMintedFromGoo; // Before mint to mitigate reentrancy.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
@@ -333,6 +338,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Gobbler pricing in terms of goo.
     /// @dev Will revert if called before minting starts
     /// or after all gobblers have been minted via VRGDA.
+    /// @return Current price of a gobbler in terms of goo.
     function gobblerPrice() public view returns (uint256) {
         // We need checked math here to cause overflow
         // before minting has begun, preventing mints.
@@ -357,7 +363,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // This will revert if the auction hasn't started yet, no need to check here as well.
         uint256 cost = legendaryGobblerPrice();
 
-        if (gobblerIds.length != cost) revert IncorrectGobblerAmount(cost);
+        if (gobblerIds.length < cost) revert InsufficientGobblerAmount(cost);
 
         // Overflow should not occur in here, as most math is on emission multiples, which are inherently small.
         unchecked {
@@ -368,11 +374,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             //////////////////////////////////////////////////////////////*/
 
             // Generate an amounts array locally to use in the event below.
-            uint256[] memory amounts = new uint256[](gobblerIds.length);
+            uint256[] memory amounts = new uint256[](cost);
 
             uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
-            for (uint256 i = 0; i < gobblerIds.length; ++i) {
+            for (uint256 i = 0; i < cost; ++i) {
                 id = gobblerIds[i];
 
                 if (id >= FIRST_LEGENDARY_GOBBLER_ID) revert CannotBurnLegendary(id);
@@ -386,16 +392,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 amounts[i] = 1;
             }
 
-            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds, amounts);
+            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds[:cost], amounts);
 
             /*//////////////////////////////////////////////////////////////
                                  LEGENDARY MINTING LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // The shift right by 1 is equivalent to multiplication by 2, used to make
-            // the legendary's emissionMultiple 2x the sum of the multiples of the gobblers burned.
-            // Must be done before minting as the transfer hook will update the user's emissionMultiple.
-            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal << 1);
+            // The legendary's emissionMultiple is 2x the sum of the multiples of the gobblers burned.
+            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal * 2);
 
             // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
@@ -404,12 +408,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
 
-            // New start price is the max of 69 and cost * 2. Left shift by 1 is like multiplication by 2.
-            legendaryGobblerAuctionData.startPrice = uint120(cost < 35 ? 69 : cost << 1);
+            // New start price is the max of LEGENDARY_GOBBLER_INITIAL_START_PRICE and cost * 2.
+            legendaryGobblerAuctionData.startPrice = uint120(
+                cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost * 2
+            );
             legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
-            emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds);
+            emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds[:cost]);
 
             _mint(msg.sender, gobblerId, "");
         }
@@ -418,7 +424,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @notice Calculate the legendary gobbler price in terms of gobblers, according to a linear decay function.
     /// @dev The price of a legendary gobbler decays as gobblers are minted. The first legendary auction begins when
     /// 1 LEGENDARY_AUCTION_INTERVAL worth of gobblers are minted, and the price decays linearly while the next interval of
-    /// gobblers is minted. Every time an additional interval is minted, a new auction begins until all legendaries been sold.
+    /// gobblers are minted. Every time an additional interval is minted, a new auction begins until all legendaries have been sold.
+    /// @return price of legendary gobbler, in terms of gobblers.
     function legendaryGobblerPrice() public view returns (uint256) {
         // Retrieve and cache the auction's startPrice and numSold on the stack.
         uint256 startPrice = legendaryGobblerAuctionData.startPrice;
@@ -429,18 +436,20 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         unchecked {
             // The number of gobblers minted at the start of the auction is computed by multiplying the # of
             // intervals that must pass before the next auction begins by the number of gobblers in each interval.
+            // We use numSold + 1 to get the number of gobblers needed to start the next legendary gobbler's auction.
             numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
         }
 
-        // How many gobblers where minted since auction began. Cannot be
-        // unchecked, we want this to revert if auction has not yet started.
+        // How many gobblers were minted since auction began. Cannot be
+        // unchecked, this should revert if the auction hasn't started yet.
         uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
 
         unchecked {
+            // prettier-ignore
             // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
-            else return (startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart)) / LEGENDARY_AUCTION_INTERVAL;
+            else return unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
         }
     }
 
@@ -481,18 +490,28 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             emit RandomnessRequested(msg.sender, toBeRevealed);
         }
 
-        // Will revert if we don't have enough LINK to afford the request.
-        return requestRandomness(chainlinkKeyHash, chainlinkFee);
+        // Call out to the randomness provider.
+        return randProvider.requestRandomBytes();
     }
 
-    /// @notice Callback from Chainlink VRF. Sets randomSeed.
-    function fulfillRandomness(bytes32, uint256 randomness) internal override {
+    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
+    function acceptRandomSeed(bytes32, uint256 randomness) external {
+        // The caller must be the randomness provider, revert in the case it's not.
+        if (msg.sender != address(randProvider)) revert NotRandProvider();
+
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
 
         gobblerRevealsData.waitingForSeed = false; // We have the seed now, open up reveals.
 
         emit RandomnessFulfilled(randomness);
+    }
+
+    /// @notice Upgrade the rand provider contract. Useful if current VRF is sunset.
+    function upgradeRandProvider(RandProvider newRandProvider) external onlyOwner {
+        //Revert if waiting for seed, so that we don't interrupt requests in flight.
+        if (gobblerRevealsData.waitingForSeed == true) revert SeedPending();
+        randProvider = newRandProvider;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -516,7 +535,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         if (numGobblers > totalRemainingToBeRevealed) revert NotEnoughRemainingToBeRevealed(totalRemainingToBeRevealed);
 
         // Implements a Knuth shuffle. If something in
-        // here can overflow we've got bigger problems.
+        // here can overflow, we've got bigger problems.
         unchecked {
             for (uint256 i = 0; i < numGobblers; ++i) {
                 /*//////////////////////////////////////////////////////////////
@@ -604,7 +623,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                 }
             }
 
-            // Update all relevant reveal state state.
+            // Update all relevant reveal state.
             gobblerRevealsData.randomSeed = uint64(randomSeed);
             gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
             gobblerRevealsData.toBeRevealed = uint56(totalRemainingToBeRevealed - numGobblers);
@@ -625,7 +644,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // 0 is not a valid id:
             if (gobblerId == 0) return "";
 
-            return string(abi.encodePacked(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString()));
+            return string.concat(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString());
         }
 
         // Between lastRevealed + 1 and currentNonLegendaryId are minted but not revealed.
@@ -636,7 +655,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
         // Between FIRST_LEGENDARY_GOBBLER_ID and FIRST_LEGENDARY_GOBBLER_ID + numSold are minted legendaries.
         if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold)
-            return string(abi.encodePacked(BASE_URI, gobblerId.toString()));
+            return string.concat(BASE_URI, gobblerId.toString());
 
         return ""; // Unminted legendaries and invalid token ids.
     }
@@ -662,6 +681,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         // The caller must own the gobbler they're feeding.
         if (owner != msg.sender) revert OwnerMismatch(owner);
 
+        // Gobblers have taken a vow not to eat other gobblers.
+        if (nft == address(this)) revert Cannibalism();
+
         unchecked {
             // Increment the number of copies fed to the gobbler.
             // Counter overflow is unrealistic on human timescales.
@@ -679,7 +701,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                              EMISSION LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate a user's staked goo balance.
+    /// @notice Calculate a user's goo emission balance.
     /// @param user The user to query balance for.
     function gooBalance(address user) public view returns (uint256) {
         // If a user's goo balance is greater than
@@ -743,7 +765,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Mint a number of gobblers to the reserves.
     /// @param numGobblersEach The number of gobblers to mint to each reserve.
-    /// @dev Gobblers minted to reserves cannot compromise more than 20% of the sum of
+    /// @dev Gobblers minted to reserves cannot comprise more than 20% of the sum of
     /// the supply of goo minted gobblers and the supply of gobblers minted to reserves.
     function mintReservedGobblers(uint256 numGobblersEach) external returns (uint256 lastMintedGobblerId) {
         unchecked {
@@ -752,7 +774,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             // loop in _batchMint to run out of gas quickly. Shift left by 1 is equivalent to multiplying by 2.
             uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach << 1);
 
-            // Ensure that after this mint gobblers minted to reserves won't compromise more than 20% of
+            // Ensure that after this mint gobblers minted to reserves won't comprise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
@@ -773,13 +795,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                           CONVENIENCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Convenience function to get emission emissionMultiple for a gobbler.
+    /// @notice Convenience function to get emissionMultiple for a gobbler.
     /// @param gobblerId The gobbler to get emissionMultiple for.
     function getGobblerEmissionMultiple(uint256 gobblerId) external view returns (uint256) {
         return getGobblerData[gobblerId].emissionMultiple;
     }
 
-    /// @notice Convenience function to get emission emissionMultiple for a user.
+    /// @notice Convenience function to get emissionMultiple for a user.
     /// @param user The user to get emissionMultiple for.
     function getUserEmissionMultiple(address user) external view returns (uint256) {
         return getEmissionDataForUser[user].emissionMultiple;
@@ -869,7 +891,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
                               HELPER LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Transfer an amount of a user's emission's multiple to another user.
+    /// @dev Transfer an amount of a user's emission multiple to another user, and
+    /// checkpoint lastBalance and lastTimestamp for correct computation of balances.
     /// @dev Should be done whenever a gobbler is transferred between two users.
     /// @param from The user to transfer the amount of emission multiple from.
     /// @param to The user to transfer the amount of emission multiple to.
@@ -881,6 +904,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     ) internal {
         unchecked {
             // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
+            // We decrease their balance before updating their emission multiple to avoid
+            // penalizing them by retroactively applying the new lower emission multiple.
             getEmissionDataForUser[from].lastBalance = uint128(gooBalance(from));
             getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
             getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
