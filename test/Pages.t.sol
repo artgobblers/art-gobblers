@@ -63,10 +63,11 @@ contract PagesTest is DSTestPlus {
     }
 
     function testTargetPrice() public {
-        uint256 cost = pages.pagePrice();
-        uint256 maxDelta = 5; // 0.000000000000000005
+        // Warp to the target sale time so that the page price equals the target price.
+        vm.warp(block.timestamp + uint256(pages.getTargetSaleDay(1e18) * 1 days) / 1e18);
 
-        assertApproxEq(cost, uint256(pages.targetPrice()), maxDelta);
+        uint256 cost = pages.pagePrice();
+        assertRelApproxEq(cost, uint256(pages.targetPrice()), 0.00001e18);
     }
 
     function testMintCommunityPagesFailsWithNoMints() public {
@@ -140,7 +141,7 @@ contract PagesTest is DSTestPlus {
     /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 9408;
+        uint256 numMint = 9407;
 
         vm.warp(block.timestamp + timeDelta);
 

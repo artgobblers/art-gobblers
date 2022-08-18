@@ -104,8 +104,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         string memory _baseUri
     )
         VRGDA(
-            4.2069e18, // Initial price.
-            0.31e18 // Per period price decrease.
+            4.2069e18, // Target price.
+            0.31e18 // Price decrease percent.
         )
         LogisticVRGDA(
             9000e18, // Asymptote.
@@ -170,7 +170,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
     /// @param sold A number of tokens sold, scaled by 1e18, to get the corresponding target sale day for.
     /// @return The target day the tokens should be sold by, scaled by 1e18, where the day is
     /// relative, such that 0 means the tokens should be sold immediately when the VRGDA begins.
-    function getTargetSaleDay(int256 sold) internal view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
+    function getTargetSaleDay(int256 sold) public view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
         // prettier-ignore
         return sold < SOLD_BY_SWITCH_WAD
             ? LogisticVRGDA.getTargetSaleDay(sold)

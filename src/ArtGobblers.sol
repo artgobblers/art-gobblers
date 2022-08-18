@@ -253,8 +253,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         string memory _unrevealedUri
     )
         VRGDA(
-            69.42e18, // Initial price.
-            0.31e18 // Per period price decrease.
+            69.42e18, // Target price.
+            0.31e18 // Price decrease percent.
         )
         LogisticVRGDA(
             // Max mintable gobblers.

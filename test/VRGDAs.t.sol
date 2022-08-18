@@ -81,37 +81,37 @@ contract VRGDAsTest is DSTestPlus {
     // }
 
     function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 1731));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 1730));
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 3870 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6391));
+        gobblers.getPrice(bound(timeSinceStart, 3870 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6390));
     }
 
     function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 6392, type(uint128).max));
+        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 6391, type(uint128).max));
     }
 
     function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 1731) {
+        while (sold <= 1730) {
             uint256 price = gobblers.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
         }
     }
 
-    function testNoOverflowForFirst8465Pages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 8465));
+    function testNoOverflowForFirst8464Pages(uint256 timeSinceStart, uint256 sold) public {
+        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 8464));
     }
 
-    function testPagePriceStrictlyIncreasesFor8465Pages() public {
+    function testPagePriceStrictlyIncreasesFor8464Pages() public {
         uint256 sold;
         uint256 previousPrice;
 
-        while (sold <= 8465) {
+        while (sold <= 8464) {
             uint256 price = pages.getPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;

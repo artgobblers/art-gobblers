@@ -51,7 +51,7 @@ abstract contract PostSwitchVRGDA is VRGDA {
     /// @param sold A number of tokens sold, scaled by 1e18, to get the corresponding target sale day for.
     /// @return The target day the tokens should be sold by, scaled by 1e18, where the day is
     /// relative, such that 0 means the tokens should be sold immediately when the VRGDA begins.
-    function getTargetSaleDay(int256 sold) internal view virtual override returns (int256) {
+    function getTargetSaleDay(int256 sold) public view virtual override returns (int256) {
         unchecked {
             return unsafeWadDiv(sold - soldBySwitch, perDay) + switchDay;
         }
