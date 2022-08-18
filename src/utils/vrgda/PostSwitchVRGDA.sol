@@ -27,9 +27,9 @@ abstract contract PostSwitchVRGDA is VRGDA {
     int256 internal immutable perDay;
 
     /// @notice Sets pricing parameters for the VRGDA.
-    /// @param _soldBySwitch The number of tokens sold at the time of the switch.
-    /// @param _switchDay The day soldBySwitch tokens were targeted to sell by.
-    /// @param _perDay The total number of tokens to target selling each day.
+    /// @param _soldBySwitch The number of tokens sold at the time of the switch, scaled by 1e18.
+    /// @param _switchDay The day soldBySwitch tokens were targeted to sell by, scaled by 1e18.
+    /// @param _perDay The total number of tokens to target selling each day, scaled by 1e18.
     constructor(
         int256 _soldBySwitch,
         int256 _switchDay,

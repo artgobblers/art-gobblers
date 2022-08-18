@@ -20,9 +20,9 @@ abstract contract VRGDA {
     /// @dev Represented as an 18 decimal fixed point number.
     int256 internal immutable decayConstant;
 
-    /// @notice Sets initial price and per period price decay for VRGDA.
-    /// @param _targetPrice The target price for a token if sold on pace.
-    /// @param _priceDecreasePercent Percent price decrease per unit of time.
+    /// @notice Sets target price and per period price decrease for the VRGDA.
+    /// @param _targetPrice The target price for a token if sold on pace, scaled by 1e18.
+    /// @param _priceDecreasePercent Percent price decrease per unit of time, scaled by 1e18.
     constructor(int256 _targetPrice, int256 _priceDecreasePercent) {
         targetPrice = _targetPrice;
 
@@ -46,7 +46,7 @@ abstract contract VRGDA {
                 // Theoretically calling toWadUnsafe with timeSinceStart/sold can overflow without
                 // detection, but under any reasonable circumstance they will never be large enough.
                 // Use ++sold as ASTRO's n param represents the nth token, whereas sold is the n-1th token.
-                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(++sold))
+                (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(++sold)) // todo: is + 1 cheaper
             ))));
         }
     }
