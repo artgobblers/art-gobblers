@@ -140,7 +140,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     /// @notice Struct holding data required for gobbler reveals.
     struct GobblerRevealsData {
-        // Last random seed obtained from VRF.
+        // Last randomness obtained from the rand provider.
         uint64 randomSeed;
         // Next reveal cannot happen before this timestamp.
         uint64 nextRevealTimestamp;
@@ -191,8 +191,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
     event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
-    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
     event RandomnessFulfilled(uint256 randomness);
+    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
+    event RandProviderUpgraded(address indexed user, RandProvider indexed newRandProvider);
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
@@ -454,7 +455,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /*//////////////////////////////////////////////////////////////
-                                VRF LOGIC
+                            RANDOMNESS LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request a new random seed for revealing gobblers.
@@ -495,6 +496,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
+    /// @param randomness The 256 bits of verifiable randomness provided by the rand provider.
     function acceptRandomSeed(bytes32, uint256 randomness) external {
         // The caller must be the randomness provider, revert in the case it's not.
         if (msg.sender != address(randProvider)) revert NotRandProvider();
@@ -508,10 +510,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Upgrade the rand provider contract. Useful if current VRF is sunset.
+    /// @param newRandProvider The new randomness provider contract address.
     function upgradeRandProvider(RandProvider newRandProvider) external onlyOwner {
-        //Revert if waiting for seed, so that we don't interrupt requests in flight.
-        if (gobblerRevealsData.waitingForSeed == true) revert SeedPending();
-        randProvider = newRandProvider;
+        // Revert if waiting for seed, so we don't interrupt requests in flight.
+        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
+
+        randProvider = newRandProvider; // Update the randomness provider.
+
+        emit RandProviderUpgraded(msg.sender, newRandProvider);
     }
 
     /*//////////////////////////////////////////////////////////////
