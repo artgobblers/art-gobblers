@@ -36,7 +36,7 @@ abstract contract VRGDA {
                               PRICING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate the price of the next token according to the VRGDA formula.
+    /// @notice Calculate the price of the a token according to the VRGDA formula.
     /// @param timeSinceStart The time since auctions began, in seconds.
     /// @param sold The number of tokens that have been sold so far.
     function getPrice(uint256 timeSinceStart, uint256 sold) public view returns (uint256) {
@@ -45,7 +45,7 @@ abstract contract VRGDA {
             return uint256(wadMul(targetPrice, wadExp(unsafeWadMul(decayConstant,
                 // Theoretically calling toWadUnsafe with timeSinceStart/sold can overflow without
                 // detection, but under any reasonable circumstance they will never be large enough.
-                // Use ++sold as ASTRO's n param represents the nth token, whereas sold is the n-1th token.
+                // Use sold + 1 as ASTRO's n param represents the nth token and sold is the n-1th token.
                 (toWadUnsafe(timeSinceStart) / 1 days) - getTargetSaleDay(toWadUnsafe(sold + 1))
             ))));
         }
