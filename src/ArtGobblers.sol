@@ -495,6 +495,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
+    /// @param randomness The 256 bits of verifiable randomness provided by the rand provider.
     function acceptRandomSeed(bytes32, uint256 randomness) external {
         // The caller must be the randomness provider, revert in the case it's not.
         if (msg.sender != address(randProvider)) revert NotRandProvider();
