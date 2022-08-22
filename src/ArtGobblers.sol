@@ -6,14 +6,13 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 
-import {VRFConsumerBase} from "chainlink/v0.8/VRFConsumerBase.sol";
-
 import {VRGDA} from "./utils/vrgda/VRGDA.sol";
 import {LibString} from "./utils/lib/LibString.sol";
 import {unsafeDivUp} from "./utils/lib/SignedWadMath.sol";
 import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
 import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
+import {RandProvider} from "./utils/random/RandProvider.sol";
 
 import {Goo} from "./Goo.sol";
 
@@ -21,7 +20,7 @@ import {Goo} from "./Goo.sol";
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Art Gobblers scan the cosmos in search of art producing life.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -37,6 +36,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice The address which receives gobblers reserved for the community.
     address public immutable community;
+
+    /// @notice The address of a randomness provider. This provider will initially be
+    /// a wrapper around Chainlink VRF v1, but can be changed in case it is fully sunset.
+    RandProvider public randProvider;
 
     /*//////////////////////////////////////////////////////////////
                             SUPPLY CONSTANTS
@@ -74,16 +77,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
-
-    /*//////////////////////////////////////////////////////////////
-                              VRF CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Public key against which randomness is generated.
-    bytes32 internal immutable chainlinkKeyHash;
-
-    /// @notice Fee required to fulfill a VRF request.
-    uint256 internal immutable chainlinkFee;
 
     /*//////////////////////////////////////////////////////////////
                              MINTLIST STATE
@@ -147,7 +140,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
 
     /// @notice Struct holding data required for gobbler reveals.
     struct GobblerRevealsData {
-        // Last random seed obtained from VRF.
+        // Last randomness obtained from the rand provider.
         uint64 randomSeed;
         // Next reveal cannot happen before this timestamp.
         uint64 nextRevealTimestamp;
@@ -198,8 +191,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     event LegendaryGobblerMinted(address indexed user, uint256 indexed gobblerId, uint256[] burnedGobblerIds);
     event ReservedGobblersMinted(address indexed user, uint256 lastMintedGobblerId, uint256 numGobblersEach);
 
-    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
     event RandomnessFulfilled(uint256 randomness);
+    event RandomnessRequested(address indexed user, uint256 toBeRevealed);
+    event RandProviderUpgraded(address indexed user, RandProvider indexed newRandProvider);
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
@@ -217,6 +211,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     error RevealsPending();
     error RequestTooEarly();
     error ZeroToBeRevealed();
+    error NotRandProvider();
 
     error ReserveImbalance();
 
@@ -242,10 +237,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @param _goo Address of the Goo contract.
     /// @param _team Address of the team reserve.
     /// @param _community Address of the community reserve.
-    /// @param _vrfCoordinator Address of the VRF coordinator.
-    /// @param _linkToken Address of the LINK token contract.
-    /// @param _chainlinkKeyHash The chosen Chainlink key hash.
-    /// @param _chainlinkFee The chosen Chainlink fee in LINK.
+    /// @param _randProvider Address of the randomness provider.
     /// @param _baseUri Base URI for revealed gobblers.
     /// @param _unrevealedUri URI for unrevealed gobblers.
     constructor(
@@ -256,11 +248,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         Goo _goo,
         address _team,
         address _community,
-        // Chainlink:
-        address _vrfCoordinator,
-        address _linkToken,
-        bytes32 _chainlinkKeyHash,
-        uint256 _chainlinkFee,
+        RandProvider _randProvider,
         // URIs:
         string memory _baseUri,
         string memory _unrevealedUri
@@ -274,7 +262,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             int256(MAX_MINTABLE * 1e18),
             0.0023e18 // Time scale.
         )
-        VRFConsumerBase(_vrfCoordinator, _linkToken)
         Owned(msg.sender) // Deployer starts as owner.
     {
         mintStart = _mintStart;
@@ -283,9 +270,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         goo = _goo;
         team = _team;
         community = _community;
-
-        chainlinkKeyHash = _chainlinkKeyHash;
-        chainlinkFee = _chainlinkFee;
+        randProvider = _randProvider;
 
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
@@ -334,8 +319,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
         // No need to check if we're at MAX_MINTABLE,
-        // gobblerPrice() will revert due to overflow if we
-        // reach it. It will also revert prior to the mint start.
+        // gobblerPrice() will revert once we reach it due to its
+        // logistic nature. It will also revert prior to the mint start.
         uint256 currentPrice = gobblerPrice();
 
         // If the current price is above the user's specified max, revert.
@@ -344,7 +329,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
         goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoo; // Before mint to prevent reentrancy.
+            ++numMintedFromGoo; // Before mint to mitigate reentrancy.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
@@ -469,7 +454,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
     }
 
     /*//////////////////////////////////////////////////////////////
-                                VRF LOGIC
+                            RANDOMNESS LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request a new random seed for revealing gobblers.
@@ -505,18 +490,33 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, VRFConsumerBase, Owned,
             emit RandomnessRequested(msg.sender, toBeRevealed);
         }
 
-        // Will revert if we don't have enough LINK to afford the request.
-        return requestRandomness(chainlinkKeyHash, chainlinkFee);
+        // Call out to the randomness provider.
+        return randProvider.requestRandomBytes();
     }
 
-    /// @notice Callback from Chainlink VRF. Sets randomSeed.
-    function fulfillRandomness(bytes32, uint256 randomness) internal override {
+    /// @notice Callback from rand provider. Sets randomSeed. Can only be called by the rand provider.
+    /// @param randomness The 256 bits of verifiable randomness provided by the rand provider.
+    function acceptRandomSeed(bytes32, uint256 randomness) external {
+        // The caller must be the randomness provider, revert in the case it's not.
+        if (msg.sender != address(randProvider)) revert NotRandProvider();
+
         // The unchecked cast to uint64 is equivalent to moduloing the randomness by 2**64.
         gobblerRevealsData.randomSeed = uint64(randomness); // 64 bits of randomness is plenty.
 
         gobblerRevealsData.waitingForSeed = false; // We have the seed now, open up reveals.
 
         emit RandomnessFulfilled(randomness);
+    }
+
+    /// @notice Upgrade the rand provider contract. Useful if current VRF is sunset.
+    /// @param newRandProvider The new randomness provider contract address.
+    function upgradeRandProvider(RandProvider newRandProvider) external onlyOwner {
+        // Revert if waiting for seed, so we don't interrupt requests in flight.
+        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
+
+        randProvider = newRandProvider; // Update the randomness provider.
+
+        emit RandProviderUpgraded(msg.sender, newRandProvider);
     }
 
     /*//////////////////////////////////////////////////////////////

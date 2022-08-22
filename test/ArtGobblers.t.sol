@@ -11,6 +11,8 @@ import {ArtGobblers, unsafeDivUp} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
+import {RandProvider} from "../src/utils/random/RandProvider.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
@@ -33,6 +35,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     Pages internal pages;
     GobblerReserve internal team;
     GobblerReserve internal community;
+    RandProvider internal randProvider;
 
     bytes32 private keyHash;
     uint256 private fee;
@@ -49,8 +52,18 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        team = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 3)), address(this));
-        community = new GobblerReserve(ArtGobblers(utils.predictContractAddress(address(this), 2)), address(this));
+        //gobblers contract will be deployed after 4 contract deploys
+        address gobblerAddress = utils.predictContractAddress(address(this), 4);
+
+        team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
+        community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
+        randProvider = new ChainlinkV1RandProvider(
+            ArtGobblers(gobblerAddress),
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee
+        );
 
         goo = new Goo(
             // Gobblers:
@@ -65,10 +78,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             goo,
             address(team),
             address(community),
-            address(vrfCoordinator),
-            address(linkToken),
-            keyHash,
-            fee,
+            randProvider,
             "base",
             ""
         );
@@ -569,7 +579,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         bytes32 requestId = gobblers.requestRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
-        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
 
         mintGobblerToAddress(users[0], 2);
 
@@ -944,7 +954,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         bytes32 requestId = gobblers.requestRandomSeed();
         uint256 randomness = uint256(keccak256(abi.encodePacked(seed)));
         // call back from coordinator
-        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(gobblers));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
         gobblers.revealGobblers(numReveal);
     }
 
