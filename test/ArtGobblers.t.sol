@@ -247,6 +247,23 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertRelApproxEq(finalPrice, targetPrice, 0.03e18);
     }
 
+    /// @notice Pricing function should NOT revert when trying to price the last mintable gobbler.
+    function testDoesNotRevertEarly() public { 
+        // This is the last gobbler we expect to mint.
+        int256 maxMintable = int256(gobblers.MAX_MINTABLE()) * 1e18;
+        // This call should NOT revert, since we should have a target date for the last mintable gobbler.
+        int256 targetSale = gobblers.getTargetSaleDay(maxMintable);
+    }
+
+    /// @notice Pricing function should revert when trying to price beyond the last mintable gobbler.
+    function testDoesRevertWhenExpected() public { 
+        // One plus the max number of mintable gobblers. 
+        int256 maxMintablePlusOne = int256(gobblers.MAX_MINTABLE() + 1) * 1e18;
+        // This call should revert, since there should be no target date beyond max mintable gobblers.  
+        vm.expectRevert("UNDEFINED");
+        int256 targetSale = gobblers.getTargetSaleDay(maxMintablePlusOne);
+    }
+
     /*//////////////////////////////////////////////////////////////
                            LEGENDARY GOBBLERS
     //////////////////////////////////////////////////////////////*/

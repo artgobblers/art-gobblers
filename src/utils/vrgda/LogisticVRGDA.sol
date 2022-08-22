@@ -17,12 +17,12 @@ abstract contract LogisticVRGDA is VRGDA {
     /// @dev The maximum number of tokens of tokens to sell + 1. We add
     /// 1 because the logistic function will never fully reach its limit.
     /// @dev Represented as an 18 decimal fixed point number.
-    int256 internal immutable logisticLimit;
+    int256 public immutable logisticLimit;
 
     /// @dev The maximum number of tokens of tokens to sell + 1 multiplied
     /// by 2. We could compute it on the fly each time but this saves gas.
     /// @dev Represented as a 36 decimal fixed point number.
-    int256 internal immutable logisticLimitDoubled;
+    int256 public immutable logisticLimitDoubled;
 
     /// @dev Time scale controls the steepness of the logistic curve,
     /// which affects how quickly we will reach the curve's asymptote.
