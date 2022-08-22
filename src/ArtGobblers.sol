@@ -219,8 +219,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     error OwnerMismatch(address owner);
 
     error NoRemainingLegendaryGobblers();
-    error InsufficientGobblerAmount(uint256 cost);
     error CannotBurnLegendary(uint256 gobblerId);
+    error InsufficientGobblerAmount(uint256 cost);
+    error LegendaryAuctionNotStarted(uint256 gobblersLeft);
 
     error PriceExceededMax(uint256 currentPrice);
 
@@ -341,7 +342,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// or after all gobblers have been minted via VRGDA.
     /// @return Current price of a gobbler in terms of goo.
     function gobblerPrice() public view returns (uint256) {
-        // We need checked math here to cause overflow
+        // We need checked math here to cause underflow
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
@@ -428,24 +429,22 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// gobblers are minted. Every time an additional interval is minted, a new auction begins until all legendaries have been sold.
     /// @return price of legendary gobbler, in terms of gobblers.
     function legendaryGobblerPrice() public view returns (uint256) {
-        // Retrieve and cache the auction's startPrice and numSold on the stack.
+        // Retrieve and cache various auction parameters and variables.
         uint256 startPrice = legendaryGobblerAuctionData.startPrice;
         uint256 numSold = legendaryGobblerAuctionData.numSold;
-
-        uint256 numMintedAtStart; // The number of gobblers minted at the start of the auction.
+        uint256 mintedFromGoo = numMintedFromGoo;
 
         unchecked {
             // The number of gobblers minted at the start of the auction is computed by multiplying the # of
             // intervals that must pass before the next auction begins by the number of gobblers in each interval.
-            // We use numSold + 1 to get the number of gobblers needed to start the next legendary gobbler's auction.
-            numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
-        }
+            uint256 numMintedAtStart = (numSold + 1) * LEGENDARY_AUCTION_INTERVAL;
 
-        // How many gobblers were minted since auction began. Cannot be
-        // unchecked, this should revert if the auction hasn't started yet.
-        uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
+            // If not enough gobblers have been minted to start the auction yet, return how many need to be minted.
+            if (numMintedAtStart > mintedFromGoo) revert LegendaryAuctionNotStarted(numMintedAtStart - mintedFromGoo);
 
-        unchecked {
+            // Compute how many gobblers were minted since the auction began.
+            uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
+
             // prettier-ignore
             // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
