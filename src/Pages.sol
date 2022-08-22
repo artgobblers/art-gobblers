@@ -104,11 +104,11 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         string memory _baseUri
     )
         VRGDA(
-            4.2069e18, // Initial price.
-            0.31e18 // Per period price decrease.
+            4.2069e18, // Target price.
+            0.31e18 // Price decrease percent.
         )
         LogisticVRGDA(
-            9000e18, // Asymptote.
+            9000e18, // Max sellable.
             0.014e18 // Time scale.
         )
         PostSwitchVRGDA(
@@ -166,20 +166,15 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         }
     }
 
-    /// @dev Given the number of tokens sold so far, return the target day the next token should be sold by.
-    /// @param sold The number of tokens that have been sold so far, where 0 means none, scaled by 1e18.
-    /// @return The target day that the next token should be sold by, scaled by 1e18, where the day
-    /// is relative, such that 0 means the token should be sold immediately when the VRGDA begins.
-    function getTargetDayForNextSale(int256 sold)
-        internal
-        view
-        override(LogisticVRGDA, PostSwitchVRGDA)
-        returns (int256)
-    {
+    /// @dev Given a number of tokens sold, return the target day that number of tokens should be sold by.
+    /// @param sold A number of tokens sold, scaled by 1e18, to get the corresponding target sale day for.
+    /// @return The target day the tokens should be sold by, scaled by 1e18, where the day is
+    /// relative, such that 0 means the tokens should be sold immediately when the VRGDA begins.
+    function getTargetSaleDay(int256 sold) public view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
         // prettier-ignore
         return sold < SOLD_BY_SWITCH_WAD
-            ? LogisticVRGDA.getTargetDayForNextSale(sold)
-            : PostSwitchVRGDA.getTargetDayForNextSale(sold);
+            ? LogisticVRGDA.getTargetSaleDay(sold)
+            : PostSwitchVRGDA.getTargetSaleDay(sold);
     }
 
     /*//////////////////////////////////////////////////////////////
