@@ -34,7 +34,7 @@ contract PageCorrectnessTest is DSTestPlus {
     function setUp() public {
         pages = new Pages(block.timestamp, Goo(address(0)), address(0), address(0), "");
 
-        LOGISTIC_SCALE = int256(MAX_MINTABLE * 2e18);
+        LOGISTIC_SCALE = int256((MAX_MINTABLE + 1) * 2e18);
     }
 
     function testFFICorrectness(uint256 timeSinceStart, uint256 numSold) public {
@@ -49,7 +49,7 @@ contract PageCorrectnessTest is DSTestPlus {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,
-                numSold,
+                numSold + 1,
                 INITIAL_PRICE,
                 PER_PERIOD_PRICE_DECREASE,
                 LOGISTIC_SCALE,
