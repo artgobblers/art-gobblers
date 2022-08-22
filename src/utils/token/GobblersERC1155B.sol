@@ -118,6 +118,17 @@ abstract contract GobblersERC1155B {
     }
 
     /*//////////////////////////////////////////////////////////////
+                              ERC165 LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+        return
+            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+            interfaceId == 0xd9b67a26 || // ERC165 Interface ID for ERC1155
+            interfaceId == 0x0e89341c; // ERC165 Interface ID for ERC1155MetadataURI
+    }
+
+    /*//////////////////////////////////////////////////////////////
                            INTERNAL MINT LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -128,8 +139,9 @@ abstract contract GobblersERC1155B {
     ) internal virtual {
         getGobblerData[id].owner = to;
 
-        // Does not check if the token was already minted because new ids in
-        // ArtGobblers.sol are set using a monotonically increasing counter.
+        // Does not check if the token was already minted or the recipient is address(0)
+        // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
@@ -139,7 +151,7 @@ abstract contract GobblersERC1155B {
                     ERC1155TokenReceiver.onERC1155Received.selector,
                 "UNSAFE_RECIPIENT"
             );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+        }
     }
 
     function _batchMint(
@@ -148,6 +160,10 @@ abstract contract GobblersERC1155B {
         uint256 lastMintedId,
         bytes memory data
     ) internal returns (uint256) {
+        // Doesn't check if the tokens were already minted or the recipient is address(0)
+        // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
+
         // Allocate arrays before entering the loop.
         uint256[] memory ids = new uint256[](amount);
         uint256[] memory amounts = new uint256[](amount);
@@ -171,7 +187,7 @@ abstract contract GobblersERC1155B {
                     ERC1155TokenReceiver.onERC1155BatchReceived.selector,
                 "UNSAFE_RECIPIENT"
             );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+        }
 
         return lastMintedId; // Return the new last minted id.
     }

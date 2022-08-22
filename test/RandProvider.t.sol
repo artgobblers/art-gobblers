@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -20,7 +19,7 @@ import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "../src/utils/lib/LibString.sol";
 
 /// @notice Unit test for the Gobbler Reserve contract.
-contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
+contract RandProviderTest is DSTestPlus {
     using LibString for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -41,6 +40,9 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
     uint256 private fee;
 
     uint256[] ids;
+
+    //chainlink event
+    event RandomnessRequest(address indexed sender, bytes32 indexed keyHash, uint256 indexed seed);
 
     /*//////////////////////////////////////////////////////////////
                                   SETUP
@@ -86,29 +88,63 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            WITHDRAWAL TESTS
-    //////////////////////////////////////////////////////////////*/
+    function testRandomnessIsCorrectlyRequested() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
 
-    /// @notice Tests that a reserve can be withdrawn from.
-    function testCanWithdraw() public {
-        mintGobblerToAddress(users[0], 9);
+        //we expect a randomnessRequest event to be emitted once the request reaches the VRFCoordinator.
+        //we only check that the request comes from the correct address, i.e. the randProvider
+        vm.expectEmit(true, false, false, false); // only check the first indexed event (sender address)
+        emit RandomnessRequest(address(randProvider), 0, 0);
 
-        gobblers.mintReservedGobblers(1);
+        gobblers.requestRandomSeed();
+    }
 
-        assertEq(gobblers.ownerOf(10), address(team));
-        assertEq(gobblers.ownerOf(11), address(community));
+    function testRandomnessIsFulfilled() public {
+        //initially, randomness should be 0
+        (uint64 randomSeed, , , , ) = gobblers.gobblerRevealsData();
+        assertEq(randomSeed, 0);
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        bytes32 requestId = gobblers.requestRandomSeed();
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
+        //randomness from vrf should be set in gobblers contract
+        (randomSeed, , , , ) = gobblers.gobblerRevealsData();
+        assertEq(randomSeed, uint64(randomness));
+    }
 
-        uint256[] memory idsToWithdraw = new uint256[](1);
+    function testOnlyGobblersCanRequestRandomness() public {
+        vm.expectRevert(ChainlinkV1RandProvider.NotGobblers.selector);
+        randProvider.requestRandomBytes();
+    }
 
-        idsToWithdraw[0] = 10;
-        team.withdraw(address(this), idsToWithdraw);
+    function testRandomnessIsOnlyUpgradableByOwner() public {
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
+        vm.expectRevert("UNAUTHORIZED");
+        vm.prank(address(0xBEEFBABE));
+        gobblers.upgradeRandProvider(newProvider);
+    }
 
-        idsToWithdraw[0] = 11;
-        community.withdraw(address(this), idsToWithdraw);
+    function testRandomnessIsNotUpgradableWithPendingSeed() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        gobblers.requestRandomSeed();
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
+        vm.expectRevert(ArtGobblers.SeedPending.selector);
+        gobblers.upgradeRandProvider(newProvider);
+    }
 
-        assertEq(gobblers.ownerOf(10), address(this));
-        assertEq(gobblers.ownerOf(11), address(this));
+    function testRandomnessIsUpgradable() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        //initial address is correct
+        assertEq(address(gobblers.randProvider()), address(randProvider));
+
+        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
+        gobblers.upgradeRandProvider(newProvider);
+        //final address is correct
+        assertEq(address(gobblers.randProvider()), address(newProvider));
     }
 
     /*//////////////////////////////////////////////////////////////

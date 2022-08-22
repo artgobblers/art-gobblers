@@ -62,11 +62,11 @@ contract PagesTest is DSTestPlus {
         assertEq(user, pages.ownerOf(1));
     }
 
-    function testInitialPrice() public {
+    function testTargetPrice() public {
         uint256 cost = pages.pagePrice();
         uint256 maxDelta = 5; // 0.000000000000000005
 
-        assertApproxEq(cost, uint256(pages.initialPrice()), maxDelta);
+        assertApproxEq(cost, uint256(pages.targetPrice()), maxDelta);
     }
 
     function testMintCommunityPagesFailsWithNoMints() public {
@@ -122,7 +122,7 @@ contract PagesTest is DSTestPlus {
 
         vm.warp(block.timestamp + timeDelta);
 
-        uint256 initialPrice = uint256(pages.initialPrice());
+        uint256 targetPrice = uint256(pages.targetPrice());
 
         for (uint256 i = 0; i < numMint; i++) {
             uint256 price = pages.pagePrice();
@@ -134,7 +134,7 @@ contract PagesTest is DSTestPlus {
         uint256 finalPrice = pages.pagePrice();
 
         // If selling at target rate, final price should equal starting price.
-        assertRelApproxEq(initialPrice, finalPrice, 0.01e18);
+        assertRelApproxEq(targetPrice, finalPrice, 0.01e18);
     }
 
     /// @notice Test that page pricing matches expected behavior after switch.
@@ -144,7 +144,7 @@ contract PagesTest is DSTestPlus {
 
         vm.warp(block.timestamp + timeDelta);
 
-        uint256 initialPrice = uint256(pages.initialPrice());
+        uint256 targetPrice = uint256(pages.targetPrice());
 
         for (uint256 i = 0; i < numMint; i++) {
             uint256 price = pages.pagePrice();
@@ -156,7 +156,7 @@ contract PagesTest is DSTestPlus {
         uint256 finalPrice = pages.pagePrice();
 
         // If selling at target rate, final price should equal starting price.
-        assertRelApproxEq(initialPrice, finalPrice, 0.02e18);
+        assertRelApproxEq(targetPrice, finalPrice, 0.02e18);
     }
 
     function testInsufficientBalance() public {
