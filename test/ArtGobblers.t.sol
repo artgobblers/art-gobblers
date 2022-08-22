@@ -135,7 +135,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
         assertEq(gobblers.ownerOf(1), users[0]);
     }
 
@@ -143,7 +143,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintInsufficientBalance() public {
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
     }
 
     /// @notice Test that you can successfully mint from goo.
@@ -153,7 +153,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
         //warp for reveals
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
@@ -166,7 +166,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         console.log("balance", initialBalance);
         //mint from balance
         vm.prank(users[0]);
-        gobblers.mintFromGooBalance(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, true);
         //asert owner is correct
         assertEq(gobblers.ownerOf(2), users[0]);
         //asert balance went down by expected amount
@@ -179,7 +179,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testMintFromBalanceInsufficient() public {
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
-        gobblers.mintFromGooBalance(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, true);
     }
 
     /// @notice Test that if mint price exceeds max it reverts.
@@ -189,7 +189,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.PriceExceededMax.selector, cost));
-        gobblers.mintFromGoo(cost - 1);
+        gobblers.mintFromGoo(cost - 1, false);
     }
 
     /// @notice Test that initial gobbler price is what we expect.
@@ -271,7 +271,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             goo.mintForGobblers(users[0], price);
             vm.stopPrank();
             vm.prank(users[0]);
-            gobblers.mintFromGoo(price);
+            gobblers.mintFromGoo(price, false);
         }
 
         uint256 targetPrice = uint256(gobblers.targetPrice());
@@ -551,7 +551,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], gobblerCost);
         vm.prank(users[0]);
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
         // assert gobbler not revealed after mint
         assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
     }
@@ -911,7 +911,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(address(gobblers));
             goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 
@@ -930,7 +930,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(users[0]);
 
             if (i == maxMintableWithGoo) vm.expectRevert("UNDEFINED");
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 
@@ -944,7 +944,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(address(gobblers));
             goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
 
         gobblers.mintReservedGobblers(gobblers.RESERVED_SUPPLY() / 2);
@@ -960,7 +960,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.prank(address(gobblers));
             goo.mintForGobblers(users[0], cost);
             vm.prank(users[0]);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
 
         gobblers.mintReservedGobblers(gobblers.RESERVED_SUPPLY() / 2);
@@ -981,7 +981,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 

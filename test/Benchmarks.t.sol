@@ -105,7 +105,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintGobbler() public {
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
     }
 
     function testBatchTransferGobblers() public {
@@ -155,7 +155,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 

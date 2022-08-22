@@ -185,6 +185,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     event GooAdded(address indexed user, uint256 gooAdded);
     event GooRemoved(address indexed user, uint256 gooAdded);
+    event GooBurned(address indexed user, uint256 gooAdded);
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
@@ -314,10 +315,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
                               MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Mint a gobbler with goo, burning the cost.
+    /// @notice Mint a gobbler, paying with goo.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
+    /// @param useVirtualBalance Whether the cost is paid from the user's
+    /// virtual balance, or from their regular balance
     /// @return gobblerId The id of the gobbler that was minted.
-    function mintFromGoo(uint256 maxPrice) external returns (uint256 gobblerId) {
+    function mintFromGoo(uint256 maxPrice, bool useVirtualBalance) external returns (uint256 gobblerId) {
         // No need to check if we're at MAX_MINTABLE,
         // gobblerPrice() will revert once we reach it due to its
         // logistic nature. It will also revert prior to the mint start.
@@ -326,38 +329,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        goo.burnForGobblers(msg.sender, currentPrice);
+        if (useVirtualBalance) {
+            //if paying from virtual balance, burn goo directly
+            burnGoo(currentPrice);
+        } else {
+            //else, burn from ERC20 balance
+            goo.burnForGobblers(msg.sender, currentPrice);
+        }
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
-
-            emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
-
-            _mint(msg.sender, gobblerId, "");
-        }
-    }
-
-    /// @notice Mint a gobbler with goo, paying directly from the user's goo balance.
-    /// @param maxPrice Maximum price to pay to mint the gobbler.
-    /// @return gobblerId The id of the gobbler that was minted.
-    function mintFromGooBalance(uint256 maxPrice) external returns (uint256 gobblerId) {
-        // No need to check mint cap, gobblerPrice()
-        // will revert due to overflow if we reach it.
-        // It will also revert prior to the mint start.
-        uint256 currentPrice = gobblerPrice();
-
-        // If the current price is above the user's specified max, revert.
-        if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
-
-        // Remove goo directly from user's balace
-        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - currentPrice);
-        getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
-
-        emit GooRemoved(msg.sender, currentPrice);
-
-        unchecked {
-            ++numMintedFromGoo; // Before mint to prevent reentrancy.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
@@ -765,7 +746,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         }
     }
 
-    /// @notice Add goo to your emission balance.
+    /// @notice Add goo to your emission balance, burning corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to add.
     function addGoo(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
@@ -780,7 +761,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         emit GooAdded(msg.sender, gooAmount);
     }
 
-    /// @notice Remove goo from your emission balance.
+    /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
         // Will revert due to underflow if removed amount is larger than the user's current goo balance.
@@ -790,6 +771,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         goo.mintForGobblers(msg.sender, gooAmount);
 
         emit GooRemoved(msg.sender, gooAmount);
+    }
+
+    /// @notice Burn goo from your emission balance.
+    /// @param gooAmount The amount of goo to burn.
+    function burnGoo(uint256 gooAmount) internal {
+        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
+        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
+        getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
+
+        emit GooBurned(msg.sender, gooAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
