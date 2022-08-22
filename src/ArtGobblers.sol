@@ -318,7 +318,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Mint a gobbler, paying with goo.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
     /// @param useVirtualBalance Whether the cost is paid from the user's
-    /// virtual balance, or from their regular balance
+    /// virtual balance, or from their regular ERC20 balance.
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice, bool useVirtualBalance) external returns (uint256 gobblerId) {
         // No need to check if we're at MAX_MINTABLE,
@@ -330,10 +330,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         if (useVirtualBalance) {
-            //if paying from virtual balance, burn goo directly
+            // If user is paying from virtual balance, burn goo directly.
             burnGoo(currentPrice);
         } else {
-            //else, burn from ERC20 balance
+            // Else, burn goo from ERC20 balance.
             goo.burnForGobblers(msg.sender, currentPrice);
         }
 
