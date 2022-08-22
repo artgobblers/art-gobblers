@@ -194,9 +194,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that initial gobbler price is what we expect.
     function testInitialGobblerPrice() public {
+        // Warp to the target sale time so that the gobbler price equals the target price.
+        vm.warp(block.timestamp + uint256(gobblers.getTargetSaleDay(1e18) * 1 days) / 1e18);
+
         uint256 cost = gobblers.gobblerPrice();
-        uint256 maxDelta = 0.000000000000000070e18;
-        assertApproxEq(cost, uint256(gobblers.targetPrice()), maxDelta);
+        assertRelApproxEq(cost, uint256(gobblers.targetPrice()), 0.00001e18);
     }
 
     /// @notice Test that minting reserved gobblers fails if there are no mints.
@@ -261,7 +263,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     function testPricingBasic() public {
         // VRGDA targets this number of mints at given time.
         uint256 timeDelta = 120 days;
-        uint256 numMint = 877;
+        uint256 numMint = 876;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -278,7 +280,24 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         uint256 finalPrice = gobblers.gobblerPrice();
 
         // Equal within 3 percent since num mint is rounded from true decimal amount.
-        assertRelApproxEq(targetPrice, finalPrice, 0.03e18);
+        assertRelApproxEq(finalPrice, targetPrice, 0.03e18);
+    }
+
+    /// @notice Pricing function should NOT revert when trying to price the last mintable gobbler.
+    function testDoesNotRevertEarly() public {
+        // This is the last gobbler we expect to mint.
+        int256 maxMintable = int256(gobblers.MAX_MINTABLE()) * 1e18;
+        // This call should NOT revert, since we should have a target date for the last mintable gobbler.
+        int256 targetSale = gobblers.getTargetSaleDay(maxMintable);
+    }
+
+    /// @notice Pricing function should revert when trying to price beyond the last mintable gobbler.
+    function testDoesRevertWhenExpected() public {
+        // One plus the max number of mintable gobblers.
+        int256 maxMintablePlusOne = int256(gobblers.MAX_MINTABLE() + 1) * 1e18;
+        // This call should revert, since there should be no target date beyond max mintable gobblers.
+        vm.expectRevert("UNDEFINED");
+        int256 targetSale = gobblers.getTargetSaleDay(maxMintablePlusOne);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -334,7 +353,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(cost, 35);
     }
 
-    /// @notice Test that initial price does't fall below what we expect.
+    /// @notice Test that target price does't fall below what we expect.
     function testLegendaryGobblerMinStartPrice() public {
         // Mint two full intervals, such that price of first auction goes to zero.
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL() * 2);
