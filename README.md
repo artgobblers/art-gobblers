@@ -1,6 +1,6 @@
 <img align="right" width="150" height="150" top="100" src="./assets/gobbler.png">
 
-# Art Gobblers • [![CI](https://github.com/artgobblers/art-gobblers/actions/workflows/tests.yml/badge.svg)](https://github.com/artgobblers/art-gobblers/actions/workflows/CI.yml)
+# Art Gobblers • [![CI](https://github.com/artgobblers/art-gobblers/actions/workflows/tests.yml/badge.svg)](https://github.com/artgobblers/art-gobblers/actions/workflows/tests.yml)
 
 Art Gobblers scan the cosmos in search of art producing life.
 
