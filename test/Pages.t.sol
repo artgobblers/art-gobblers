@@ -115,6 +115,23 @@ contract PagesTest is DSTestPlus {
         pages.mintCommunityPages(1);
     }
 
+    /// @notice Test that the pricing switch does now significantly slow down or speed up the issuance of pages.
+    function testSwitchSmoothness() public {
+        uint256 switchPageSaleTime = uint256(pages.getTargetSaleDay(8337e18) - pages.getTargetSaleDay(8336e18));
+
+        assertRelApproxEq(
+            uint256(pages.getTargetSaleDay(8336e18) - pages.getTargetSaleDay(8335e18)),
+            switchPageSaleTime,
+            0.0005e18
+        );
+
+        assertRelApproxEq(
+            switchPageSaleTime,
+            uint256(pages.getTargetSaleDay(8338e18) - pages.getTargetSaleDay(8337e18)),
+            0.005e18
+        );
+    }
+
     /// @notice Test that page pricing matches expected behavior before switch.
     function testPagePricingPricingBeforeSwitch() public {
         // Expected sales rate according to mathematical formula.
@@ -141,7 +158,7 @@ contract PagesTest is DSTestPlus {
     /// @notice Test that page pricing matches expected behavior after switch.
     function testPagePricingPricingAfterSwitch() public {
         uint256 timeDelta = 360 days;
-        uint256 numMint = 9407;
+        uint256 numMint = 9479;
 
         vm.warp(block.timestamp + timeDelta);
 
@@ -157,7 +174,7 @@ contract PagesTest is DSTestPlus {
         uint256 finalPrice = pages.pagePrice();
 
         // If selling at target rate, final price should equal starting price.
-        assertRelApproxEq(targetPrice, finalPrice, 0.02e18);
+        assertRelApproxEq(finalPrice, targetPrice, 0.02e18);
     }
 
     function testInsufficientBalance() public {
