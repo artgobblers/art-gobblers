@@ -183,9 +183,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event GooAdded(address indexed user, uint256 gooAdded);
-    event GooRemoved(address indexed user, uint256 gooAdded);
-    event GooBurned(address indexed user, uint256 gooAdded);
+    event GooBalanceUpdated(address indexed user, uint256 newGooBalance);
 
     event GobblerClaimed(address indexed user, uint256 indexed gobblerId);
     event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price);
@@ -328,13 +326,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        if (useVirtualBalance) {
-            // If user is paying from virtual balance, burn goo directly.
-            burnGoo(currentPrice);
-        } else {
-            // Else, burn goo from ERC20 balance.
-            goo.burnForGobblers(msg.sender, currentPrice);
-        }
+        // Decrement user balance by current price, either from virtual balance or ERC20
+        useVirtualBalance ? updateGooBalance(currentPrice, false) : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
@@ -750,36 +743,30 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     function addGoo(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
         goo.burnForGobblers(msg.sender, gooAmount);
-
-        unchecked {
-            // If a user has enough goo to overflow their balance we've got big problems.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) + gooAmount);
-            getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
-        }
-
-        emit GooAdded(msg.sender, gooAmount);
+        // Increase virtual goo balance.
+        updateGooBalance(gooAmount, true);
     }
 
     /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
-        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
-        getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
-
+        // Decrease virtual goo balance. 
+        updateGooBalance(gooAmount, false);
+        // Mint goo being removed from gobbler. 
         goo.mintForGobblers(msg.sender, gooAmount);
-
-        emit GooRemoved(msg.sender, gooAmount);
     }
-
-    /// @notice Burn goo from your emission balance.
-    /// @param gooAmount The amount of goo to burn.
-    function burnGoo(uint256 gooAmount) internal {
-        // Will revert due to underflow if removed amount is larger than the user's current goo balance.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender) - gooAmount);
+    
+    /// @notice Update goo emission balance.
+    /// @param updateAmount The amount of goo by which we change the current balance.
+    /// @param incrementGoo Flag to specify whether we increment or decrement goo amount.
+    function updateGooBalance(uint256 updateAmount, bool incrementGoo) private {
+        // Will revert if removing amount larger than the user's current goo balance. 
+        uint256 updatedBalance = incrementGoo ? gooBalance(msg.sender) + updateAmount : gooBalance(msg.sender) - updateAmount;
+        // Snapshot new emission data for user. 
+        getEmissionDataForUser[msg.sender].lastBalance = uint128(updatedBalance);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
-        emit GooBurned(msg.sender, gooAmount);
+        emit GooBalanceUpdated(msg.sender, updatedBalance);
     }
 
     /*//////////////////////////////////////////////////////////////
