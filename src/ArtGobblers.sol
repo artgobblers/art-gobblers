@@ -743,6 +743,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     function addGoo(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
         goo.burnForGobblers(msg.sender, gooAmount);
+
         // Increase virtual goo balance.
         updateGooBalance(gooAmount, true);
     }
