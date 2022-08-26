@@ -752,7 +752,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(1, "seed");
         vm.prank(users[0]);
         vm.expectRevert(stdError.arithmeticError);
-        // can't remove, since balance should be zero. 
+        // can't remove, since balance should be zero.
         gobblers.removeGoo(1);
     }
 
@@ -776,7 +776,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.gooBalance(users[0]), additionAmount);
     }
 
-     /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance. 
+    /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance.
     function testCantAddMoreGooThanOwned() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
@@ -786,7 +786,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.addGoo(10000);
     }
 
-    /// @notice make sure that actions that trigger balance snapshotting do not affect total balance. 
+    /// @notice make sure that actions that trigger balance snapshotting do not affect total balance.
     function testSnapshotDoesNotAffectBalance() public {
         //mint one gobbler for each user
         mintGobblerToAddress(users[0], 1);
@@ -795,12 +795,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         //give user initial goo balance
         vm.prank(address(gobblers));
         goo.mintForGobblers(users[0], 100);
-        //reveal gobblers 
+        //reveal gobblers
         bytes32 requestId = gobblers.requestRandomSeed();
-        uint256 randomness = 1022; // magic seed to ensure both gobblers have same multiplier 
+        uint256 randomness = 1022; // magic seed to ensure both gobblers have same multiplier
         vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
         gobblers.revealGobblers(2);
-        //make sure both gobblers have same multiple, and same starting balance  
+        //make sure both gobblers have same multiple, and same starting balance
         assertGt(gobblers.getUserEmissionMultiple(users[0]), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[0]), gobblers.getUserEmissionMultiple(users[1]));
         uint256 initialBalanceZero = gobblers.gooBalance(users[0]);
@@ -812,28 +812,16 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.addGoo(1);
         gobblers.removeGoo(1);
         vm.stopPrank();
-        //One more time 
+        //One more time
         vm.warp(block.timestamp + 5 days);
         vm.startPrank(users[0]);
         gobblers.addGoo(1);
         gobblers.removeGoo(1);
         vm.stopPrank();
-        // make sure users have equal balance 
+        // make sure users have equal balance
         vm.warp(block.timestamp + 5 days);
         assertGt(gobblers.getUserEmissionMultiple(users[0]), initialBalanceZero);
         assertEq(gobblers.gooBalance(users[0]), gobblers.gooBalance(users[1]));
-    }
-
-    function testMagicSeed(uint256 a) public {
-        mintGobblerToAddress(users[0], 1);
-        mintGobblerToAddress(users[1], 1);
-        vm.warp(block.timestamp + 1 days);
-        bytes32 requestId = gobblers.requestRandomSeed();
-        uint256 randomness = a;
-        // call back from coordinator
-        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(randProvider));
-        gobblers.revealGobblers(2);
-        assertTrue(gobblers.getUserEmissionMultiple(users[0]) != gobblers.getUserEmissionMultiple(users[1]));
     }
 
     /// @notice Test that emission multiple changes as expected after transfer.
