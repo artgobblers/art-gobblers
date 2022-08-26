@@ -750,19 +750,21 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
-        // Decrease virtual goo balance. 
+        // Decrease virtual goo balance.
         updateGooBalance(gooAmount, false);
-        // Mint goo being removed from gobbler. 
+        // Mint goo being removed from gobbler.
         goo.mintForGobblers(msg.sender, gooAmount);
     }
-    
+
     /// @notice Update goo emission balance.
     /// @param updateAmount The amount of goo by which we change the current balance.
     /// @param incrementGoo Flag to specify whether we increment or decrement goo amount.
     function updateGooBalance(uint256 updateAmount, bool incrementGoo) private {
-        // Will revert if removing amount larger than the user's current goo balance. 
-        uint256 updatedBalance = incrementGoo ? gooBalance(msg.sender) + updateAmount : gooBalance(msg.sender) - updateAmount;
-        // Snapshot new emission data for user. 
+        // Will revert if removing amount larger than the user's current goo balance.
+        uint256 updatedBalance = incrementGoo
+            ? gooBalance(msg.sender) + updateAmount
+            : gooBalance(msg.sender) - updateAmount;
+        // Snapshot new emission data for user.
         getEmissionDataForUser[msg.sender].lastBalance = uint128(updatedBalance);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
 
