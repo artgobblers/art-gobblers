@@ -159,7 +159,7 @@ contract RandProviderTest is DSTestPlus {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 }
