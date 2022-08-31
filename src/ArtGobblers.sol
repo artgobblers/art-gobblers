@@ -15,6 +15,7 @@ import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
 import {RandProvider} from "./utils/random/RandProvider.sol";
 
 import {Goo} from "./Goo.sol";
+import {Pages} from "./Pages.sol";
 
 /// @title Art Gobblers NFT
 /// @author FrankieIsLost <frankie@paradigm.xyz>
@@ -30,6 +31,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     /// @notice The address of the Goo ERC20 token contract.
     Goo public immutable goo;
+
+     /// @notice The address of the Pages ERC721 token contract.
+    Pages public immutable pages;
 
     /// @notice The address which receives gobblers reserved for the team.
     address public immutable team;
@@ -226,6 +230,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     error NotEnoughRemainingToBeRevealed(uint256 totalRemainingToBeRevealed);
 
+    error CallerNotPages(address caller);
+
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -245,6 +251,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         uint256 _mintStart,
         // Addresses:
         Goo _goo,
+        Pages _pages,
         address _team,
         address _community,
         RandProvider _randProvider,
@@ -266,6 +273,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         merkleRoot = _merkleRoot;
 
         goo = _goo;
+        pages = _pages;
         team = _team;
         community = _community;
         randProvider = _randProvider;
@@ -327,7 +335,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         // Decrement user balance by current price, either from virtual balance or ERC20
-        useVirtualBalance ? updateGooBalance(currentPrice, false) : goo.burnForGobblers(msg.sender, currentPrice);
+        useVirtualBalance ? updateGooBalance(msg.sender, currentPrice, false) : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
@@ -745,31 +753,41 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         goo.burnForGobblers(msg.sender, gooAmount);
 
         // Increase virtual goo balance.
-        updateGooBalance(gooAmount, true);
+        updateGooBalance(msg.sender, gooAmount, true);
     }
 
     /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
         // Decrease virtual goo balance.
-        updateGooBalance(gooAmount, false);
+        updateGooBalance(msg.sender, gooAmount, false);
         // Mint goo being removed from gobbler.
         goo.mintForGobblers(msg.sender, gooAmount);
+    }
+
+    /// @notice Requires caller address to match pages address.
+    modifier onlyPages() {
+        if (msg.sender != address(pages)) revert CallerNotPages(msg.sender);
+        _;
+    }
+
+    function burnGooForPages(address addr, uint256 updateAmount) external onlyPages {
+        updateGooBalance(addr, updateAmount, false);
     }
 
     /// @notice Update goo emission balance.
     /// @param updateAmount The amount of goo by which we change the current balance.
     /// @param incrementGoo Flag to specify whether we increment or decrement goo amount.
-    function updateGooBalance(uint256 updateAmount, bool incrementGoo) private {
+    function updateGooBalance(address addr, uint256 updateAmount, bool incrementGoo) private {
         // Will revert if removing amount larger than the user's current goo balance.
         uint256 updatedBalance = incrementGoo
-            ? gooBalance(msg.sender) + updateAmount
-            : gooBalance(msg.sender) - updateAmount;
+            ? gooBalance(addr) + updateAmount
+            : gooBalance(addr) - updateAmount;
         // Snapshot new emission data for user.
-        getEmissionDataForUser[msg.sender].lastBalance = uint128(updatedBalance);
-        getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
+        getEmissionDataForUser[addr].lastBalance = uint128(updatedBalance);
+        getEmissionDataForUser[addr].lastTimestamp = uint64(block.timestamp);
 
-        emit GooBalanceUpdated(msg.sender, updatedBalance);
+        emit GooBalanceUpdated(addr, updatedBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

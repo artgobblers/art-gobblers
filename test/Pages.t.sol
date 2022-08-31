@@ -7,6 +7,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
+import {ArtGobblers} from "../src/ArtGobblers.sol";
 import {console} from "./utils/Console.sol";
 
 contract PagesTest is DSTestPlus {
@@ -36,7 +37,7 @@ contract PagesTest is DSTestPlus {
             utils.predictContractAddress(address(this), 1)
         );
 
-        pages = new Pages(block.timestamp, goo, community, address(this), "");
+        pages = new Pages(block.timestamp, goo, community, ArtGobblers(address(this)), "");
 
         user = users[1];
     }
@@ -44,7 +45,7 @@ contract PagesTest is DSTestPlus {
     function testMintBeforeSetMint() public {
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
     }
 
     function testMintBeforeStart() public {
@@ -52,13 +53,13 @@ contract PagesTest is DSTestPlus {
 
         vm.expectRevert(stdError.arithmeticError);
         vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
     }
 
     function testRegularMint() public {
         goo.mintForGobblers(user, pages.pagePrice());
         vm.prank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
         assertEq(user, pages.ownerOf(1));
     }
 
@@ -129,7 +130,7 @@ contract PagesTest is DSTestPlus {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
-            pages.mintFromGoo(price);
+            pages.mintFromGoo(price, false);
         }
 
         uint256 finalPrice = pages.pagePrice();
@@ -151,7 +152,7 @@ contract PagesTest is DSTestPlus {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
-            pages.mintFromGoo(price);
+            pages.mintFromGoo(price, false);
         }
 
         uint256 finalPrice = pages.pagePrice();
@@ -163,7 +164,7 @@ contract PagesTest is DSTestPlus {
     function testInsufficientBalance() public {
         vm.prank(user);
         vm.expectRevert(stdError.arithmeticError);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
     }
 
     function testMintPriceExceededMax() public {
@@ -171,7 +172,7 @@ contract PagesTest is DSTestPlus {
         goo.mintForGobblers(user, cost);
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(Pages.PriceExceededMax.selector, cost));
-        pages.mintFromGoo(cost - 1);
+        pages.mintFromGoo(cost - 1, false);
     }
 
     /// @notice Mint a number of pages to the given address
@@ -180,7 +181,7 @@ contract PagesTest is DSTestPlus {
             goo.mintForGobblers(addr, pages.pagePrice());
 
             vm.prank(addr);
-            pages.mintFromGoo(type(uint256).max);
+            pages.mintFromGoo(type(uint256).max, false);
         }
     }
 }
