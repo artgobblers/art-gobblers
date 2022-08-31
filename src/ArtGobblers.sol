@@ -741,7 +741,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         }
     }
 
-    /// @notice Add goo to your emission balance, burning corresponding ERC20 balance.
+    /// @notice Add goo to your emission balance,
+    /// burning the corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to add.
     function addGoo(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
@@ -751,7 +752,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         updateGooBalance(gooAmount, GooBalanceUpdateType.INCREASE);
     }
 
-    /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
+    /// @notice Remove goo from your emission balance,
+    /// and add it to your corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
         // Decrease msg.sender's virtual goo balance.
