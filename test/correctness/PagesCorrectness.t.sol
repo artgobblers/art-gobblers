@@ -25,9 +25,9 @@ contract PageCorrectnessTest is DSTestPlus {
 
     int256 internal immutable TIME_SCALE = 0.014e18;
 
-    int256 internal immutable SWITCHOVER_TIME = 207e18;
+    int256 internal immutable SWITCHOVER_TIME = 270e18;
 
-    int256 internal immutable PER_PERIOD_POST_SWITCHOVER = 10e18;
+    int256 internal immutable PER_PERIOD_POST_SWITCHOVER = 9e18;
 
     Pages internal pages;
 
