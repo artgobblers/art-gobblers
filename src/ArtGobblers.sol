@@ -314,8 +314,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     /// @notice Mint a gobbler, paying with goo.
     /// @param maxPrice Maximum price to pay to mint the gobbler.
-    /// @param useVirtualBalance Whether the cost is paid from the user's
-    /// virtual balance, or from their regular ERC20 balance.
+    /// @param useVirtualBalance Whether the cost is paid from the
+    /// user's virtual balance, or from their regular ERC20 balance.
     /// @return gobblerId The id of the gobbler that was minted.
     function mintFromGoo(uint256 maxPrice, bool useVirtualBalance) external returns (uint256 gobblerId) {
         // No need to check if we're at MAX_MINTABLE,
@@ -326,8 +326,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        // Decrement user balance by current price, either from virtual balance or ERC20
-        useVirtualBalance ? updateGooBalance(currentPrice, false) : goo.burnForGobblers(msg.sender, currentPrice);
+        // Decrement the user's goo balance by the current
+        // price, either from virtual balance or ERC20 balance.
+        useVirtualBalance
+            ? updateGooBalance(currentPrice, GooBalanceUpdateType.DECREASE)
+            : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
@@ -744,27 +747,35 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // Burn goo being added to gobbler.
         goo.burnForGobblers(msg.sender, gooAmount);
 
-        // Increase virtual goo balance.
-        updateGooBalance(gooAmount, true);
+        // Increase msg.sender's virtual goo balance.
+        updateGooBalance(gooAmount, GooBalanceUpdateType.INCREASE);
     }
 
     /// @notice Remove goo from your emission balance, and add to corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
-        // Decrease virtual goo balance.
-        updateGooBalance(gooAmount, false);
-        // Mint goo being removed from gobbler.
+        // Decrease msg.sender's virtual goo balance.
+        updateGooBalance(gooAmount, GooBalanceUpdateType.DECREASE);
+
+        // Mint the goo removed from the gobbler.
         goo.mintForGobblers(msg.sender, gooAmount);
     }
 
-    /// @notice Update goo emission balance.
-    /// @param updateAmount The amount of goo by which we change the current balance.
-    /// @param incrementGoo Flag to specify whether we increment or decrement goo amount.
-    function updateGooBalance(uint256 updateAmount, bool incrementGoo) private {
+    /// @dev An enum representing the type of goo balance update.
+    enum GooBalanceUpdateType {
+        INCREASE,
+        DECREASE
+    }
+
+    /// @notice Internal helper to update msg.sender's goo emission balance.
+    /// @param gooAmount The amount of goo by which we change the current balance.
+    /// @param updateType Flag to specify whether we increase or decrease by gooAmount.
+    function updateGooBalance(uint256 gooAmount, GooBalanceUpdateType updateType) internal {
         // Will revert if removing amount larger than the user's current goo balance.
-        uint256 updatedBalance = incrementGoo
-            ? gooBalance(msg.sender) + updateAmount
-            : gooBalance(msg.sender) - updateAmount;
+        uint256 updatedBalance = updateType == GooBalanceUpdateType.INCREASE
+            ? gooBalance(msg.sender) + gooAmount
+            : gooBalance(msg.sender) - gooAmount;
+
         // Snapshot new emission data for user.
         getEmissionDataForUser[msg.sender].lastBalance = uint128(updatedBalance);
         getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
