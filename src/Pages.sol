@@ -142,7 +142,9 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        useVirtualBalance ? artGobblers.burnGooForPages(msg.sender, currentPrice) : goo.burnForPages(msg.sender, currentPrice);
+        useVirtualBalance
+            ? artGobblers.burnGooForPages(msg.sender, currentPrice)
+            : goo.burnForPages(msg.sender, currentPrice);
 
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);

@@ -32,7 +32,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice The address of the Goo ERC20 token contract.
     Goo public immutable goo;
 
-     /// @notice The address of the Pages ERC721 token contract.
+    /// @notice The address of the Pages ERC721 token contract.
     Pages public immutable pages;
 
     /// @notice The address which receives gobblers reserved for the team.
@@ -335,7 +335,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
         // Decrement user balance by current price, either from virtual balance or ERC20
-        useVirtualBalance ? updateGooBalance(msg.sender, currentPrice, false) : goo.burnForGobblers(msg.sender, currentPrice);
+        useVirtualBalance
+            ? updateGooBalance(msg.sender, currentPrice, false)
+            : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
@@ -778,11 +780,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Update goo emission balance.
     /// @param updateAmount The amount of goo by which we change the current balance.
     /// @param incrementGoo Flag to specify whether we increment or decrement goo amount.
-    function updateGooBalance(address addr, uint256 updateAmount, bool incrementGoo) private {
+    function updateGooBalance(
+        address addr,
+        uint256 updateAmount,
+        bool incrementGoo
+    ) private {
         // Will revert if removing amount larger than the user's current goo balance.
-        uint256 updatedBalance = incrementGoo
-            ? gooBalance(addr) + updateAmount
-            : gooBalance(addr) - updateAmount;
+        uint256 updatedBalance = incrementGoo ? gooBalance(addr) + updateAmount : gooBalance(addr) - updateAmount;
         // Snapshot new emission data for user.
         getEmissionDataForUser[addr].lastBalance = uint128(updatedBalance);
         getEmissionDataForUser[addr].lastTimestamp = uint64(block.timestamp);
