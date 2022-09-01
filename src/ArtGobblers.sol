@@ -334,7 +334,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        // Decrement user balance by current price, either from virtual balance or ERC20
+        // Decrement the user's goo balance by the current
+        // price, either from virtual balance or ERC20 balance.
         useVirtualBalance
             ? updateGooBalance(msg.sender, currentPrice, GooBalanceUpdateType.DECREASE)
             : goo.burnForGobblers(msg.sender, currentPrice);
@@ -749,7 +750,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Add goo to your emission balance,
-    /// burning corresponding ERC20 balance.
+    /// burning the corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to add.
     function addGoo(uint256 gooAmount) external {
         // Burn goo being added to gobbler.
@@ -760,7 +761,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Remove goo from your emission balance,
-    /// and add to corresponding ERC20 balance.
+    /// and add it to your corresponding ERC20 balance.
     /// @param gooAmount The amount of goo to remove.
     function removeGoo(uint256 gooAmount) external {
         // Decrease msg.sender's virtual goo balance.
