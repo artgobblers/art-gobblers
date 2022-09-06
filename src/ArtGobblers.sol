@@ -791,8 +791,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /// @notice Internal helper to update an address goo emission balance.
+    /// @param addr Address that we are updating balances for. 
     /// @param gooAmount The amount of goo by which we change the current balance.
-    /// @param updateType Flag to specify whether we increase or decrease by
+    /// @param updateType Flag to specify whether we increase or decrease by. 
     function updateGooBalance(
         address addr,
         uint256 gooAmount,
