@@ -230,7 +230,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     error NotEnoughRemainingToBeRevealed(uint256 totalRemainingToBeRevealed);
 
-    error CallerNotPages(address caller);
+    error UnauthorizedCaller(address caller);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -766,6 +766,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     function removeGoo(uint256 gooAmount) external {
         // Decrease msg.sender's virtual goo balance.
         updateGooBalance(msg.sender, gooAmount, GooBalanceUpdateType.DECREASE);
+
         // Mint goo being removed from gobbler.
         goo.mintForGobblers(msg.sender, gooAmount);
     }
@@ -776,38 +777,36 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         DECREASE
     }
 
-    /// @notice Requires caller address to match pages address.
-    modifier onlyPages() {
-        if (msg.sender != address(pages)) revert CallerNotPages(msg.sender);
-        _;
-    }
-
     /// @notice Burn some amount of a user's virtual goo balance. Only callable by
     /// the pages contract when purchasing pages with virtual balance.
-    /// @param addr Address to burn virtual balance for.
+    /// @param user Address to burn virtual balance for.
     /// @param gooAmount The amount of goo by which we change the current balance.
-    function burnGooForPages(address addr, uint256 gooAmount) external onlyPages {
-        updateGooBalance(addr, gooAmount, GooBalanceUpdateType.DECREASE);
+    function burnGooForPages(address user, uint256 gooAmount) external {
+        // Require msg.sender to match pages address. 
+        if (msg.sender != address(pages)) revert UnauthorizedCaller(msg.sender);
+
+        // Burn corresponding goo amount from user address. 
+        updateGooBalance(user, gooAmount, GooBalanceUpdateType.DECREASE);
     }
 
-    /// @notice Internal helper to update an address goo emission balance.
-    /// @param addr Address that we are updating balances for. 
-    /// @param gooAmount The amount of goo by which we change the current balance.
-    /// @param updateType Flag to specify whether we increase or decrease by. 
+    /// @notice Internal helper to update an address's goo emission balance.
+    /// @param user Address that we are updating balances for. 
+    /// @param gooAmount The amount of goo to modify the current balance by.
+    /// @param updateType Flag to specify whether we increase or decrease by gooAmount. 
     function updateGooBalance(
-        address addr,
+        address user,
         uint256 gooAmount,
         GooBalanceUpdateType updateType
-    ) private {
+    ) internal {
         // Will revert if removing amount larger than the user's current goo balance.
         uint256 updatedBalance = updateType == GooBalanceUpdateType.INCREASE
-            ? gooBalance(addr) + gooAmount
-            : gooBalance(addr) - gooAmount;
+            ? gooBalance(user) + gooAmount
+            : gooBalance(user) - gooAmount;
         // Snapshot new emission data for user.
-        getEmissionDataForUser[addr].lastBalance = uint128(updatedBalance);
-        getEmissionDataForUser[addr].lastTimestamp = uint64(block.timestamp);
+        getEmissionDataForUser[user].lastBalance = uint128(updatedBalance);
+        getEmissionDataForUser[user].lastTimestamp = uint64(block.timestamp);
 
-        emit GooBalanceUpdated(addr, updatedBalance);
+        emit GooBalanceUpdated(user, updatedBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

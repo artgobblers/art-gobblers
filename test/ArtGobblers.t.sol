@@ -257,6 +257,33 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
     }
 
+    function testCanMintPageFromVirtualBalance() public {
+        uint256 cost = gobblers.gobblerPrice();
+        //mint initial gobbler
+        vm.prank(address(gobblers));
+        goo.mintForGobblers(users[0], cost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoo(type(uint256).max, false);
+        //warp for reveals
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        //warp until balance is larger than cost
+        vm.warp(block.timestamp + 3 days);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 pagePrice = pages.pagePrice();
+        console.log(pagePrice);
+        assertTrue(initialBalance > pagePrice);
+        //mint from balance
+        vm.prank(users[0]);
+        pages.mintFromGoo(type(uint256).max, true);
+        //asert owner is correct
+        assertEq(pages.ownerOf(1), users[0]);
+        //asert balance went down by expected amount
+        uint256 finalBalance = gobblers.gooBalance(users[0]);
+        uint256 paidGoo = initialBalance - finalBalance;
+        assertEq(paidGoo, pagePrice);
+    }
+
     /*//////////////////////////////////////////////////////////////
                               PRICING TESTS
     //////////////////////////////////////////////////////////////*/
