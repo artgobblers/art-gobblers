@@ -782,17 +782,17 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @param user Address to burn virtual balance for.
     /// @param gooAmount The amount of goo by which we change the current balance.
     function burnGooForPages(address user, uint256 gooAmount) external {
-        // Require msg.sender to match pages address. 
+        // Require msg.sender to match pages address.
         if (msg.sender != address(pages)) revert UnauthorizedCaller(msg.sender);
 
-        // Burn corresponding goo amount from user address. 
+        // Burn corresponding goo amount from user address.
         updateGooBalance(user, gooAmount, GooBalanceUpdateType.DECREASE);
     }
 
     /// @notice Internal helper to update an address's goo emission balance.
-    /// @param user Address that we are updating balances for. 
+    /// @param user Address that we are updating balances for.
     /// @param gooAmount The amount of goo to modify the current balance by.
-    /// @param updateType Flag to specify whether we increase or decrease by gooAmount. 
+    /// @param updateType Flag to specify whether we increase or decrease by gooAmount.
     function updateGooBalance(
         address user,
         uint256 gooAmount,
