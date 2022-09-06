@@ -8,6 +8,7 @@ import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
 import {PostSwitchVRGDA} from "./utils/vrgda/PostSwitchVRGDA.sol";
 
 import {Goo} from "./Goo.sol";
+import {ArtGobblers} from "./ArtGobblers.sol";
 
 /// @title Pages NFT
 /// @author FrankieIsLost <frankie@paradigm.xyz>
@@ -99,7 +100,7 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // Addresses:
         Goo _goo,
         address _community,
-        address _artGobblers,
+        ArtGobblers _artGobblers,
         // URIs:
         string memory _baseUri
     )
@@ -133,15 +134,21 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
 
     /// @notice Mint a page with goo, burning the cost.
     /// @param maxPrice Maximum price to pay to mint the page.
+    /// @param useVirtualBalance Whether the cost is paid from the
+    /// user's virtual goo balance, or from their ERC20 goo balance.
     /// @return pageId The id of the page that was minted.
-    function mintFromGoo(uint256 maxPrice) external returns (uint256 pageId) {
+    function mintFromGoo(uint256 maxPrice, bool useVirtualBalance) external returns (uint256 pageId) {
         // Will revert if prior to mint start.
         uint256 currentPrice = pagePrice();
 
         // If the current price is above the user's specified max, revert.
         if (currentPrice > maxPrice) revert PriceExceededMax(currentPrice);
 
-        goo.burnForPages(msg.sender, currentPrice);
+        // Decrement the user's goo balance by the current
+        // price, either from virtual balance or ERC20 balance.
+        useVirtualBalance
+            ? artGobblers.burnGooForPages(msg.sender, currentPrice)
+            : goo.burnForPages(msg.sender, currentPrice);
 
         unchecked {
             emit PagePurchased(msg.sender, pageId = ++currentId, currentPrice);

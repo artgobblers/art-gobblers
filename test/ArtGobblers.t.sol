@@ -52,8 +52,9 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 4 contract deploys
+        //gobblers contract will be deployed after 4 contract deploys, and pages after 5
         address gobblerAddress = utils.predictContractAddress(address(this), 4);
+        address pagesAddress = utils.predictContractAddress(address(this), 5);
 
         team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
@@ -76,6 +77,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
             goo,
+            Pages(pagesAddress),
             address(team),
             address(community),
             randProvider,
@@ -83,7 +85,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -253,6 +255,49 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         vm.expectRevert(ArtGobblers.ReserveImbalance.selector);
         gobblers.mintReservedGobblers(1);
+    }
+
+    function testCanMintPageFromVirtualBalance() public {
+        uint256 cost = gobblers.gobblerPrice();
+        //mint initial gobbler
+        vm.prank(address(gobblers));
+        goo.mintForGobblers(users[0], cost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoo(type(uint256).max, false);
+        //warp for reveals
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        //warp until balance is larger than cost
+        vm.warp(block.timestamp + 3 days);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 pagePrice = pages.pagePrice();
+        console.log(pagePrice);
+        assertTrue(initialBalance > pagePrice);
+        //mint from balance
+        vm.prank(users[0]);
+        pages.mintFromGoo(type(uint256).max, true);
+        //asert owner is correct
+        assertEq(pages.ownerOf(1), users[0]);
+        //asert balance went down by expected amount
+        uint256 finalBalance = gobblers.gooBalance(users[0]);
+        uint256 paidGoo = initialBalance - finalBalance;
+        assertEq(paidGoo, pagePrice);
+    }
+
+    function testCannotMintPageWithInsufficientBalance() public {
+        uint256 cost = gobblers.gobblerPrice();
+        //mint initial gobbler
+        vm.prank(address(gobblers));
+        goo.mintForGobblers(users[0], cost);
+        vm.prank(users[0]);
+        gobblers.mintFromGoo(type(uint256).max, false);
+        //warp for reveals
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        // try to mint from balance
+        vm.prank(users[0]);
+        vm.expectRevert(stdError.arithmeticError);
+        pages.mintFromGoo(type(uint256).max, true);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -875,7 +920,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
         assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
@@ -888,7 +933,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.OwnerMismatch.selector, address(0)));
         gobblers.feedArt(1, address(pages), 1, false);
         vm.stopPrank();
@@ -921,7 +966,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(address(gobblers));
         goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
         vm.expectRevert();
         gobblers.feedArt(1, address(pages), 1, true);
     }

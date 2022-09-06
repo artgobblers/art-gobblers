@@ -54,8 +54,9 @@ contract RandProviderTest is DSTestPlus {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 4 contract deploys
+        //gobblers contract will be deployed after 4 contract deploys, and pages after 5
         address gobblerAddress = utils.predictContractAddress(address(this), 4);
+        address pagesAddress = utils.predictContractAddress(address(this), 5);
 
         team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
@@ -78,6 +79,7 @@ contract RandProviderTest is DSTestPlus {
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
             goo,
+            Pages(pagesAddress),
             address(team),
             address(community),
             randProvider,
@@ -85,7 +87,7 @@ contract RandProviderTest is DSTestPlus {
             ""
         );
 
-        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
     }
 
     function testRandomnessIsCorrectlyRequested() public {
