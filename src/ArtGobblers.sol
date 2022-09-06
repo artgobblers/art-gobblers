@@ -767,7 +767,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // Decrease msg.sender's virtual goo balance.
         updateUserGooBalance(msg.sender, gooAmount, GooBalanceUpdateType.DECREASE);
 
-        // Mint goo being removed from gobbler.
+        // Mint the corresponding amount of ERC20 goo.
         goo.mintForGobblers(msg.sender, gooAmount);
     }
 
