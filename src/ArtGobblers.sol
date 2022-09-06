@@ -774,7 +774,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Burn an amount of a user's virtual goo balance. Only callable
     /// by the Pages contract to enable purchasing pages with virtual balance.
     /// @param user The user who's virtual goo balance we should burn from.
-    /// @param gooAmount The amount of goo by which we change the current balance.
+    /// @param gooAmount The amount of goo to burn from the user's virtual balance.
     function burnGooForPages(address user, uint256 gooAmount) external {
         // The caller must be the Pages contract, revert otherwise.
         if (msg.sender != address(pages)) revert UnauthorizedCaller(msg.sender);
