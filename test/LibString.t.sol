@@ -6,7 +6,6 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {LibString} from "../src/utils/lib/LibString.sol";
 import {console} from "./utils/Console.sol";
 
-
 contract LibStringTest is DSTestPlus {
     function testToString() public {
         assertEq(LibString.toString(0), "0");
@@ -31,10 +30,10 @@ contract LibStringTest is DSTestPlus {
 
     function testToStringOverwrite() public {
         string memory str = LibString.toString(1);
-        
+
         bytes32 data;
         bytes32 expected;
-        
+
         assembly {
             // Imagine a high level allocation writing something to the current free memory.
             // Should have sufficient higher order bits for this to be visible
@@ -43,8 +42,8 @@ contract LibStringTest is DSTestPlus {
             mstore(0x40, add(mload(0x40), 32))
             data := mload(add(str, 32))
 
-            // the expected value should be the uft-8 encoding of 1 (49), 
-            // followed by clean bits. We achieve this by taking the value and 
+            // the expected value should be the uft-8 encoding of 1 (49),
+            // followed by clean bits. We achieve this by taking the value and
             // shifting left to the end of the 32 byte word
             expected := shl(248, 49)
         }
@@ -53,7 +52,7 @@ contract LibStringTest is DSTestPlus {
     }
 
     function testToStringDirty() public {
-        uint freememptr;
+        uint256 freememptr;
         // Make the next 4 bytes of the free memory dirty
         assembly {
             let dirty := not(0)
@@ -65,15 +64,15 @@ contract LibStringTest is DSTestPlus {
             mstore(add(freememptr, 128), dirty)
         }
         string memory str = LibString.toString(1);
-        uint len;
+        uint256 len;
         bytes32 data;
         bytes32 expected;
         assembly {
             freememptr := str
             len := mload(str)
             data := mload(add(str, 32))
-            // the expected value should be the uft-8 encoding of 1 (49), 
-            // followed by clean bits. We achieve this by taking the value and 
+            // the expected value should be the uft-8 encoding of 1 (49),
+            // followed by clean bits. We achieve this by taking the value and
             // shifting left to the end of the 32 byte word
             expected := shl(248, 49)
         }
