@@ -13,9 +13,6 @@ library LibString {
             // We'll store our string at the first chunk of free memory.
             str := mload(0x40)
 
-            // The length of our string will start off at the max of 78.
-            mstore(str, k)
-
             // Update the free memory pointer to prevent overriding our string.
             // We need to allocate 5 32-byte words for our string, so we increment
             // the free memory pointer by 160 (32 * 5). The first word is used to
