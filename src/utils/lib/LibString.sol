@@ -13,15 +13,14 @@ library LibString {
             // We'll store our string at the first chunk of free memory.
             str := mload(0x40)
 
-            // Update the free memory pointer to prevent overriding our string.
-            // We need to allocate 5 32-byte words for our string, so we increment
-            // the free memory pointer by 160 (32 * 5). The first word is used to
-            // store the length of the string. We need up to 3 words to store digits
-            // (78 bytes). We also leave a zeroed word at the end, such that there are no
-            // dirty bits at the end of our string encoding.
+            // Update the free memory pointer to prevent overriding our string. We
+            // need to allocate 5 32-byte words for our string, so we increment the free
+            // memory pointer by 160 (32 * 5). The first word is used to store the length of the
+            // string. We need up to 3 words to store digits (78 bytes). We also leave an extra word
+            // of zeros at the end, such that there are no dirty bits at the end of our string encoding.
             mstore(0x40, add(str, 160))
 
-            // Clean last two words of memory as they may not be overwritten
+            // Clean last two words of memory as they may not be overwritten.
             mstore(add(str, 96), 0)
             mstore(add(str, 128), 0)
 
