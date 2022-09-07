@@ -10,8 +10,8 @@ import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
-import {RandProvider} from "../src/utils/random/RandProvider.sol";
-import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
+import {RandProvider} from "../src/utils/rand/RandProvider.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider.sol";
 
 contract VRGDAsTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);

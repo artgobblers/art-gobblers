@@ -2,8 +2,9 @@
 pragma solidity >=0.8.0;
 
 /// @title Signed Wad Math
-/// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
+/// @author FrankieIsLost <frankie@paradigm.xyz>
+/// @author Remco Bloemen <remco@wicked.ventures>
 /// @notice Efficient signed wad arithmetic.
 
 /// @dev Will not revert on overflow, only use where overflow is not possible.
@@ -11,6 +12,25 @@ function toWadUnsafe(uint256 x) pure returns (int256 r) {
     assembly {
         // Multiply x by 1e18.
         r := mul(x, 1000000000000000000)
+    }
+}
+
+/// @dev Takes an integer amount of seconds and converts it to a wad amount of days.
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+function toDaysWadUnsafe(uint256 x) pure returns (int256 r) {
+    assembly {
+        // Multiply x by 1e18 and then divide it by 86400.
+        r := div(mul(x, 1000000000000000000), 86400)
+    }
+}
+
+/// @dev Takes a wad amount of days and converts it to an integer amount of seconds.
+/// @dev Will not revert on overflow, only use where overflow is not possible.
+/// @dev Not compatible with negative day amounts, it assumes x is positive.
+function fromDaysWadUnsafe(int256 x) pure returns (uint256 r) {
+    assembly {
+        // Multiply x by 86400 and then divide it by 1e18.
+        r := div(mul(x, 86400), 1000000000000000000)
     }
 }
 

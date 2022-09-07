@@ -6,8 +6,8 @@ import "forge-std/Script.sol";
 import {LibRLP} from "../../test/utils/LibRLP.sol";
 
 import {GobblerReserve} from "../../src/utils/GobblerReserve.sol";
-import {RandProvider} from "../../src/utils/random/RandProvider.sol";
-import {ChainlinkV1RandProvider} from "../../src/utils/random/ChainlinkV1RandProvider.sol";
+import {RandProvider} from "../../src/utils/rand/RandProvider.sol";
+import {ChainlinkV1RandProvider} from "../../src/utils/rand/ChainlinkV1RandProvider.sol";
 
 import {Goo} from "../../src/Goo.sol";
 import {Pages} from "../../src/Pages.sol";

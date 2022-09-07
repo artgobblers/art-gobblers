@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {VRGDA} from "./utils/vrgda/VRGDA.sol";
+import {LogisticToLinearVRGDA} from "VRGDAs/LogisticToLinearVRGDA.sol";
+
 import {LibString} from "./utils/lib/LibString.sol";
 import {PagesERC721} from "./utils/token/PagesERC721.sol";
-import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
-import {PostSwitchVRGDA} from "./utils/vrgda/PostSwitchVRGDA.sol";
 
 import {Goo} from "./Goo.sol";
 import {ArtGobblers} from "./ArtGobblers.sol";
@@ -14,7 +13,7 @@ import {ArtGobblers} from "./ArtGobblers.sol";
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Pages is an ERC721 that can hold custom art.
-contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
+contract Pages is PagesERC721, LogisticToLinearVRGDA {
     using LibString for uint256;
 
     /*//////////////////////////////////////////////////////////////
@@ -104,15 +103,11 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         // URIs:
         string memory _baseUri
     )
-        VRGDA(
+        LogisticToLinearVRGDA(
             4.2069e18, // Target price.
-            0.31e18 // Price decrease percent.
-        )
-        LogisticVRGDA(
-            9000e18, // Max sellable.
-            0.014e18 // Time scale.
-        )
-        PostSwitchVRGDA(
+            0.31e18, // Price decay percent.
+            9000e18, // Logistic asymptote.
+            0.014e18, // Logistic time scale.
             SOLD_BY_SWITCH_WAD, // Sold by switch.
             SWITCH_DAY_WAD, // Target switch day.
             9e18 // Pages to target per day.
@@ -169,19 +164,8 @@ contract Pages is PagesERC721, LogisticVRGDA, PostSwitchVRGDA {
         unchecked {
             // The number of pages minted for the community reserve
             // should never exceed 10% of the total supply of pages.
-            return getPrice(timeSinceStart, currentId - numMintedForCommunity);
+            return getVRGDAPrice(timeSinceStart, currentId - numMintedForCommunity);
         }
-    }
-
-    /// @dev Given a number of tokens sold, return the target day that number of tokens should be sold by.
-    /// @param sold A number of tokens sold, scaled by 1e18, to get the corresponding target sale day for.
-    /// @return The target day the tokens should be sold by, scaled by 1e18, where the day is
-    /// relative, such that 0 means the tokens should be sold immediately when the VRGDA begins.
-    function getTargetSaleDay(int256 sold) public view override(LogisticVRGDA, PostSwitchVRGDA) returns (int256) {
-        // prettier-ignore
-        return sold < SOLD_BY_SWITCH_WAD
-            ? LogisticVRGDA.getTargetSaleDay(sold)
-            : PostSwitchVRGDA.getTargetSaleDay(sold);
     }
 
     /*//////////////////////////////////////////////////////////////
