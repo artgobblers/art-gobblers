@@ -16,7 +16,7 @@ library LibString {
             // Update the free memory pointer to prevent overriding our string. We
             // need to allocate 5 32-byte words for our string, so we increment the free
             // memory pointer by 160 (32 * 5). The first word is used to store the length of the
-            // string. We need up to 3 words to store digits (96 bytes). We also leave an extra word
+            // string. We use up to 3 words to store digits (96 bytes). We also leave an extra word
             // of zeros at the end, such that there are no dirty bits at the end of our string encoding.
             mstore(0x40, add(str, 160))
 
