@@ -5,6 +5,7 @@ import {LogisticToLinearVRGDA} from "VRGDAs/LogisticToLinearVRGDA.sol";
 
 import {LibString} from "./utils/lib/LibString.sol";
 import {PagesERC721} from "./utils/token/PagesERC721.sol";
+import {toDaysWadUnsafe} from "./utils/lib/SignedWadMath.sol";
 
 import {Goo} from "./Goo.sol";
 import {ArtGobblers} from "./ArtGobblers.sol";
@@ -164,7 +165,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
         unchecked {
             // The number of pages minted for the community reserve
             // should never exceed 10% of the total supply of pages.
-            return getVRGDAPrice(timeSinceStart, currentId - numMintedForCommunity);
+            return getVRGDAPrice(toDaysWadUnsafe(timeSinceStart), currentId - numMintedForCommunity);
         }
     }
 

@@ -9,6 +9,7 @@ import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {ArtGobblers} from "../src/ArtGobblers.sol";
 import {console} from "./utils/Console.sol";
+import {fromDaysWadUnsafe} from "../src/utils/lib/SignedWadMath.sol";
 
 contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -65,7 +66,7 @@ contract PagesTest is DSTestPlus {
 
     function testTargetPrice() public {
         // Warp to the target sale time so that the page price equals the target price.
-        vm.warp(block.timestamp + uint256(pages.getTargetSaleDay(1e18) * 1 days) / 1e18);
+        vm.warp(block.timestamp + fromDaysWadUnsafe(pages.getTargetSaleTime(1e18)));
 
         uint256 cost = pages.pagePrice();
         assertRelApproxEq(cost, uint256(pages.targetPrice()), 0.00001e18);

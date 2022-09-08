@@ -368,7 +368,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getVRGDAPrice(timeSinceStart, numMintedFromGoo);
+        return getVRGDAPrice(toDaysWadUnsafe(timeSinceStart), numMintedFromGoo);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -731,13 +731,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Calculate a user's virtual goo balance.
     /// @param user The user to query balance for.
     function gooBalance(address user) public view returns (uint256) {
-        // TODO: USE THE NEW toDAYSWAD AND STUFF!!!!! PUT SIGNED WAD MATH IN SOLMATE !!!!!
-
+        // Compute the user's virtual goo balance by leveraging LibGOO.
         // prettier-ignore
         return LibGOO.computeGOOBalance(
             getEmissionDataForUser[user].emissionMultiple,
             getEmissionDataForUser[user].lastBalance,
-            toDaysWadUnsafe(block.timestamp - getEmissionDataForUser[user])
+            uint(toDaysWadUnsafe(block.timestamp - getEmissionDataForUser[user].lastTimestamp))
         );
     }
 
