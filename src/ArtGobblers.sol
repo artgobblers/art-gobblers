@@ -812,6 +812,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
+        // Update the number of gobblers owned by the team and community reserve.
+        getUserData[team].gobblersOwned += uint32(numGobblersEach);
+        getUserData[community].gobblersOwned += uint32(numGobblersEach);
+
         // Mint numGobblersEach gobblers to both the team and community reserve.
         lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
         lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "");
