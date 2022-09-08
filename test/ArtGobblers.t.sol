@@ -1093,8 +1093,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
+            uint256 gobblersOwnedBefore = gobblers.getGobblersOwnedByUser(addr);
+
             vm.prank(addr);
             gobblers.mintFromGoo(type(uint256).max, false);
+
+            assertEq(gobblers.getGobblersOwnedByUser(addr), gobblersOwnedBefore + 1);
         }
     }
 
