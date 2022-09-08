@@ -56,6 +56,7 @@ contract VRGDAsTest is DSTestPlus {
             "root",
             block.timestamp,
             goo,
+            Pages(pagesAddress),
             address(0xBEEF),
             address(0xBEEF),
             randProvider,
@@ -63,7 +64,7 @@ contract VRGDAsTest is DSTestPlus {
             ""
         );
 
-        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
     }
 
     // function testFindGobblerOverflowPoint() public view {

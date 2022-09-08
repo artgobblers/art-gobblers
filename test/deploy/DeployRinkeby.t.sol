@@ -27,7 +27,7 @@ contract DeployRinkebyTest is DSTestPlus {
 
     /// @notice Test page addresses where correctly set.
     function testPagesAddressCorrectness() public {
-        assertEq(deployScript.pages().artGobblers(), address(deployScript.artGobblers()));
+        assertEq(address(deployScript.pages().artGobblers()), address(deployScript.artGobblers()));
         assertEq(address(deployScript.pages().goo()), address(deployScript.goo()));
     }
 

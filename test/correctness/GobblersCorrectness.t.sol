@@ -8,6 +8,7 @@ import {ArtGobblers} from "../../src/ArtGobblers.sol";
 import {RandProvider} from "../../src/utils/random/RandProvider.sol";
 
 import {Goo} from "../../src/Goo.sol";
+import {Pages} from "../../src/Pages.sol";
 
 contract GobblersCorrectnessTest is DSTestPlus {
     using LibString for uint256;
@@ -33,6 +34,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
             "root",
             block.timestamp,
             Goo(address(0)),
+            Pages(address(0)),
             address(0),
             address(0),
             RandProvider(address(0)),

@@ -10,35 +10,37 @@ library MerkleProofLib {
         bytes32 leaf
     ) internal pure returns (bool isValid) {
         assembly {
-            let computedHash := leaf // The hash starts as the leaf hash.
-
-            // Initialize data to the offset of the proof in the calldata.
-            let data := proof.offset
-
-            // Iterate over proof elements to compute root hash.
-            for {
+            if proof.length {
                 // Left shifting by 5 is like multiplying by 32.
-                let end := add(data, shl(5, proof.length))
-            } lt(data, end) {
-                data := add(data, 32) // Shift 1 word per cycle.
-            } {
-                // Load the current proof element.
-                let loadedData := calldataload(data)
+                let end := add(proof.offset, shl(5, proof.length))
 
-                // Slot where computedHash should be put in scratch space.
-                // If computedHash > loadedData: slot 32, otherwise: slot 0.
-                let computedHashSlot := shl(5, gt(computedHash, loadedData))
+                // Initialize offset to the offset of the proof in calldata.
+                let offset := proof.offset
 
-                // Store elements to hash contiguously in scratch space.
-                // The xor puts loadedData in whichever slot computedHash is
-                // not occupying, so 0 if computedHashSlot is 32, 32 otherwise.
-                mstore(computedHashSlot, computedHash)
-                mstore(xor(computedHashSlot, 32), loadedData)
+                // Iterate over proof elements to compute root hash.
+                // prettier-ignore
+                for {} 1 {} {
+                    // Slot where the leaf should be put in scratch space. If
+                    // leaf > calldataload(offset): slot 32, otherwise: slot 0.
+                    let leaftSlot := shl(5, gt(leaf, calldataload(offset)))
 
-                computedHash := keccak256(0, 64) // Hash both slots of scratch space.
+                    // Store elements to hash contiguously in scratch space.
+                    // The xor puts calldataload(offset) in whichever slot leaf
+                    // is not occupying, so 0 if leaftSlot is 32, and 32 otherwise.
+                    mstore(leaftSlot, leaf)
+                    mstore(xor(leaftSlot, 32), calldataload(offset))
+
+                    // Reuse leaf to store the hash to reduce stack operations.
+                    leaf := keccak256(0, 64) // Hash both slots of scratch space.
+
+                    offset := add(offset, 32) // Shift 1 word per cycle.
+
+                    // prettier-ignore
+                    if iszero(lt(offset, end)) { break }
+                }
             }
 
-            isValid := eq(computedHash, root) // The proof is valid if the roots match.
+            isValid := eq(leaf, root) // The proof is valid if the roots match.
         }
     }
 }
