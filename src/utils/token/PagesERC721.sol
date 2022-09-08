@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
+import {ArtGobblers} from "../../ArtGobblers.sol";
 
 /// @notice ERC721 implementation optimized for Pages by pre-approving them to the ArtGobblers contract.
 /// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
@@ -30,10 +31,10 @@ abstract contract PagesERC721 {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    address public immutable artGobblers;
+    ArtGobblers public immutable artGobblers;
 
     constructor(
-        address _artGobblers,
+        ArtGobblers _artGobblers,
         string memory _name,
         string memory _symbol
     ) {
@@ -69,7 +70,7 @@ abstract contract PagesERC721 {
     mapping(address => mapping(address => bool)) internal _isApprovedForAll;
 
     function isApprovedForAll(address owner, address operator) public view virtual returns (bool isApproved) {
-        if (operator == artGobblers) return true; // Skip approvals for the ArtGobblers contract.
+        if (operator == address(artGobblers)) return true; // Skip approvals for the ArtGobblers contract.
 
         return _isApprovedForAll[owner][operator];
     }

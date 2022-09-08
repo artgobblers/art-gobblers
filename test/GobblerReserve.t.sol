@@ -52,8 +52,9 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 4 contract deploys
+        //gobblers contract will be deployed after 4 contract deploys, and pages after 5
         address gobblerAddress = utils.predictContractAddress(address(this), 4);
+        address pagesAddress = utils.predictContractAddress(address(this), 5);
 
         team = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
         community = new GobblerReserve(ArtGobblers(gobblerAddress), address(this));
@@ -76,6 +77,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
             goo,
+            Pages(pages),
             address(team),
             address(community),
             randProvider,
@@ -83,7 +85,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -123,7 +125,7 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 }

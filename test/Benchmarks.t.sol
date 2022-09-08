@@ -58,6 +58,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
             goo,
+            Pages(pageAddress),
             address(0xBEEF),
             address(0xBEEF),
             randProvider,
@@ -65,7 +66,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             ""
         );
 
-        pages = new Pages(block.timestamp, goo, address(0xBEEF), address(gobblers), "");
+        pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
 
         vm.prank(address(gobblers));
         goo.mintForGobblers(address(this), type(uint128).max);
@@ -101,11 +102,11 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
     }
 
     function testMintPage() public {
-        pages.mintFromGoo(type(uint256).max);
+        pages.mintFromGoo(type(uint256).max, false);
     }
 
     function testMintGobbler() public {
-        gobblers.mintFromGoo(type(uint256).max);
+        gobblers.mintFromGoo(type(uint256).max, false);
     }
 
     function testBatchTransferGobblers() public {
@@ -155,7 +156,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            gobblers.mintFromGoo(type(uint256).max);
+            gobblers.mintFromGoo(type(uint256).max, false);
         }
     }
 
@@ -166,7 +167,7 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
             vm.stopPrank();
 
             vm.prank(addr);
-            pages.mintFromGoo(type(uint256).max);
+            pages.mintFromGoo(type(uint256).max, false);
         }
     }
 }

@@ -90,6 +90,7 @@ abstract contract DeployBase is Script {
             merkleRoot,
             mintStart,
             goo,
+            Pages(pageAddress),
             address(teamReserve),
             address(communityReserve),
             randProvider,
@@ -98,7 +99,7 @@ abstract contract DeployBase is Script {
         );
 
         // Deploy pages contract.
-        pages = new Pages(mintStart, goo, teamColdWallet, gobblerAddress, pagesBaseUri);
+        pages = new Pages(mintStart, goo, teamColdWallet, artGobblers, pagesBaseUri);
 
         vm.stopBroadcast();
     }

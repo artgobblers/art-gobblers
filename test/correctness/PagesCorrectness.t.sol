@@ -6,6 +6,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {LibString} from "../../src/utils/lib/LibString.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../src/Pages.sol";
+import {ArtGobblers} from "../../src/ArtGobblers.sol";
 import {Goo} from "../../src/Goo.sol";
 
 contract PageCorrectnessTest is DSTestPlus {
@@ -32,7 +33,7 @@ contract PageCorrectnessTest is DSTestPlus {
     Pages internal pages;
 
     function setUp() public {
-        pages = new Pages(block.timestamp, Goo(address(0)), address(0), address(0), "");
+        pages = new Pages(block.timestamp, Goo(address(0)), address(0), ArtGobblers(address(0)), "");
 
         LOGISTIC_SCALE = int256((MAX_MINTABLE + 1) * 2e18);
     }
