@@ -45,9 +45,9 @@ abstract contract GobblersERC1155B {
         // The current owner of the gobbler.
         address owner;
         // Index of token after shuffle.
-        uint48 idx;
+        uint64 idx;
         // Multiple on goo issuance.
-        uint48 emissionMultiple;
+        uint32 emissionMultiple;
     }
 
     mapping(uint256 => GobblerData) public getGobblerData;

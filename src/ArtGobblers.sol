@@ -421,7 +421,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             // The legendary's emissionMultiple is 2x the sum of the multiples of the gobblers burned.
             getGobblerData[gobblerId].emissionMultiple = uint32(burnedMultipleTotal * 2);
 
-            // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
+            // Update the user's user data struct in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
             // were burned and hence should have their multiples subtracted from the user's total multiple.
             getUserData[msg.sender].lastBalance = uint128(gooBalance(msg.sender)); // Checkpoint balance.
@@ -978,15 +978,15 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         uint32 gobblersTransferred
     ) internal {
         unchecked {
-            // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-            // We decrease their balance before updating their emission multiple to avoid
-            // penalizing them by retroactively applying the new lower emission multiple.
+            // We update their last balance before updating their emission multiple to avoid
+            // penalizing them by retroactively applying their new (lower) emission multiple.
             getUserData[from].lastBalance = uint128(gooBalance(from));
             getUserData[from].lastTimestamp = uint64(block.timestamp);
             getUserData[from].emissionMultiple -= emissionsMultipleTotal;
             getUserData[from].gobblersOwned -= gobblersTransferred;
 
-            // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
+            // We update their last balance before updating their emission multiple to avoid
+            // overpaying them by retroactively applying their new (higher) emission multiple.
             getUserData[to].lastBalance = uint128(gooBalance(to));
             getUserData[to].lastTimestamp = uint64(block.timestamp);
             getUserData[to].emissionMultiple += emissionsMultipleTotal;

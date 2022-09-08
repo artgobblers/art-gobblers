@@ -627,7 +627,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
-        (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
+        (, uint64 expectedIndex, ) = gobblers.getGobblerData(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
         assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
