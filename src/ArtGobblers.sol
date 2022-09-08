@@ -734,9 +734,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // Compute the user's virtual goo balance by leveraging LibGOO.
         // prettier-ignore
         return LibGOO.computeGOOBalance(
-            getEmissionDataForUser[user].emissionMultiple,
-            getEmissionDataForUser[user].lastBalance,
-            uint(toDaysWadUnsafe(block.timestamp - getEmissionDataForUser[user].lastTimestamp))
+            getUserData[user].emissionMultiple,
+            getUserData[user].lastBalance,
+            uint(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp))
         );
     }
 
