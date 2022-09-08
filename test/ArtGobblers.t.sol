@@ -330,11 +330,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /// @notice Pricing function should NOT revert when trying to price the last mintable gobbler.
-    function testDoesNotRevertEarly() public {
+    function testDoesNotRevertEarly() public view {
         // This is the last gobbler we expect to mint.
         int256 maxMintable = int256(gobblers.MAX_MINTABLE()) * 1e18;
         // This call should NOT revert, since we should have a target date for the last mintable gobbler.
-        int256 targetSale = gobblers.getTargetSaleTime(maxMintable);
+        gobblers.getTargetSaleTime(maxMintable);
     }
 
     /// @notice Pricing function should revert when trying to price beyond the last mintable gobbler.
@@ -343,7 +343,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         int256 maxMintablePlusOne = int256(gobblers.MAX_MINTABLE() + 1) * 1e18;
         // This call should revert, since there should be no target date beyond max mintable gobblers.
         vm.expectRevert("UNDEFINED");
-        int256 targetSale = gobblers.getTargetSaleTime(maxMintablePlusOne);
+        gobblers.getTargetSaleTime(maxMintablePlusOne);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -649,8 +649,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLegendaryUri() public {
-        (, uint128 numSold) = gobblers.legendaryGobblerAuctionData();
-
         assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID()), "");
         assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID() + 1), "");
     }
