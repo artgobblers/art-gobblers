@@ -119,17 +119,17 @@ contract PagesTest is DSTestPlus {
 
     /// @notice Test that the pricing switch does now significantly slow down or speed up the issuance of pages.
     function testSwitchSmoothness() public {
-        uint256 switchPageSaleTime = uint256(pages.getTargetSaleDay(8337e18) - pages.getTargetSaleDay(8336e18));
+        uint256 switchPageSaleTime = uint256(pages.getTargetSaleTime(8337e18) - pages.getTargetSaleTime(8336e18));
 
         assertRelApproxEq(
-            uint256(pages.getTargetSaleDay(8336e18) - pages.getTargetSaleDay(8335e18)),
+            uint256(pages.getTargetSaleTime(8336e18) - pages.getTargetSaleTime(8335e18)),
             switchPageSaleTime,
             0.0005e18
         );
 
         assertRelApproxEq(
             switchPageSaleTime,
-            uint256(pages.getTargetSaleDay(8338e18) - pages.getTargetSaleDay(8337e18)),
+            uint256(pages.getTargetSaleTime(8338e18) - pages.getTargetSaleTime(8337e18)),
             0.005e18
         );
     }
