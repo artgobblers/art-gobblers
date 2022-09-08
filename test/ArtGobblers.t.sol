@@ -111,6 +111,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
+        assertEq(gobblers.getGobblersOwnedByUser(user), 1);
     }
 
     /// @notice Test that minting from the mintlist twice fails.
@@ -156,6 +157,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         gobblers.mintFromGoo(type(uint256).max, false);
+        assertEq(gobblers.getGobblersOwnedByUser(users[0]), 1);
         //warp for reveals
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
@@ -216,6 +218,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
         assertEq(gobblers.ownerOf(9), address(team));
         assertEq(gobblers.ownerOf(10), address(community));
+        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 1);
+        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 1);
     }
 
     /// @notice Test multiple reserved gobblers can be minted under fair circumstances.
@@ -227,6 +231,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.ownerOf(20), address(team));
         assertEq(gobblers.ownerOf(21), address(community));
         assertEq(gobblers.ownerOf(22), address(community));
+        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 2);
+        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 2);
     }
 
     /// @notice Test minting reserved gobblers fails if not enough have gobblers been minted.
@@ -879,11 +885,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertGt(initialUserMultiple, 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), 0);
 
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 1);
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 0);
+
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), initialUserMultiple);
+
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 0);
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 1);
     }
 
     /// @notice Test that gobbler balances are accurate after transfer.
