@@ -9,7 +9,7 @@ import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {ArtGobblers} from "../src/ArtGobblers.sol";
 import {console} from "./utils/Console.sol";
-import {fromDaysWadUnsafe} from "../src/utils/lib/SignedWadMath.sol";
+import {fromDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 contract PagesTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);

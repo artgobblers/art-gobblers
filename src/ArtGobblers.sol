@@ -3,25 +3,17 @@ pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import {MerkleProofLib} from "solmate/utils/MerkleProofLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
+import {toWadUnsafe, toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 import {LibGOO} from "goo-issuance/LibGOO.sol";
 
 import {LogisticVRGDA} from "VRGDAs/LogisticVRGDA.sol";
 
 import {RandProvider} from "./utils/rand/RandProvider.sol";
-
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-// TODO: ALL OF THESE SHOULD BE IN SOLMATE!!!
-import {LibString} from "./utils/lib/LibString.sol";
-import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
-import {unsafeDivUp, toWadUnsafe, toDaysWadUnsafe} from "./utils/lib/SignedWadMath.sol";
 
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
 
@@ -471,7 +463,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
-            else return unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
+            else return FixedPointMathLib.unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
         }
     }
 

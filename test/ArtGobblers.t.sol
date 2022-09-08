@@ -7,7 +7,7 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {ArtGobblers, unsafeDivUp} from "../src/ArtGobblers.sol";
+import {ArtGobblers, FixedPointMathLib} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
@@ -17,8 +17,8 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
-import {LibString} from "../src/utils/lib/LibString.sol";
-import {fromDaysWadUnsafe} from "../src/utils/lib/SignedWadMath.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import {fromDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
 contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
@@ -393,7 +393,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
         // Mint first interval and half of second interval.
-        mintGobblerToAddress(users[0], unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
+        mintGobblerToAddress(users[0], FixedPointMathLib.unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
         uint256 cost = gobblers.legendaryGobblerPrice();
         // Auction price should be cut by half mid way through auction.
         assertEq(cost, 35);

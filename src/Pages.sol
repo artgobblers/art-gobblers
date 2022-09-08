@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+import {LibString} from "solmate/utils/LibString.sol";
+import {toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
+
 import {LogisticToLinearVRGDA} from "VRGDAs/LogisticToLinearVRGDA.sol";
 
-import {LibString} from "./utils/lib/LibString.sol";
 import {PagesERC721} from "./utils/token/PagesERC721.sol";
-import {toDaysWadUnsafe} from "./utils/lib/SignedWadMath.sol";
 
 import {Goo} from "./Goo.sol";
 import {ArtGobblers} from "./ArtGobblers.sol";
