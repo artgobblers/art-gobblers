@@ -102,12 +102,14 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.ownerOf(11), address(community));
 
         uint256[] memory idsToWithdraw = new uint256[](1);
+        uint256[] memory amountsToWithdraw = new uint256[](1);
+        amountsToWithdraw[0] = 1;
 
         idsToWithdraw[0] = 10;
-        team.withdraw(address(this), idsToWithdraw);
+        team.withdraw(address(this), idsToWithdraw, amountsToWithdraw);
 
         idsToWithdraw[0] = 11;
-        community.withdraw(address(this), idsToWithdraw);
+        community.withdraw(address(this), idsToWithdraw, amountsToWithdraw);
 
         assertEq(gobblers.ownerOf(10), address(this));
         assertEq(gobblers.ownerOf(11), address(this));

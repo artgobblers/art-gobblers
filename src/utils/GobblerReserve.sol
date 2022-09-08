@@ -32,94 +32,13 @@ contract GobblerReserve is Owned, ERC1155TokenReceiver {
     /// @notice Withdraw gobblers from the reserve.
     /// @param to The address to transfer the gobblers to.
     /// @param ids The ids of the gobblers to transfer.
-    function withdraw(address to, uint256[] calldata ids) external onlyOwner {
-        unchecked {
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-            // TODO: I wonder if copying directly from calldata is cheaper?
-
-            // Generating this in memory is pretty expensive
-            // but this is not a hot path so we can afford it.
-            uint256[] memory amounts = new uint256[](ids.length);
-            for (uint256 i = 0; i < ids.length; i++) amounts[i] = 1;
-
-            artGobblers.safeBatchTransferFrom(address(this), to, ids, amounts, "");
-        }
+    /// @param amounts The amounts of each gobbler to transfer (must be 1).
+    function withdraw(
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) external onlyOwner {
+        // We could generate amounts in-memory, but getting via calldata is cheaper.
+        artGobblers.safeBatchTransferFrom(address(this), to, ids, amounts, "");
     }
 }
