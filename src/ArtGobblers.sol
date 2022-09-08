@@ -3,16 +3,19 @@ pragma solidity >=0.8.0;
 
 import {Owned} from "solmate/auth/Owned.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import {MerkleProofLib} from "solmate/utils/MerkleProofLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
+import {toWadUnsafe, toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
-import {VRGDA} from "./utils/vrgda/VRGDA.sol";
-import {LibString} from "./utils/lib/LibString.sol";
-import {unsafeDivUp} from "./utils/lib/SignedWadMath.sol";
-import {LogisticVRGDA} from "./utils/vrgda/LogisticVRGDA.sol";
-import {MerkleProofLib} from "./utils/lib/MerkleProofLib.sol";
+import {LibGOO} from "goo-issuance/LibGOO.sol";
+
+import {LogisticVRGDA} from "VRGDAs/LogisticVRGDA.sol";
+
+import {RandProvider} from "./utils/rand/RandProvider.sol";
+
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
-import {RandProvider} from "./utils/random/RandProvider.sol";
 
 import {Goo} from "./Goo.sol";
 import {Pages} from "./Pages.sol";
@@ -261,12 +264,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         string memory _baseUri,
         string memory _unrevealedUri
     )
-        VRGDA(
-            69.42e18, // Target price.
-            0.31e18 // Price decrease percent.
-        )
         LogisticVRGDA(
-            int256(MAX_MINTABLE * 1e18), // Max VRGDA sellable gobblers.
+            69.42e18, // Target price.
+            0.31e18, // Price decay percent.
+            // Max gobblers mintable via VRGDA.
+            toWadUnsafe(MAX_MINTABLE),
             0.0023e18 // Time scale.
         )
         Owned(msg.sender) // Deployer starts as owner.
@@ -364,7 +366,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
 
-        return getPrice(timeSinceStart, numMintedFromGoo);
+        return getVRGDAPrice(toDaysWadUnsafe(timeSinceStart), numMintedFromGoo);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -469,7 +471,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             // If we've minted the full interval or beyond it, the price has decayed to 0.
             if (numMintedSinceStart >= LEGENDARY_AUCTION_INTERVAL) return 0;
             // Otherwise decay the price linearly based on what fraction of the interval has been minted.
-            else return unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
+            else return FixedPointMathLib.unsafeDivUp(startPrice * (LEGENDARY_AUCTION_INTERVAL - numMintedSinceStart), LEGENDARY_AUCTION_INTERVAL);
         }
     }
 
@@ -729,32 +731,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Calculate a user's virtual goo balance.
     /// @param user The user to query balance for.
     function gooBalance(address user) public view returns (uint256) {
-        // If a user's goo balance is greater than
-        // 2**256 - 1 we've got much bigger problems.
-        unchecked {
-            uint256 emissionMultiple = getUserData[user].emissionMultiple;
-            uint256 lastBalanceWad = getUserData[user].lastBalance;
-
-            // Stored with 18 decimals, such that if a day and a half elapsed this variable would equal 1.5e18.
-            uint256 daysElapsedWad = ((block.timestamp - getUserData[user].lastTimestamp) * 1e18) / 1 days;
-
-            uint256 daysElapsedSquaredWad = daysElapsedWad.mulWadDown(daysElapsedWad); // Need to use wad math here.
-
-            // prettier-ignore
-            return lastBalanceWad + // The last recorded balance.
-
-            // Don't need to do wad multiplication since we're
-            // multiplying by a plain integer with no decimals.
-            // Shift right by 2 is equivalent to division by 4.
-            ((emissionMultiple * daysElapsedSquaredWad) >> 2) +
-
-            daysElapsedWad.mulWadDown( // Terms are wads, so must mulWad.
-                // No wad multiplication for emissionMultiple * lastBalance
-                // because emissionMultiple is a plain integer with no decimals.
-                // We multiply the sqrt's radicand by 1e18 because it expects ints.
-                (emissionMultiple * lastBalanceWad * 1e18).sqrt()
-            );
-        }
+        // Compute the user's virtual goo balance by leveraging LibGOO.
+        // prettier-ignore
+        return LibGOO.computeGOOBalance(
+            getEmissionDataForUser[user].emissionMultiple,
+            getEmissionDataForUser[user].lastBalance,
+            uint(toDaysWadUnsafe(block.timestamp - getEmissionDataForUser[user].lastTimestamp))
+        );
     }
 
     /// @notice Add goo to your emission balance,
