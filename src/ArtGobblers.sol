@@ -166,18 +166,20 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
                              EMISSION STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Struct holding data required for goo emission calculations.
-    struct EmissionData {
+    /// @notice Struct holding data relevant to each user's account.
+    struct UserData {
+        // The total number of gobblers currently owned by the user.
+        uint32 gobblersOwned;
         // The sum of the multiples of all gobblers the user holds.
-        uint64 emissionMultiple;
-        // Balance at time of last checkpointing.
+        uint32 emissionMultiple;
+        // User's virtual goo balance at time of last checkpointing.
         uint128 lastBalance;
-        // Timestamp of last checkpointing.
+        // Timestamp of the last virtual goo balance checkpoint.
         uint64 lastTimestamp;
     }
 
-    /// @notice Maps user addresses to their emission data.
-    mapping(address => EmissionData) public getEmissionDataForUser;
+    /// @notice Maps user addresses to their account data.
+    mapping(address => UserData) public getUserData;
 
     /*//////////////////////////////////////////////////////////////
                             ART FEEDING STATE
@@ -312,6 +314,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to mitigate reentrancy.
 
         unchecked {
+            getUserData[msg.sender].gobblersOwned += 1; // Update the user's # of gobblers owned.
+
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
 
             _mint(msg.sender, gobblerId, "");
@@ -344,6 +348,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
+
+            getUserData[msg.sender].gobblersOwned += 1; // Update the user's # of gobblers owned.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
@@ -415,14 +421,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             //////////////////////////////////////////////////////////////*/
 
             // The legendary's emissionMultiple is 2x the sum of the multiples of the gobblers burned.
-            getGobblerData[gobblerId].emissionMultiple = uint48(burnedMultipleTotal * 2);
+            getGobblerData[gobblerId].emissionMultiple = uint32(burnedMultipleTotal * 2);
 
-            // Update the user's emission data in one big batch. We add burnedMultipleTotal to their
+            // Update the user's user data struct in one big batch. We add burnedMultipleTotal to their
             // emission multiple (not burnedMultipleTotal * 2) to account for the standard gobblers that
             // were burned and hence should have their multiples subtracted from the user's total multiple.
-            getEmissionDataForUser[msg.sender].lastBalance = uint128(gooBalance(msg.sender));
-            getEmissionDataForUser[msg.sender].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[msg.sender].emissionMultiple += uint64(burnedMultipleTotal);
+            getUserData[msg.sender].lastBalance = uint128(gooBalance(msg.sender)); // Checkpoint balance.
+            getUserData[msg.sender].lastTimestamp = uint64(block.timestamp); // Store time alongside it.
+            getUserData[msg.sender].emissionMultiple += uint32(burnedMultipleTotal); // Update multiple.
+            // We subtract the amount of gobblers burned, and then add 1 to factor in the new legendary.
+            getUserData[msg.sender].gobblersOwned = uint32(getUserData[msg.sender].gobblersOwned - cost + 1);
 
             // New start price is the max of LEGENDARY_GOBBLER_INITIAL_START_PRICE and cost * 2.
             legendaryGobblerAuctionData.startPrice = uint120(
@@ -579,16 +587,16 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
                 //////////////////////////////////////////////////////////////*/
 
                 // Get the index of the swap id.
-                uint48 swapIndex = getGobblerData[swapId].idx == 0
-                    ? uint48(swapId) // Hasn't been shuffled before.
+                uint64 swapIndex = getGobblerData[swapId].idx == 0
+                    ? uint64(swapId) // Hasn't been shuffled before.
                     : getGobblerData[swapId].idx; // Shuffled before.
 
                 // Get the owner of the current id.
                 address currentIdOwner = getGobblerData[currentId].owner;
 
                 // Get the index of the current id.
-                uint48 currentIndex = getGobblerData[currentId].idx == 0
-                    ? uint48(currentId) // Hasn't been shuffled before.
+                uint64 currentIndex = getGobblerData[currentId].idx == 0
+                    ? uint64(currentId) // Hasn't been shuffled before.
                     : getGobblerData[currentId].idx; // Shuffled before.
 
                 /*//////////////////////////////////////////////////////////////
@@ -614,7 +622,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
                 // Swap the index and multiple of the current id.
                 getGobblerData[currentId].idx = swapIndex;
-                getGobblerData[currentId].emissionMultiple = uint48(newCurrentIdMultiple);
+                getGobblerData[currentId].emissionMultiple = uint32(newCurrentIdMultiple);
 
                 // Swap the index of the swap id.
                 getGobblerData[swapId].idx = currentIndex;
@@ -623,10 +631,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
                                    UPDATE CURRENT ID MULTIPLE
                 //////////////////////////////////////////////////////////////*/
 
-                // Update the emission data for the owner of the current id.
-                getEmissionDataForUser[currentIdOwner].lastBalance = uint128(gooBalance(currentIdOwner));
-                getEmissionDataForUser[currentIdOwner].lastTimestamp = uint64(block.timestamp);
-                getEmissionDataForUser[currentIdOwner].emissionMultiple += uint64(newCurrentIdMultiple);
+                // Update the user data for the owner of the current id.
+                getUserData[currentIdOwner].lastBalance = uint128(gooBalance(currentIdOwner));
+                getUserData[currentIdOwner].lastTimestamp = uint64(block.timestamp);
+                getUserData[currentIdOwner].emissionMultiple += uint32(newCurrentIdMultiple);
 
                 // Update the random seed to choose a new distance for the next iteration.
                 // It is critical that we cast to uint64 here, as otherwise the random seed
@@ -726,9 +734,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // Compute the user's virtual goo balance by leveraging LibGOO.
         // prettier-ignore
         return LibGOO.computeGOOBalance(
-            getEmissionDataForUser[user].emissionMultiple,
-            getEmissionDataForUser[user].lastBalance,
-            uint(toDaysWadUnsafe(block.timestamp - getEmissionDataForUser[user].lastTimestamp))
+            getUserData[user].emissionMultiple,
+            getUserData[user].lastBalance,
+            uint(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp))
         );
     }
 
@@ -787,6 +795,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
+        // Update the number of gobblers owned by the team and community reserve.
+        getUserData[team].gobblersOwned += uint32(numGobblersEach);
+        getUserData[community].gobblersOwned += uint32(numGobblersEach);
+
         // Mint numGobblersEach gobblers to both the team and community reserve.
         lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
         lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "");
@@ -812,7 +824,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @notice Convenience function to get emissionMultiple for a user.
     /// @param user The user to get emissionMultiple for.
     function getUserEmissionMultiple(address user) external view returns (uint256) {
-        return getEmissionDataForUser[user].emissionMultiple;
+        return getUserData[user].emissionMultiple;
+    }
+
+    /// @notice Convenience function to get the gobblers owned by a user.
+    /// @param user The user to get gobblersOwned for.
+    function getGobblersOwnedByUser(address user) external view returns (uint256) {
+        return getUserData[user].gobblersOwned;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -835,7 +853,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         uint256 amount;
 
         unchecked {
-            uint64 emissionsMultipleTotal; // Will use to set each user's multiple.
+            uint32 emissionMultipleTotal; // Will use to set each user's multiple.
 
             for (uint256 i = 0; i < ids.length; i++) {
                 id = ids[i];
@@ -849,10 +867,14 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
                 getGobblerData[id].owner = to;
 
-                emissionsMultipleTotal += getGobblerData[id].emissionMultiple;
+                emissionMultipleTotal += getGobblerData[id].emissionMultiple;
             }
 
-            transferUserEmissionMultiple(from, to, emissionsMultipleTotal);
+            // Note: ids.length is technically not the true number of unique gobblers transferred, as
+            // a user could transfer the same gobbler to themselves multiple times. However, this
+            // shouldn't cause problems in practice, as finalizeGobblerTransfer is implemented in
+            // such a way that self-transfers should cancel themselves out to result in a no-op.
+            finalizeGobblerTransfer(from, to, emissionMultipleTotal, uint32(ids.length));
         }
 
         emit TransferBatch(msg.sender, from, to, ids, amounts);
@@ -882,7 +904,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
         getGobblerData[id].owner = to;
 
-        transferUserEmissionMultiple(from, to, getGobblerData[id].emissionMultiple);
+        finalizeGobblerTransfer(from, to, getGobblerData[id].emissionMultiple, 1);
 
         emit TransferSingle(msg.sender, from, to, id, amount);
 
@@ -922,35 +944,40 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             : gooBalance(user) - gooAmount;
 
         // Snapshot the user's new goo balance with the current timestamp.
-        getEmissionDataForUser[user].lastBalance = uint128(updatedBalance);
-        getEmissionDataForUser[user].lastTimestamp = uint64(block.timestamp);
+        getUserData[user].lastBalance = uint128(updatedBalance);
+        getUserData[user].lastTimestamp = uint64(block.timestamp);
 
         emit GooBalanceUpdated(user, updatedBalance);
     }
 
-    /// @dev Transfer an amount of a user's emission multiple to another user, and
-    /// checkpoint lastBalance and lastTimestamp for correct computation of balances.
-    /// @dev Should be done whenever a gobbler is transferred between two users.
-    /// @param from The user to transfer the amount of emission multiple from.
-    /// @param to The user to transfer the amount of emission multiple to.
-    /// @param emissionMultiple The amount of emission multiple to transfer.
-    function transferUserEmissionMultiple(
+    /// @dev Finalizes the transfer of gobbler(s) from one user to another, by
+    /// updating the sender and recipient's emission multiples and gobblers owned.
+    /// It also updates lastBalance/lastTimestamp for correct balance calculations.
+    /// @dev Should be invoked whenever gobbler(s) are transferred between two users.
+    /// @param from The user who has sent the gobbler(s).
+    /// @param to The user who has received the gobbler(s).
+    /// @param emissionsMultipleTotal The sum of the multiples of the gobbler(s) transferred.
+    /// @param gobblersTransferred The number of gobbler(s) transferred.
+    function finalizeGobblerTransfer(
         address from,
         address to,
-        uint64 emissionMultiple
+        uint32 emissionsMultipleTotal,
+        uint32 gobblersTransferred
     ) internal {
         unchecked {
-            // Decrease the from user's emissionMultiple by the gobbler's emissionMultiple.
-            // We decrease their balance before updating their emission multiple to avoid
-            // penalizing them by retroactively applying the new lower emission multiple.
-            getEmissionDataForUser[from].lastBalance = uint128(gooBalance(from));
-            getEmissionDataForUser[from].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[from].emissionMultiple -= emissionMultiple;
+            // We update their last balance before updating their emission multiple to avoid
+            // penalizing them by retroactively applying their new (lower) emission multiple.
+            getUserData[from].lastBalance = uint128(gooBalance(from));
+            getUserData[from].lastTimestamp = uint64(block.timestamp);
+            getUserData[from].emissionMultiple -= emissionsMultipleTotal;
+            getUserData[from].gobblersOwned -= gobblersTransferred;
 
-            // Increase the to user's emissionMultiple by the gobbler's emissionMultiple.
-            getEmissionDataForUser[to].lastBalance = uint128(gooBalance(to));
-            getEmissionDataForUser[to].lastTimestamp = uint64(block.timestamp);
-            getEmissionDataForUser[to].emissionMultiple += emissionMultiple;
+            // We update their last balance before updating their emission multiple to avoid
+            // overpaying them by retroactively applying their new (higher) emission multiple.
+            getUserData[to].lastBalance = uint128(gooBalance(to));
+            getUserData[to].lastTimestamp = uint64(block.timestamp);
+            getUserData[to].emissionMultiple += emissionsMultipleTotal;
+            getUserData[to].gobblersOwned += gobblersTransferred;
         }
     }
 }
