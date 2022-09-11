@@ -12,6 +12,7 @@ import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {RandProvider} from "../src/utils/rand/RandProvider.sol";
 import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider.sol";
+import {toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 contract VRGDAsTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -82,19 +83,22 @@ contract VRGDAsTest is DSTestPlus {
     // }
 
     function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getVRGDAPrice(int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)), bound(sold, 0, 1730));
+        gobblers.getVRGDAPrice(
+            toDaysWadUnsafe(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS)),
+            bound(sold, 0, 1730)
+        );
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
         gobblers.getVRGDAPrice(
-            int256(bound(timeSinceStart, 3870 days * 1e18, ONE_THOUSAND_YEARS * 1e18)),
+            toDaysWadUnsafe(bound(timeSinceStart, 3870 days, ONE_THOUSAND_YEARS)),
             bound(sold, 0, 6391)
         );
     }
 
     function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
         gobblers.getVRGDAPrice(
-            int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)),
+            toDaysWadUnsafe(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS)),
             bound(sold, 6392, type(uint128).max)
         );
     }
@@ -111,7 +115,7 @@ contract VRGDAsTest is DSTestPlus {
     }
 
     function testNoOverflowForFirst8465Pages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getVRGDAPrice(int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)), bound(sold, 0, 8465));
+        pages.getVRGDAPrice(toDaysWadUnsafe(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS)), bound(sold, 0, 8465));
     }
 
     function testPagePriceStrictlyIncreasesFor8465Pages() public {
