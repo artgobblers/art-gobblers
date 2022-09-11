@@ -3,9 +3,9 @@ pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {LibString} from "../../src/utils/lib/LibString.sol";
+import {LibString} from "solmate/utils/LibString.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
-import {RandProvider} from "../../src/utils/random/RandProvider.sol";
+import {RandProvider} from "../../src/utils/rand/RandProvider.sol";
 
 import {Goo} from "../../src/Goo.sol";
 import {Pages} from "../../src/Pages.sol";
@@ -51,10 +51,10 @@ contract GobblersCorrectnessTest is DSTestPlus {
         numSold = bound(numSold, 0, MAX_MINTABLE);
 
         // Limit mint time to 20 years.
-        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
+        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS * 1e18);
 
         // Calculate actual price from VRGDA.
-        try gobblers.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
+        try gobblers.getVRGDAPrice(int256(timeSinceStart), numSold) returns (uint256 actualPrice) {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,

@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {LibString} from "../../src/utils/lib/LibString.sol";
+import {LibString} from "solmate/utils/LibString.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../src/Pages.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
@@ -43,10 +43,10 @@ contract PageCorrectnessTest is DSTestPlus {
         numSold = bound(numSold, 0, 10000);
 
         // Limit mint time to 20 years.
-        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
+        timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS * 1e18);
 
         // Calculate actual price from VRGDA.
-        try pages.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
+        try pages.getVRGDAPrice(int256(timeSinceStart), numSold) returns (uint256 actualPrice) {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,

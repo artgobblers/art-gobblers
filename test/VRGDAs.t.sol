@@ -10,8 +10,8 @@ import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
-import {RandProvider} from "../src/utils/random/RandProvider.sol";
-import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
+import {RandProvider} from "../src/utils/rand/RandProvider.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider.sol";
 
 contract VRGDAsTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -82,15 +82,21 @@ contract VRGDAsTest is DSTestPlus {
     // }
 
     function testNoOverflowForMostGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 1730));
+        gobblers.getVRGDAPrice(int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)), bound(sold, 0, 1730));
     }
 
     function testNoOverflowForAllGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 3870 days, ONE_THOUSAND_YEARS), bound(sold, 0, 6391));
+        gobblers.getVRGDAPrice(
+            int256(bound(timeSinceStart, 3870 days * 1e18, ONE_THOUSAND_YEARS * 1e18)),
+            bound(sold, 0, 6391)
+        );
     }
 
     function testFailOverflowForBeyondLimitGobblers(uint256 timeSinceStart, uint256 sold) public {
-        gobblers.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 6392, type(uint128).max));
+        gobblers.getVRGDAPrice(
+            int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)),
+            bound(sold, 6392, type(uint128).max)
+        );
     }
 
     function testGobblerPriceStrictlyIncreasesForMostGobblers() public {
@@ -98,14 +104,14 @@ contract VRGDAsTest is DSTestPlus {
         uint256 previousPrice;
 
         while (sold <= 1730) {
-            uint256 price = gobblers.getPrice(0 days, sold++);
+            uint256 price = gobblers.getVRGDAPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
         }
     }
 
     function testNoOverflowForFirst8465Pages(uint256 timeSinceStart, uint256 sold) public {
-        pages.getPrice(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS), bound(sold, 0, 8465));
+        pages.getVRGDAPrice(int256(bound(timeSinceStart, 0 days, ONE_THOUSAND_YEARS * 1e18)), bound(sold, 0, 8465));
     }
 
     function testPagePriceStrictlyIncreasesFor8465Pages() public {
@@ -113,7 +119,7 @@ contract VRGDAsTest is DSTestPlus {
         uint256 previousPrice;
 
         while (sold <= 8465) {
-            uint256 price = pages.getPrice(0 days, sold++);
+            uint256 price = pages.getVRGDAPrice(0 days, sold++);
             assertGt(price, previousPrice);
             previousPrice = price;
         }
