@@ -5,8 +5,10 @@ bytecode_hash = "none"
 no_match_test = "FFI|LongRunning"
 
 [profile.intense]
-fuzz_runs = 10000
 no_match_test = "FFI"
+
+[profile.intense.fuzz]
+runs = 10000
 
 [profile.ffi]
 ffi = true
