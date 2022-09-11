@@ -3,11 +3,12 @@ pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {LibString} from "../../src/utils/lib/LibString.sol";
+import {LibString} from "solmate/utils/LibString.sol";
 import {console} from "../utils/Console.sol";
 import {Pages} from "../../src/Pages.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 import {Goo} from "../../src/Goo.sol";
+import {toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 contract PageCorrectnessTest is DSTestPlus {
     using LibString for uint256;
@@ -46,7 +47,7 @@ contract PageCorrectnessTest is DSTestPlus {
         timeSinceStart = bound(timeSinceStart, 0, TWENTY_YEARS);
 
         // Calculate actual price from VRGDA.
-        try pages.getPrice(timeSinceStart, numSold) returns (uint256 actualPrice) {
+        try pages.getVRGDAPrice(toDaysWadUnsafe(timeSinceStart), numSold) returns (uint256 actualPrice) {
             // Calculate expected price from python script.
             uint256 expectedPrice = calculatePrice(
                 timeSinceStart,

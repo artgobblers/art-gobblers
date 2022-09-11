@@ -1,6 +1,6 @@
 # Gobblers Analysis
 
-Directory for gobbler economy modeling.
+Directory for Gobbler FFI fuzz testing.
 
 ## Running
 
@@ -13,5 +13,5 @@ pip install -r requirements.txt
 Then run FFI tests with
 
 ```
-forge test -vvv --ffi --match-test FFI
+FOUNDRY_PROFILE="FFI" forge test
 ```

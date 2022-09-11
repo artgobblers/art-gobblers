@@ -7,17 +7,18 @@ import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
-import {ArtGobblers, unsafeDivUp} from "../src/ArtGobblers.sol";
+import {ArtGobblers, FixedPointMathLib} from "../src/ArtGobblers.sol";
 import {Goo} from "../src/Goo.sol";
 import {Pages} from "../src/Pages.sol";
 import {GobblerReserve} from "../src/utils/GobblerReserve.sol";
-import {RandProvider} from "../src/utils/random/RandProvider.sol";
-import {ChainlinkV1RandProvider} from "../src/utils/random/ChainlinkV1RandProvider.sol";
+import {RandProvider} from "../src/utils/rand/RandProvider.sol";
+import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
-import {LibString} from "../src/utils/lib/LibString.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import {fromDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
 contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
@@ -111,6 +112,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
+        assertEq(gobblers.getGobblersOwnedByUser(user), 1);
     }
 
     /// @notice Test that minting from the mintlist twice fails.
@@ -156,6 +158,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         gobblers.mintFromGoo(type(uint256).max, false);
+        assertEq(gobblers.getGobblersOwnedByUser(users[0]), 1);
         //warp for reveals
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
@@ -197,7 +200,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that initial gobbler price is what we expect.
     function testInitialGobblerPrice() public {
         // Warp to the target sale time so that the gobbler price equals the target price.
-        vm.warp(block.timestamp + uint256(gobblers.getTargetSaleDay(1e18) * 1 days) / 1e18);
+        vm.warp(block.timestamp + fromDaysWadUnsafe(gobblers.getTargetSaleTime(1e18)));
 
         uint256 cost = gobblers.gobblerPrice();
         assertRelApproxEq(cost, uint256(gobblers.targetPrice()), 0.00001e18);
@@ -216,6 +219,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
         assertEq(gobblers.ownerOf(9), address(team));
         assertEq(gobblers.ownerOf(10), address(community));
+        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 1);
+        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 1);
     }
 
     /// @notice Test multiple reserved gobblers can be minted under fair circumstances.
@@ -227,6 +232,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.ownerOf(20), address(team));
         assertEq(gobblers.ownerOf(21), address(community));
         assertEq(gobblers.ownerOf(22), address(community));
+        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 2);
+        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 2);
     }
 
     /// @notice Test minting reserved gobblers fails if not enough have gobblers been minted.
@@ -329,11 +336,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /// @notice Pricing function should NOT revert when trying to price the last mintable gobbler.
-    function testDoesNotRevertEarly() public {
+    function testDoesNotRevertEarly() public view {
         // This is the last gobbler we expect to mint.
         int256 maxMintable = int256(gobblers.MAX_MINTABLE()) * 1e18;
         // This call should NOT revert, since we should have a target date for the last mintable gobbler.
-        int256 targetSale = gobblers.getTargetSaleDay(maxMintable);
+        gobblers.getTargetSaleTime(maxMintable);
     }
 
     /// @notice Pricing function should revert when trying to price beyond the last mintable gobbler.
@@ -342,7 +349,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         int256 maxMintablePlusOne = int256(gobblers.MAX_MINTABLE() + 1) * 1e18;
         // This call should revert, since there should be no target date beyond max mintable gobblers.
         vm.expectRevert("UNDEFINED");
-        int256 targetSale = gobblers.getTargetSaleDay(maxMintablePlusOne);
+        gobblers.getTargetSaleTime(maxMintablePlusOne);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -392,7 +399,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     /// @notice Test that mid price happens when we expect.
     function testLegendaryGobblerMidPrice() public {
         // Mint first interval and half of second interval.
-        mintGobblerToAddress(users[0], unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
+        mintGobblerToAddress(users[0], FixedPointMathLib.unsafeDivUp(gobblers.LEGENDARY_AUCTION_INTERVAL() * 3, 2));
         uint256 cost = gobblers.legendaryGobblerPrice();
         // Auction price should be cut by half mid way through auction.
         assertEq(cost, 35);
@@ -627,7 +634,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.getGobblerEmissionMultiple(1), 0);
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
-        (, uint48 expectedIndex, ) = gobblers.getGobblerData(1);
+        (, uint64 expectedIndex, ) = gobblers.getGobblerData(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
         assertTrue(stringEquals(gobblers.uri(1), expectedURI));
     }
@@ -648,8 +655,6 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLegendaryUri() public {
-        (, uint128 numSold) = gobblers.legendaryGobblerAuctionData();
-
         assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID()), "");
         assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID() + 1), "");
     }
@@ -879,11 +884,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertGt(initialUserMultiple, 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), 0);
 
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 1);
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 0);
+
         vm.prank(users[0]);
         gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), initialUserMultiple);
+
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 0);
+        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 1);
     }
 
     /// @notice Test that gobbler balances are accurate after transfer.
@@ -1093,8 +1104,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
+            uint256 gobblersOwnedBefore = gobblers.getGobblersOwnedByUser(addr);
+
             vm.prank(addr);
             gobblers.mintFromGoo(type(uint256).max, false);
+
+            assertEq(gobblers.getGobblersOwnedByUser(addr), gobblersOwnedBefore + 1);
         }
     }
 
