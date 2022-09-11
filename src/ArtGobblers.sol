@@ -10,11 +10,9 @@ import {ERC1155, ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {toWadUnsafe, toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 import {LibGOO} from "goo-issuance/LibGOO.sol";
-
 import {LogisticVRGDA} from "VRGDAs/LogisticVRGDA.sol";
 
 import {RandProvider} from "./utils/rand/RandProvider.sol";
-
 import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
 
 import {Goo} from "./Goo.sol";
