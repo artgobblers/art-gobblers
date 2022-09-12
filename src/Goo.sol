@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {ERC20} from "solmate/tokens/ERC20.sol";
-
 /*      GGGGGGGGGGGGG
      GGG::::::::::::G
    GG:::::::::::::::G
@@ -19,6 +17,8 @@ G:::::G        G::::Go::::o     o::::oo::::o     o::::o
    GG:::::::::::::::Go:::::::::::::::oo:::::::::::::::o
      GGG::::::GGG:::G oo:::::::::::oo  oo:::::::::::oo
         GGGGGG   GGGG   ooooooooooo      ooooooooooo */
+
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 /// @title Goo Token (GOO)
 /// @author FrankieIsLost <frankie@paradigm.xyz>
