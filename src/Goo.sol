@@ -3,6 +3,23 @@ pragma solidity >=0.8.0;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
+/*      GGGGGGGGGGGGG
+     GGG::::::::::::G
+   GG:::::::::::::::G
+  G:::::GGGGGGGG::::G
+ G:::::G       GGGGGG   ooooooooooo      ooooooooooo
+G:::::G               oo:::::::::::oo  oo:::::::::::oo
+G:::::G              o:::::::::::::::oo:::::::::::::::o
+G:::::G    GGGGGGGGGGo:::::ooooo:::::oo:::::ooooo:::::o
+G:::::G    G::::::::Go::::o     o::::oo::::o     o::::o
+G:::::G    GGGGG::::Go::::o     o::::oo::::o     o::::o
+G:::::G        G::::Go::::o     o::::oo::::o     o::::o
+ G:::::G       G::::Go::::o     o::::oo::::o     o::::o
+  G:::::GGGGGGGG::::Go:::::ooooo:::::oo:::::ooooo:::::o
+   GG:::::::::::::::Go:::::::::::::::oo:::::::::::::::o
+     GGG::::::GGG:::G oo:::::::::::oo  oo:::::::::::oo
+        GGGGGG   GGGG   ooooooooooo      ooooooooooo */
+
 /// @title Goo Token (GOO)
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>

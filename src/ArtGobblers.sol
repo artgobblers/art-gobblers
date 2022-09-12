@@ -1,6 +1,41 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/*             AAA                                           tttt
+              A:::A                                       ttt:::t
+             A:::::A                                      t:::::t
+            A:::::::A                                     t:::::t
+           A:::::::::A          rrrrr   rrrrrrrrr   ttttttt:::::ttttttt
+          A:::::A:::::A         r::::rrr:::::::::r  t:::::::::::::::::t
+         A:::::A A:::::A        r:::::::::::::::::r t:::::::::::::::::t
+        A:::::A   A:::::A       rr::::::rrrrr::::::rtttttt:::::::tttttt
+       A:::::A     A:::::A       r:::::r     r:::::r      t:::::t
+      A:::::AAAAAAAAA:::::A      r:::::r     rrrrrrr      t:::::t
+     A:::::::::::::::::::::A     r:::::r                  t:::::t
+    A:::::AAAAAAAAAAAAA:::::A    r:::::r                  t:::::t    tttttt
+   A:::::A             A:::::A   r:::::r                  t::::::tttt:::::t
+  A:::::A               A:::::A  r:::::r                  tt::::::::::::::t
+ A:::::A                 A:::::A r:::::r                    tt:::::::::::tt
+AAAAAAA                   AAAAAAArrrrrrr                      ttttttttttt
+
+                                     bbbbbbbb           bbbbbbbb
+        GGGGGGGGGGGGG                b::::::b           b::::::b            lllllll
+     GGG::::::::::::G                b::::::b           b::::::b            l:::::l
+   GG:::::::::::::::G                b::::::b           b::::::b            l:::::l
+  G:::::GGGGGGGG::::G                 b:::::b            b:::::b            l:::::l
+ G:::::G       GGGGGG   ooooooooooo   b:::::bbbbbbbbb    b:::::bbbbbbbbb     l::::l     eeeeeeeeeeee    rrrrr   rrrrrrrrr       ssssssssss
+G:::::G               oo:::::::::::oo b::::::::::::::bb  b::::::::::::::bb   l::::l   ee::::::::::::ee  r::::rrr:::::::::r    ss::::::::::s
+G:::::G              o:::::::::::::::ob::::::::::::::::b b::::::::::::::::b  l::::l  e::::::eeeee:::::eer:::::::::::::::::r ss:::::::::::::s
+G:::::G    GGGGGGGGGGo:::::ooooo:::::ob:::::bbbbb:::::::bb:::::bbbbb:::::::b l::::l e::::::e     e:::::err::::::rrrrr::::::rs::::::ssss:::::s
+G:::::G    G::::::::Go::::o     o::::ob:::::b    b::::::bb:::::b    b::::::b l::::l e:::::::eeeee::::::e r:::::r     r:::::r s:::::s  ssssss
+G:::::G    GGGGG::::Go::::o     o::::ob:::::b     b:::::bb:::::b     b:::::b l::::l e:::::::::::::::::e  r:::::r     rrrrrrr   s::::::s
+G:::::G        G::::Go::::o     o::::ob:::::b     b:::::bb:::::b     b:::::b l::::l e::::::eeeeeeeeeee   r:::::r                  s::::::s
+ G:::::G       G::::Go::::o     o::::ob:::::b     b:::::bb:::::b     b:::::b l::::l e:::::::e            r:::::r            ssssss   s:::::s
+  G:::::GGGGGGGG::::Go:::::ooooo:::::ob:::::bbbbbb::::::bb:::::bbbbbb::::::bl::::::le::::::::e           r:::::r            s:::::ssss::::::s
+   GG:::::::::::::::Go:::::::::::::::ob::::::::::::::::b b::::::::::::::::b l::::::l e::::::::eeeeeeee   r:::::r            s::::::::::::::s
+     GGG::::::GGG:::G oo:::::::::::oo b:::::::::::::::b  b:::::::::::::::b  l::::::l  ee:::::::::::::e   r:::::r             s:::::::::::ss
+        GGGGGG   GGGG   ooooooooooo   bbbbbbbbbbbbbbbb   bbbbbbbbbbbbbbbb   llllllll    eeeeeeeeeeeeee   rrrrrrr              sssssssssss */
+
 import {Owned} from "solmate/auth/Owned.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {LibString} from "solmate/utils/LibString.sol";

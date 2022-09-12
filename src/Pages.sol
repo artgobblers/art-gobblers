@@ -1,6 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/*  PPPPPPPPPPPPPPPPP
+    P::::::::::::::::P
+    P::::::PPPPPP:::::P
+    PP:::::P     P:::::P
+    P::::P     P:::::Paaaaaaaaaaaaa     ggggggggg   ggggg    eeeeeeeeeeee        ssssssssss
+    P::::P     P:::::Pa::::::::::::a   g:::::::::ggg::::g  ee::::::::::::ee    ss::::::::::s
+    P::::PPPPPP:::::P aaaaaaaaa:::::a g:::::::::::::::::g e::::::eeeee:::::eess:::::::::::::s
+    P:::::::::::::PP           a::::ag::::::ggggg::::::gge::::::e     e:::::es::::::ssss:::::s
+    P::::PPPPPPPPP      aaaaaaa:::::ag:::::g     g:::::g e:::::::eeeee::::::e s:::::s  ssssss
+    P::::P            aa::::::::::::ag:::::g     g:::::g e:::::::::::::::::e    s::::::s
+    P::::P           a::::aaaa::::::ag:::::g     g:::::g e::::::eeeeeeeeeee        s::::::s
+    P::::P          a::::a    a:::::ag::::::g    g:::::g e:::::::e           ssssss   s:::::s
+    PP::::::PP        a::::a    a:::::ag:::::::ggggg:::::g e::::::::e          s:::::ssss::::::s
+    P::::::::P        a:::::aaaa::::::a g::::::::::::::::g  e::::::::eeeeeeee  s::::::::::::::s
+    P::::::::P         a::::::::::aa:::a gg::::::::::::::g   ee:::::::::::::e   s:::::::::::ss
+    PPPPPPPPPP          aaaaaaaaaa  aaaa   gggggggg::::::g     eeeeeeeeeeeeee    sssssssssss
+                                                g:::::g
+                                    gggggg      g:::::g
+                                    g:::::gg   gg:::::g
+                                        g::::::ggg:::::::g
+                                        gg:::::::::::::g
+                                        ggg::::::ggg
+                                            gggggg */
+
 import {LibString} from "solmate/utils/LibString.sol";
 import {toDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
