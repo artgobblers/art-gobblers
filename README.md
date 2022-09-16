@@ -52,7 +52,7 @@ For differential fuzzing against a python implementation, see [here](./analysis/
 
 ### Update Gas Snapshots
 
-To update the gas snapshot, run: 
+To update the gas snapshots, run: 
 
 ```sh
 forge snapshot
