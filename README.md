@@ -60,11 +60,11 @@ forge snapshot
 
 ## Audits
 
-Art Gobblers engaged the following auditors to review the project before launch:
+The following auditors were engaged to review the project before launch:
 
-- Spearbit (Report pending)
-- code4rena (Audit pending)
-- samczsun (No report)
+- [Spearbit](https://spearbit.com) (Report pending)
+- [code4rena](https://code423n4.com) (Audit pending)
+- [samczsun](https://twitter.com/samczsun) (No report)
 
 ## License
 
