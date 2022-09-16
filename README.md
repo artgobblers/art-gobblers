@@ -68,4 +68,4 @@ The following auditors were engaged to review the project before launch:
 
 ## License
 
-[MIT](LICENSE) Copyright 2022 Art Gobblers
+[MIT](LICENSE) © 2022 Art Gobblers
