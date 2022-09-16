@@ -60,7 +60,11 @@ forge snapshot
 
 ## Audits
 
-Art Gobblers engaged Spearbit and C4 to evaluate the security of these contracts. 
+Art Gobblers engaged the following auditors to review the project before launch:
+
+- Spearbit (Report pending)
+- code4rena (Audit pending)
+- samczsun (No report)
 
 ## License
 
