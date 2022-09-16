@@ -8,7 +8,7 @@ Art Gobblers is an experimental decentralized art factory by Justin Roiland and 
 
 Art Gobblers is a decentralized art factory owned by aliens. As artists make cool art, Gobblers gains cultural relevance, making collectors want the art more, incentivizing artists to make cooler art. It's also an on-chain game.
 
-See our [overview of the system](https://www.paradigm.xyz/2022/09/artgobblers), as well as deep dives into some of the mechanisms used in the project, like [GOO](https://www.paradigm.xyz/2022/09/goo) and [VRGDAs](https://www.paradigm.xyz/2022/08/vrgda).
+See our [overview of the system](https://www.paradigm.xyz/2022/09/artgobblers), as well as deep dives into some the project's mechanisms, like [GOO](https://www.paradigm.xyz/2022/09/goo) and [VRGDAs](https://www.paradigm.xyz/2022/08/vrgda).
 
 ## Deployments
 
