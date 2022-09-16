@@ -62,10 +62,10 @@ forge snapshot
 
 The following auditors were engaged to review the project before launch:
 
+- [samczsun](https://samczsun.com) (No report)
 - [Spearbit](https://spearbit.com) (Report pending)
 - [code4rena](https://code423n4.com) (Audit pending)
 - [Riley Holterhus](https://www.rileyholterhus.com) (No Report)
-- [samczsun](https://samczsun.com) (No report)
 
 ## License
 
