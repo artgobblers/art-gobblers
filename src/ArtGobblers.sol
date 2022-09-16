@@ -80,7 +80,7 @@ import {Pages} from "./Pages.sol";
 /// @title Art Gobblers NFT
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
-/// @notice Art Gobblers scan the cosmos in search of art producing life.
+/// @notice Art Gobblers is an experimental decentralized art factory by Justin Roiland and Paradigm.
 contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
