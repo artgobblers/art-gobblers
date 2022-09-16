@@ -58,9 +58,9 @@ To update the gas snapshot, run:
 forge snapshot
 ```
 
-## Audit
+## Audits
 
-Art Gobblers engaged Spearbit to audit the security of these contracts. The audit did not uncover significant flaws that could result in the compromise of the target system. 
+Art Gobblers engaged Spearbit and C4 to evaluate the security of these contracts. 
 
 ## License
 [MIT](LICENSE) Copyright 2022 Art Gobblers
