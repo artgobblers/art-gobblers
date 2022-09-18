@@ -5,7 +5,7 @@ import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
 import {ArtGobblers} from "../../ArtGobblers.sol";
 
 /// @notice ERC721 implementation optimized for Pages by pre-approving them to the ArtGobblers contract.
-/// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
+/// @author Modified from Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol)
 abstract contract PagesERC721 {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
