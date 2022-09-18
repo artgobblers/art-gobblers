@@ -324,7 +324,11 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         legendaryGobblerAuctionData.startPrice = uint128(LEGENDARY_GOBBLER_INITIAL_START_PRICE);
 
         // Reveal for initial mint must wait a day from the start of the mint.
-        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 1 days);
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        gobblerRevealsData.nextRevealTimestamp = uint64(_mintStart + 48 minutes);
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
+        // XXX ONLY FOR TESTNET SHOULD BE 1 DAY NORMALLY XXX
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -397,6 +401,12 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         // We need checked math here to cause underflow
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
+        
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
+        timeSinceStart *= 30;
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
 
         return getVRGDAPrice(toDaysWadUnsafe(timeSinceStart), numMintedFromGoo);
     }
@@ -760,7 +770,11 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         return LibGOO.computeGOOBalance(
             getUserData[user].emissionMultiple,
             getUserData[user].lastBalance,
-            uint(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp))
+            // XXX ONLY FOR TESTNET XXX
+            // XXX ONLY FOR TESTNET XXX
+            uint(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp) * 30)
+            // XXX ONLY FOR TESTNET XXX
+            // XXX ONLY FOR TESTNET XXX
         );
     }
 
