@@ -8,7 +8,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 /// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice Goo is the in-game token for ArtGobblers. It's a standard ERC20
 /// token that can be burned and minted by the gobblers and pages contract.
-contract Goo is ERC20("Goo", "GOO", 18) {
+contract Goo is ERC20("Poo", "POO", 18) {
     /*//////////////////////////////////////////////////////////////
                                 ADDRESSES
     //////////////////////////////////////////////////////////////*/

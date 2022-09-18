@@ -114,7 +114,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
             SWITCH_DAY_WAD, // Target switch day.
             9e18 // Pages to target per day.
         )
-        PagesERC721(_artGobblers, "Pages", "PAGE")
+        PagesERC721(_artGobblers, "Toilet Paper", "TP")
     {
         mintStart = _mintStart;
 
@@ -162,6 +162,12 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
         // We need checked math here to cause overflow
         // before minting has begun, preventing mints.
         uint256 timeSinceStart = block.timestamp - mintStart;
+
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
+        timeSinceStart *= 30;
+        // XXX ONLY FOR TESTNET XXX
+        // XXX ONLY FOR TESTNET XXX
 
         unchecked {
             // The number of pages minted for the community reserve
