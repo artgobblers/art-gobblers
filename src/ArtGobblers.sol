@@ -239,11 +239,11 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     mapping(address => UserData) public getUserData;
 
     /*//////////////////////////////////////////////////////////////
-                            ART FEEDING STATE
+                            GOBBLED ART STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps gobbler ids to NFT contracts and their ids to the # of those NFT ids fed to the gobbler.
-    mapping(uint256 => mapping(address => mapping(uint256 => uint256))) public getCopiesOfArtFedToGobbler;
+    /// @notice Maps gobbler ids to NFT contracts and their ids to the # of those NFT ids gobbled by the gobbler.
+    mapping(uint256 => mapping(address => mapping(uint256 => uint256))) public getCopiesOfArtGobbledByGobbler;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -262,7 +262,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     event GobblersRevealed(address indexed user, uint256 numGobblers, uint256 lastRevealedId);
 
-    event ArtFedToGobbler(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
+    event ArtGobbled(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -745,7 +745,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     }
 
     /*//////////////////////////////////////////////////////////////
-                            ART FEEDING LOGIC
+                            GOBBLE ART LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Feed a gobbler a work of art.
@@ -753,7 +753,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /// @param nft The ERC721 or ERC1155 contract of the work of art.
     /// @param id The id of the work of art.
     /// @param isERC1155 Whether the work of art is an ERC1155 token.
-    function feedArt(
+    function gobble(
         uint256 gobblerId,
         address nft,
         uint256 id,
@@ -769,12 +769,12 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         if (nft == address(this)) revert Cannibalism();
 
         unchecked {
-            // Increment the number of copies fed to the gobbler.
+            // Increment the # of copies gobbled by the gobbler.
             // Counter overflow is unrealistic on human timescales.
-            ++getCopiesOfArtFedToGobbler[gobblerId][nft][id];
+            ++getCopiesOfArtGobbledByGobbler[gobblerId][nft][id];
         }
 
-        emit ArtFedToGobbler(msg.sender, gobblerId, nft, id);
+        emit ArtGobbled(msg.sender, gobblerId, nft, id);
 
         isERC1155
             ? ERC1155(nft).safeTransferFrom(msg.sender, address(this), id, 1, "")
