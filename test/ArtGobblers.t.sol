@@ -932,13 +932,13 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(user, pagePrice);
         vm.startPrank(user);
         pages.mintFromGoo(type(uint256).max, false);
-        gobblers.feedArt(1, address(pages), 1, false);
+        gobblers.gobble(1, address(pages), 1, false);
         vm.stopPrank();
         assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
     }
 
     /// @notice Test that you can't feed art to gobblers you don't own.
-    function testCantFeedArtToUnownedGobbler() public {
+    function testCantgobbleToUnownedGobbler() public {
         address user = users[0];
         uint256 pagePrice = pages.pagePrice();
         vm.prank(address(gobblers));
@@ -946,7 +946,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         pages.mintFromGoo(type(uint256).max, false);
         vm.expectRevert(abi.encodeWithSelector(ArtGobblers.OwnerMismatch.selector, address(0)));
-        gobblers.feedArt(1, address(pages), 1, false);
+        gobblers.gobble(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -956,7 +956,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 1);
         vm.startPrank(user);
         vm.expectRevert("WRONG_FROM");
-        gobblers.feedArt(1, address(pages), 1, false);
+        gobblers.gobble(1, address(pages), 1, false);
         vm.stopPrank();
     }
 
@@ -966,7 +966,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(user, 2);
         vm.startPrank(user);
         vm.expectRevert(ArtGobblers.Cannibalism.selector);
-        gobblers.feedArt(1, address(gobblers), 2, true);
+        gobblers.gobble(1, address(gobblers), 2, true);
         vm.stopPrank();
     }
 
@@ -979,7 +979,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         pages.mintFromGoo(type(uint256).max, false);
         vm.expectRevert();
-        gobblers.feedArt(1, address(pages), 1, true);
+        gobblers.gobble(1, address(pages), 1, true);
     }
 
     function testFeeding1155() public {
@@ -989,7 +989,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         token.mint(user, 0, 1, "");
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
-        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
         vm.stopPrank();
         assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 1);
     }
@@ -1001,11 +1001,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         token.mint(user, 0, 5, "");
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
-        gobblers.feedArt(1, address(token), 0, true);
-        gobblers.feedArt(1, address(token), 0, true);
-        gobblers.feedArt(1, address(token), 0, true);
-        gobblers.feedArt(1, address(token), 0, true);
-        gobblers.feedArt(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
+        gobblers.gobble(1, address(token), 0, true);
         vm.stopPrank();
         assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 5);
     }
@@ -1018,7 +1018,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.startPrank(user);
         token.setApprovalForAll(address(gobblers), true);
         vm.expectRevert();
-        gobblers.feedArt(1, address(token), 0, false);
+        gobblers.gobble(1, address(token), 0, false);
     }
 
     /*//////////////////////////////////////////////////////////////
