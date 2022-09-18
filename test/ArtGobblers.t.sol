@@ -934,7 +934,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         pages.mintFromGoo(type(uint256).max, false);
         gobblers.gobble(1, address(pages), 1, false);
         vm.stopPrank();
-        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(pages), 1), 1);
+        assertEq(gobblers.getCopiesOfArtGobbledByGobbler(1, address(pages), 1), 1);
     }
 
     /// @notice Test that you can't feed art to gobblers you don't own.
@@ -991,7 +991,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         token.setApprovalForAll(address(gobblers), true);
         gobblers.gobble(1, address(token), 0, true);
         vm.stopPrank();
-        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 1);
+        assertEq(gobblers.getCopiesOfArtGobbledByGobbler(1, address(token), 0), 1);
     }
 
     function testFeedingMultiple1155Copies() public {
@@ -1007,7 +1007,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.gobble(1, address(token), 0, true);
         gobblers.gobble(1, address(token), 0, true);
         vm.stopPrank();
-        assertEq(gobblers.getCopiesOfArtFedToGobbler(1, address(token), 0), 5);
+        assertEq(gobblers.getCopiesOfArtGobbledByGobbler(1, address(token), 0), 5);
     }
 
     function testCantFeed1155As721() public {
