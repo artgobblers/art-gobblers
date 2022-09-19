@@ -85,7 +85,7 @@ contract GobblersCorrectnessTest is DSTestPlus {
     ) private returns (uint256) {
         string[] memory inputs = new string[](15);
         inputs[0] = "python3";
-        inputs[1] = "analysis/compute_price.py";
+        inputs[1] = "analysis/python/compute_price.py";
         inputs[2] = "gobblers";
         inputs[3] = "--time_since_start";
         inputs[4] = _timeSinceStart.toString();
