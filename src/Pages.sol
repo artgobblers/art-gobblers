@@ -163,6 +163,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
         // URIs:
         string memory _baseUri
     )
+        PagesERC721(_artGobblers, "Pages", "PAGE")
         LogisticToLinearVRGDA(
             4.2069e18, // Target price.
             0.31e18, // Price decay percent.
@@ -172,7 +173,6 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
             SWITCH_DAY_WAD, // Target switch day.
             9e18 // Pages to target per day.
         )
-        PagesERC721(_artGobblers, "Pages", "PAGE")
     {
         mintStart = _mintStart;
 
