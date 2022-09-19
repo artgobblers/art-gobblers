@@ -299,6 +299,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         string memory _unrevealedUri
     )
         GobblersERC721("Art Gobblers", "GOBBLER")
+        Owned(msg.sender)
         LogisticVRGDA(
             69.42e18, // Target price.
             0.31e18, // Price decay percent.
@@ -306,7 +307,6 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             toWadUnsafe(MAX_MINTABLE),
             0.0023e18 // Time scale.
         )
-        Owned(msg.sender)
     {
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
