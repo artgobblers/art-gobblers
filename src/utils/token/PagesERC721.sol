@@ -167,7 +167,7 @@ abstract contract PagesERC721 {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        INTERNAL MINT/BURN LOGIC
+                           INTERNAL MINT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address to, uint256 id) internal {
