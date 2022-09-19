@@ -68,9 +68,9 @@ contract BenchmarksTest is DSTest {
         pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
 
         vm.prank(address(gobblers));
-        goo.mintForGobblers(address(this), type(uint128).max);
+        goo.mintForGobblers(address(this), type(uint192).max);
 
-        gobblers.addGoo(1e18);
+        gobblers.addGoo(type(uint96).max);
 
         mintPageToAddress(address(this), 9);
         mintGobblerToAddress(address(this), gobblers.LEGENDARY_AUCTION_INTERVAL());
@@ -104,8 +104,16 @@ contract BenchmarksTest is DSTest {
         pages.mintFromGoo(type(uint256).max, false);
     }
 
+    function testMintPageUsingVirtualBalance() public {
+        pages.mintFromGoo(type(uint256).max, true);
+    }
+
     function testMintGobbler() public {
         gobblers.mintFromGoo(type(uint256).max, false);
+    }
+
+    function testMintGobblerUsingVirtualBalance() public {
+        gobblers.mintFromGoo(type(uint256).max, true);
     }
 
     function testTransferGobbler() public {
