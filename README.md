@@ -31,6 +31,7 @@ To build the contracts:
 ```sh
 git clone https://github.com/artgobblers/art-gobblers.git
 cd art-gobblers
+forge install 
 forge build
 ```
 
@@ -49,6 +50,15 @@ FOUNDRY_PROFILE="intense" forge test
 ```
 
 For differential fuzzing against a python implementation, see [here](./analysis/README.md).
+
+### Run Slither 
+
+After [installing Slither](https://github.com/crytic/slither#how-to-install), run: 
+
+```sh
+slither src/ --solc-remaps 'ds-test/=lib/ds-test/src/ solmate/=lib/solmate/src/ forge-std/=lib/forge-std/src/ chainlink/=lib/chainlink/contracts/src/ VRGDAs/=lib/VRGDAs/src/ goo-issuance/=lib/goo-issuance/src/'
+```
+
 
 ### Update Gas Snapshots
 
