@@ -139,8 +139,6 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error InvalidId();
-
     error ReserveImbalance();
 
     error PriceExceededMax(uint256 currentPrice);
@@ -265,7 +263,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
     /// @notice Returns a page's URI if it has been minted.
     /// @param pageId The id of the page to get the URI for.
     function tokenURI(uint256 pageId) public view virtual override returns (string memory) {
-        if (pageId == 0 || pageId > currentId) revert InvalidId();
+        if (pageId == 0 || pageId > currentId) revert("NOT_MINTED");
 
         return string.concat(BASE_URI, pageId.toString());
     }

@@ -3,8 +3,6 @@ pragma solidity >=0.8.0;
 
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
 
-// TODO: custom errors?
-
 /// @notice ERC721 implementation optimized for ArtGobblers by packing balanceOf/ownerOf with user/attribute data.
 /// @author Modified from Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol)
 abstract contract GobblersERC721 {

@@ -298,7 +298,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         string memory _baseUri,
         string memory _unrevealedUri
     )
-        GobblersERC721("Art Gobblers", "GOBBLER") // TODO: use d1ll0n thing?
+        GobblersERC721("Art Gobblers", "GOBBLER")
         Owned(msg.sender)
         LogisticVRGDA(
             69.42e18, // Target price.
@@ -437,9 +437,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
                 burnedMultipleTotal += getGobblerData[id].emissionMultiple;
 
-                getGobblerData[id].owner = address(0);
-
-                emit Transfer(msg.sender, address(0), id);
+                emit Transfer(msg.sender, getGobblerData[id].owner = address(0), id);
             }
 
             /*//////////////////////////////////////////////////////////////
@@ -691,12 +689,10 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
     /// @notice Returns a token's URI if it has been minted.
     /// @param gobblerId The id of the token to get the URI for.
-    // TODO: DOES THIS COMPLY WITH 721, like should ti be rveerting?
     function tokenURI(uint256 gobblerId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealed are revealed normal gobblers.
         if (gobblerId <= gobblerRevealsData.lastRevealedId) {
-            // 0 is not a valid id:
-            if (gobblerId == 0) return "";
+            if (gobblerId == 0) revert("NOT_MINTED"); // 0 is not a valid id for Art Gobblers.
 
             return string.concat(BASE_URI, uint256(getGobblerData[gobblerId].idx).toString());
         }
@@ -705,13 +701,13 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         if (gobblerId <= currentNonLegendaryId) return UNREVEALED_URI;
 
         // Between currentNonLegendaryId and FIRST_LEGENDARY_GOBBLER_ID are unminted.
-        if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID) return "";
+        if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID) revert("NOT_MINTED");
 
         // Between FIRST_LEGENDARY_GOBBLER_ID and FIRST_LEGENDARY_GOBBLER_ID + numSold are minted legendaries.
         if (gobblerId < FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold)
             return string.concat(BASE_URI, gobblerId.toString());
 
-        return ""; // Unminted legendaries and invalid token ids.
+        revert("NOT_MINTED"); // Unminted legendaries and invalid token ids.
     }
 
     /*//////////////////////////////////////////////////////////////
