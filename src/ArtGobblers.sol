@@ -807,6 +807,35 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         updateUserGooBalance(user, gooAmount, GooBalanceUpdateType.DECREASE);
     }
 
+    /// @dev An enum for representing whether to
+    /// increase or decrease a user's goo balance.
+    enum GooBalanceUpdateType {
+        INCREASE,
+        DECREASE
+    }
+
+    /// @notice Update a user's virtual goo balance.
+    /// @param user The user whose virtual goo balance we should update.
+    /// @param gooAmount The amount of goo to update the user's virtual balance by.
+    /// @param updateType Whether to increase or decrease the user's balance by gooAmount.
+    function updateUserGooBalance(
+        address user,
+        uint256 gooAmount,
+        GooBalanceUpdateType updateType
+    ) internal {
+        // Will revert due to underflow if we're decreasing by more than the user's current balance.
+        // Don't need to do checked addition in the increase case, but we do it anyway for convenience.
+        uint256 updatedBalance = updateType == GooBalanceUpdateType.INCREASE
+            ? gooBalance(user) + gooAmount
+            : gooBalance(user) - gooAmount;
+
+        // Snapshot the user's new goo balance with the current timestamp.
+        getUserData[user].lastBalance = uint128(updatedBalance);
+        getUserData[user].lastTimestamp = uint64(block.timestamp);
+
+        emit GooBalanceUpdated(user, updatedBalance);
+    }
+
     /*//////////////////////////////////////////////////////////////
                      RESERVED GOBBLERS MINTING LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -873,57 +902,24 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
         getGobblerData[id].owner = to;
 
-        uint256 emissionMultiple = getGobblerData[id].emissionMultiple;
-
         unchecked {
+            uint32 emissionMultiple = getGobblerData[id].emissionMultiple; // Caching saves gas.
+
             // We update their last balance before updating their emission multiple to avoid
             // penalizing them by retroactively applying their new (lower) emission multiple.
             getUserData[from].lastBalance = uint128(gooBalance(from));
             getUserData[from].lastTimestamp = uint64(block.timestamp);
-            getUserData[from].emissionMultiple -= uint32(emissionMultiple);
+            getUserData[from].emissionMultiple -= emissionMultiple;
             getUserData[from].gobblersOwned -= 1;
 
             // We update their last balance before updating their emission multiple to avoid
             // overpaying them by retroactively applying their new (higher) emission multiple.
             getUserData[to].lastBalance = uint128(gooBalance(to));
             getUserData[to].lastTimestamp = uint64(block.timestamp);
-            getUserData[to].emissionMultiple += uint32(emissionMultiple);
+            getUserData[to].emissionMultiple += emissionMultiple;
             getUserData[to].gobblersOwned += 1;
         }
 
         emit Transfer(from, to, id);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                              HELPER LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev An enum for representing whether to
-    /// increase or decrease a user's goo balance.
-    enum GooBalanceUpdateType {
-        INCREASE,
-        DECREASE
-    }
-
-    /// @notice Update a user's virtual goo balance.
-    /// @param user The user whose virtual goo balance we should update.
-    /// @param gooAmount The amount of goo to update the user's virtual balance by.
-    /// @param updateType Whether to increase or decrease the user's balance by gooAmount.
-    function updateUserGooBalance(
-        address user,
-        uint256 gooAmount,
-        GooBalanceUpdateType updateType
-    ) internal {
-        // Will revert due to underflow if we're decreasing by more than the user's current balance.
-        // Don't need to do checked addition in the increase case, but we do it anyway for convenience.
-        uint256 updatedBalance = updateType == GooBalanceUpdateType.INCREASE
-            ? gooBalance(user) + gooAmount
-            : gooBalance(user) - gooAmount;
-
-        // Snapshot the user's new goo balance with the current timestamp.
-        getUserData[user].lastBalance = uint128(updatedBalance);
-        getUserData[user].lastTimestamp = uint64(block.timestamp);
-
-        emit GooBalanceUpdated(user, updatedBalance);
     }
 }
