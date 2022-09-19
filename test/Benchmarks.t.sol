@@ -116,6 +116,10 @@ contract BenchmarksTest is DSTest {
     // TODO: tranfer gobbler test
     // TODO: tranfer gobbler test
 
+    function testTransferGobbler() public {
+        gobblers.safeTransferFrom(address(this), address(0xBEEF), 1, 1, "");
+    }
+
     function testAddGoo() public {
         gobblers.addGoo(1e18);
     }
