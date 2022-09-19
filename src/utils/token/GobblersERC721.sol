@@ -30,6 +30,19 @@ abstract contract GobblersERC721 {
                          GOBBLERS/ERC721 STORAGE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Struct holding gobbler data.
+    struct GobblerData {
+        // The current owner of the gobbler.
+        address owner;
+        // Index of token after shuffle.
+        uint64 idx;
+        // Multiple on goo issuance.
+        uint32 emissionMultiple;
+    }
+
+    /// @notice Maps gobbler ids to their data.
+    mapping(uint256 => GobblerData) public getGobblerData;
+
     /// @notice Struct holding data relevant to each user's account.
     struct UserData {
         // The total number of gobblers currently owned by the user.
@@ -44,18 +57,6 @@ abstract contract GobblersERC721 {
 
     /// @notice Maps user addresses to their account data.
     mapping(address => UserData) public getUserData;
-
-    /// @notice Struct holding gobbler data.
-    struct GobblerData {
-        // The current owner of the gobbler.
-        address owner;
-        // Index of token after shuffle.
-        uint64 idx;
-        // Multiple on goo issuance.
-        uint32 emissionMultiple;
-    }
-
-    mapping(uint256 => GobblerData) public getGobblerData;
 
     function ownerOf(uint256 id) external view returns (address owner) {
         require((owner = getGobblerData[id].owner) != address(0), "NOT_MINTED");
