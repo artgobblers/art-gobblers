@@ -1,6 +1,6 @@
 # Gobblers Analysis
 
-Additional analysis for gobblers, including python implementations for differential testing, as well as automatic theorem proving.
+Additional analysis for Art Gobblers, including python implementations for differential fuzzing, as well as automatic theorem proving of certain key assumptions.
 
 
 ## Differential testing
