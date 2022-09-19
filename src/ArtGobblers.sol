@@ -894,11 +894,12 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
         require(to != address(0), "INVALID_RECIPIENT");
 
-        if (!(msg.sender == from || isApprovedForAll[from][msg.sender])) {
-            require(getApproved[id] == msg.sender, "NOT_APPROVED");
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
+            "NOT_AUTHORIZED"
+        );
 
-            delete getApproved[id];
-        }
+        delete getApproved[id];
 
         getGobblerData[id].owner = to;
 
