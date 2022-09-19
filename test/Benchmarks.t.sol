@@ -108,16 +108,8 @@ contract BenchmarksTest is DSTest {
         gobblers.mintFromGoo(type(uint256).max, false);
     }
 
-    // TODO: tranfer gobbler test
-    // TODO: tranfer gobbler test
-
-    // TODO: tranfer gobbler test
-    // TODO: tranfer gobbler test
-    // TODO: tranfer gobbler test
-    // TODO: tranfer gobbler test
-
     function testTransferGobbler() public {
-        gobblers.safeTransferFrom(address(this), address(0xBEEF), 1, 1, "");
+        gobblers.transferFrom(address(this), address(0xBEEF), 1);
     }
 
     function testAddGoo() public {

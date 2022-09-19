@@ -444,7 +444,10 @@ contract ArtGobblersTest is DSTestPlus {
 
         assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), emissionMultipleSum * 2);
 
-        for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
+        for (uint256 i = 0; i < ids.length; i++) {
+            hevm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(ids[i]);
+        }
     }
 
     /// @notice Test that Legendary Gobblers can be minted at 0 cost.
@@ -510,7 +513,7 @@ contract ArtGobblersTest is DSTestPlus {
     }
 
     /// @notice Test that legendary gobblers can be minted with slippage.
-    function testMintLegendaryGobblerWithSplippage() public {
+    function testMintLegendaryGobblerWithSlippage() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
         // Mint full interval to kick off first auction.
@@ -531,7 +534,8 @@ contract ArtGobblersTest is DSTestPlus {
 
         //check full cost was burned
         for (uint256 curId = 1; curId <= cost; curId++) {
-            assertEq(gobblers.ownerOf(curId), address(0));
+            hevm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(curId);
         }
         //check extra tokens were not burned
         for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {

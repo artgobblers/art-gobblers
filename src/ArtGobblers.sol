@@ -380,12 +380,12 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoo; // Before mint to mitigate reentrancy.
+            ++numMintedFromGoo;
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
-
-            _mint(msg.sender, gobblerId);
         }
+
+        _mint(msg.sender, gobblerId);
     }
 
     /// @notice Gobbler pricing in terms of goo.
@@ -827,10 +827,6 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             if (newNumMintedForReserves > (numMintedFromGoo + newNumMintedForReserves) / 5) revert ReserveImbalance();
         }
 
-        // Update the number of gobblers owned by the team and community reserve.
-        getUserData[team].gobblersOwned += uint32(numGobblersEach);
-        getUserData[community].gobblersOwned += uint32(numGobblersEach);
-
         // Mint numGobblersEach gobblers to both the team and community reserve.
         lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId);
         lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId);
@@ -857,7 +853,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     }
 
     /*//////////////////////////////////////////////////////////////
-                             ERC1155B LOGIC
+                              ERC721 LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function transferFrom(
