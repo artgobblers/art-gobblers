@@ -19,7 +19,7 @@ FOUNDRY_PROFILE="FFI" forge test
 
 ## Automatic theorem proving
 
-In order to run, first install a theorem prover such as [Z3](https://github.com/Z3Prover/z3)
+In order to run, first install a theorem prover such as [Z3](https://github.com/Z3Prover/z3).
 
 Then, run the following command: 
 
