@@ -381,7 +381,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoo; // Overflow should be impossible due to supply cap of 10,000.
+            ++numMintedFromGoo; // Overflow should be impossible due to the supply cap.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
         }
