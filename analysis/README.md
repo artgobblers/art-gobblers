@@ -17,7 +17,7 @@ Then run FFI tests from the root directory:
 FOUNDRY_PROFILE="FFI" forge test
 ```
 
-## SMT
+## Automatic theorem proving
 
 In order to run, first install a theorem prover such as [Z3](https://github.com/Z3Prover/z3)
 
