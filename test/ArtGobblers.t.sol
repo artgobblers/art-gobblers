@@ -616,7 +616,8 @@ contract ArtGobblersTest is DSTestPlus {
 
     /// @notice Test unminted URI is correct.
     function testUnmintedUri() public {
-        assertEq(gobblers.tokenURI(1), "");
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(1);
     }
 
     /// @notice Test that unrevealed URI is correct.
@@ -658,8 +659,13 @@ contract ArtGobblersTest is DSTestPlus {
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLegendaryUri() public {
-        assertEq(gobblers.tokenURI(gobblers.FIRST_LEGENDARY_GOBBLER_ID()), "");
-        assertEq(gobblers.tokenURI(gobblers.FIRST_LEGENDARY_GOBBLER_ID() + 1), "");
+        uint256 currentLegendaryId = gobblers.FIRST_LEGENDARY_GOBBLER_ID();
+
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(currentLegendaryId);
+
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(currentLegendaryId + 1);
     }
 
     /*//////////////////////////////////////////////////////////////
