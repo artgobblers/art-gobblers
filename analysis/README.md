@@ -5,7 +5,7 @@ Additional analysis for Art Gobblers, including python implementations for diffe
 
 ## Differential testing
 
-In order to run differential tests, first install requirements with
+In order to run differential fuzz tests, first install requirements with:
 
 ```
 pip install -r requirements.txt
