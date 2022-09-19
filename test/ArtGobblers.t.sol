@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -21,7 +20,7 @@ import {LibString} from "solmate/utils/LibString.sol";
 import {fromDaysWadUnsafe} from "solmate/utils/SignedWadMath.sol";
 
 /// @notice Unit test for Art Gobbler Contract.
-contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
+contract ArtGobblersTest is DSTestPlus {
     using LibString for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -112,7 +111,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.claimGobbler(proof);
         // verify gobbler ownership
         assertEq(gobblers.ownerOf(1), user);
-        assertEq(gobblers.getGobblersOwnedByUser(user), 1);
+        assertEq(gobblers.balanceOf(user), 1);
     }
 
     /// @notice Test that minting from the mintlist twice fails.
@@ -158,7 +157,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         goo.mintForGobblers(users[0], cost);
         vm.prank(users[0]);
         gobblers.mintFromGoo(type(uint256).max, false);
-        assertEq(gobblers.getGobblersOwnedByUser(users[0]), 1);
+        assertEq(gobblers.balanceOf(users[0]), 1);
         //warp for reveals
         vm.warp(block.timestamp + 1 days);
         setRandomnessAndReveal(1, "seed");
@@ -219,8 +218,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         gobblers.mintReservedGobblers(1);
         assertEq(gobblers.ownerOf(9), address(team));
         assertEq(gobblers.ownerOf(10), address(community));
-        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 1);
-        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 1);
+        assertEq(gobblers.balanceOf(address(team)), 1);
+        assertEq(gobblers.balanceOf(address(community)), 1);
     }
 
     /// @notice Test multiple reserved gobblers can be minted under fair circumstances.
@@ -232,8 +231,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.ownerOf(20), address(team));
         assertEq(gobblers.ownerOf(21), address(community));
         assertEq(gobblers.ownerOf(22), address(community));
-        assertEq(gobblers.getGobblersOwnedByUser(address(team)), 2);
-        assertEq(gobblers.getGobblersOwnedByUser(address(community)), 2);
+        assertEq(gobblers.balanceOf(address(team)), 2);
+        assertEq(gobblers.balanceOf(address(community)), 2);
     }
 
     /// @notice Test minting reserved gobblers fails if not enough have gobblers been minted.
@@ -445,7 +444,10 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), emissionMultipleSum * 2);
 
-        for (uint256 i = 0; i < ids.length; i++) assertEq(gobblers.ownerOf(ids[i]), address(0));
+        for (uint256 i = 0; i < ids.length; i++) {
+            hevm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(ids[i]);
+        }
     }
 
     /// @notice Test that Legendary Gobblers can be minted at 0 cost.
@@ -511,7 +513,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
     }
 
     /// @notice Test that legendary gobblers can be minted with slippage.
-    function testMintLegendaryGobblerWithSplippage() public {
+    function testMintLegendaryGobblerWithSlippage() public {
         uint256 startTime = block.timestamp + 30 days;
         vm.warp(startTime);
         // Mint full interval to kick off first auction.
@@ -532,7 +534,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
         //check full cost was burned
         for (uint256 curId = 1; curId <= cost; curId++) {
-            assertEq(gobblers.ownerOf(curId), address(0));
+            hevm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(curId);
         }
         //check extra tokens were not burned
         for (uint256 curId = cost + 1; curId <= cost + 10; curId++) {
@@ -613,7 +616,8 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
 
     /// @notice Test unminted URI is correct.
     function testUnmintedUri() public {
-        assertEq(gobblers.uri(1), "");
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(1);
     }
 
     /// @notice Test that unrevealed URI is correct.
@@ -624,7 +628,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         vm.prank(users[0]);
         gobblers.mintFromGoo(type(uint256).max, false);
         // assert gobbler not revealed after mint
-        assertTrue(stringEquals(gobblers.uri(1), gobblers.UNREVEALED_URI()));
+        assertTrue(stringEquals(gobblers.tokenURI(1), gobblers.UNREVEALED_URI()));
     }
 
     /// @notice Test that revealed URI is correct.
@@ -636,7 +640,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(1, "seed");
         (, uint64 expectedIndex, ) = gobblers.getGobblerData(1);
         string memory expectedURI = string(abi.encodePacked(gobblers.BASE_URI(), uint256(expectedIndex).toString()));
-        assertTrue(stringEquals(gobblers.uri(1), expectedURI));
+        assertTrue(stringEquals(gobblers.tokenURI(1), expectedURI));
     }
 
     /// @notice Test that legendary gobbler URI is correct.
@@ -649,14 +653,19 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         string memory expectedURI = string(
             abi.encodePacked(gobblers.BASE_URI(), uint256(currentLegendaryId).toString())
         );
-        string memory actualURI = gobblers.uri(currentLegendaryId);
+        string memory actualURI = gobblers.tokenURI(currentLegendaryId);
         assertTrue(stringEquals(actualURI, expectedURI));
     }
 
     /// @notice Test that un-minted legendary gobbler URI is correct.
     function testUnmintedLegendaryUri() public {
-        assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID()), "");
-        assertEq(gobblers.uri(gobblers.FIRST_LEGENDARY_GOBBLER_ID() + 1), "");
+        uint256 currentLegendaryId = gobblers.FIRST_LEGENDARY_GOBBLER_ID();
+
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(currentLegendaryId);
+
+        hevm.expectRevert("NOT_MINTED");
+        gobblers.tokenURI(currentLegendaryId + 1);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -720,7 +729,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         mintGobblerToAddress(users[0], 100);
         // first 100 gobblers should be unrevealed
         for (uint256 i = 1; i <= 100; i++) {
-            assertEq(gobblers.uri(i), gobblers.UNREVEALED_URI());
+            assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
         }
 
         vm.warp(block.timestamp + 1 days); // can only reveal every 24 hours
@@ -728,11 +737,11 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         setRandomnessAndReveal(50, "seed");
         // first 50 gobblers should now be revealed
         for (uint256 i = 1; i <= 50; i++) {
-            assertTrue(!stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
+            assertTrue(!stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
         // and next 50 should remain unrevealed
         for (uint256 i = 51; i <= 100; i++) {
-            assertTrue(stringEquals(gobblers.uri(i), gobblers.UNREVEALED_URI()));
+            assertTrue(stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
     }
 
@@ -884,17 +893,17 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertGt(initialUserMultiple, 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), 0);
 
-        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 1);
-        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 0);
+        assertEq(gobblers.balanceOf(address(users[0])), 1);
+        assertEq(gobblers.balanceOf(address(users[1])), 0);
 
         vm.prank(users[0]);
-        gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
+        gobblers.transferFrom(users[0], users[1], 1);
 
         assertEq(gobblers.getUserEmissionMultiple(users[0]), 0);
         assertEq(gobblers.getUserEmissionMultiple(users[1]), initialUserMultiple);
 
-        assertEq(gobblers.getGobblersOwnedByUser(address(users[0])), 0);
-        assertEq(gobblers.getGobblersOwnedByUser(address(users[1])), 1);
+        assertEq(gobblers.balanceOf(address(users[0])), 0);
+        assertEq(gobblers.balanceOf(address(users[1])), 1);
     }
 
     /// @notice Test that gobbler balances are accurate after transfer.
@@ -913,7 +922,7 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(userTwoBalance, 0);
         //transfer gobblers
         vm.prank(users[0]);
-        gobblers.safeTransferFrom(users[0], users[1], 1, 1, "");
+        gobblers.transferFrom(users[0], users[1], 1);
         //balance should not change after transfer
         assertEq(gobblers.gooBalance(users[0]), userOneBalance);
         assertEq(gobblers.gooBalance(users[1]), userTwoBalance);
@@ -1104,12 +1113,12 @@ contract ArtGobblersTest is DSTestPlus, ERC1155TokenReceiver {
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
 
-            uint256 gobblersOwnedBefore = gobblers.getGobblersOwnedByUser(addr);
+            uint256 gobblersOwnedBefore = gobblers.balanceOf(addr);
 
             vm.prank(addr);
             gobblers.mintFromGoo(type(uint256).max, false);
 
-            assertEq(gobblers.getGobblersOwnedByUser(addr), gobblersOwnedBefore + 1);
+            assertEq(gobblers.balanceOf(addr), gobblersOwnedBefore + 1);
         }
     }
 

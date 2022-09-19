@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import {DSTest} from "ds-test/test.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -14,7 +13,7 @@ import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 
-contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
+contract BenchmarksTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;
@@ -69,9 +68,9 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
 
         vm.prank(address(gobblers));
-        goo.mintForGobblers(address(this), type(uint128).max);
+        goo.mintForGobblers(address(this), type(uint192).max);
 
-        gobblers.addGoo(1e18);
+        gobblers.addGoo(type(uint96).max);
 
         mintPageToAddress(address(this), 9);
         mintGobblerToAddress(address(this), gobblers.LEGENDARY_AUCTION_INTERVAL());
@@ -105,23 +104,20 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         pages.mintFromGoo(type(uint256).max, false);
     }
 
+    function testMintPageUsingVirtualBalance() public {
+        pages.mintFromGoo(type(uint256).max, true);
+    }
+
     function testMintGobbler() public {
         gobblers.mintFromGoo(type(uint256).max, false);
     }
 
-    function testBatchTransferGobblers() public {
-        uint256[] memory ids = new uint256[](100);
-        uint256[] memory amounts = new uint256[](100);
-        for (uint256 i = 0; i < 100; i++) {
-            ids[i] = i + 1;
-            amounts[i] = 1;
-        }
-
-        gobblers.safeBatchTransferFrom(address(this), address(0xBEEF), ids, amounts, "");
+    function testMintGobblerUsingVirtualBalance() public {
+        gobblers.mintFromGoo(type(uint256).max, true);
     }
 
     function testTransferGobbler() public {
-        gobblers.safeTransferFrom(address(this), address(0xBEEF), 1, 1, "");
+        gobblers.transferFrom(address(this), address(0xBEEF), 1);
     }
 
     function testAddGoo() public {

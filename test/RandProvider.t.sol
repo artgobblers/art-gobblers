@@ -15,7 +15,6 @@ import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "solmate/utils/LibString.sol";
 
 /// @notice Unit test for the RandProvider contract.

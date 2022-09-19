@@ -1,12 +1,11 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
-import {ArtGobblers} from "../../ArtGobblers.sol";
 
-/// @notice ERC721 implementation optimized for Pages by pre-approving them to the ArtGobblers contract.
+/// @notice ERC721 implementation optimized for ArtGobblers by packing balanceOf/ownerOf with user/attribute data.
 /// @author Modified from Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol)
-abstract contract PagesERC721 {
+abstract contract GobblersERC721 {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -28,37 +27,45 @@ abstract contract PagesERC721 {
     function tokenURI(uint256 id) external view virtual returns (string memory);
 
     /*//////////////////////////////////////////////////////////////
-                               CONSTRUCTOR
+                         GOBBLERS/ERC721 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    ArtGobblers public immutable artGobblers;
-
-    constructor(
-        ArtGobblers _artGobblers,
-        string memory _name,
-        string memory _symbol
-    ) {
-        name = _name;
-        symbol = _symbol;
-        artGobblers = _artGobblers;
+    /// @notice Struct holding gobbler data.
+    struct GobblerData {
+        // The current owner of the gobbler.
+        address owner;
+        // Index of token after shuffle.
+        uint64 idx;
+        // Multiple on goo issuance.
+        uint32 emissionMultiple;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                      ERC721 BALANCE/OWNER STORAGE
-    //////////////////////////////////////////////////////////////*/
+    /// @notice Maps gobbler ids to their data.
+    mapping(uint256 => GobblerData) public getGobblerData;
 
-    mapping(uint256 => address) internal _ownerOf;
+    /// @notice Struct holding data relevant to each user's account.
+    struct UserData {
+        // The total number of gobblers currently owned by the user.
+        uint32 gobblersOwned;
+        // The sum of the multiples of all gobblers the user holds.
+        uint32 emissionMultiple;
+        // User's goo balance at time of last checkpointing.
+        uint128 lastBalance;
+        // Timestamp of the last goo balance checkpoint.
+        uint64 lastTimestamp;
+    }
 
-    mapping(address => uint256) internal _balanceOf;
+    /// @notice Maps user addresses to their account data.
+    mapping(address => UserData) public getUserData;
 
     function ownerOf(uint256 id) external view returns (address owner) {
-        require((owner = _ownerOf[id]) != address(0), "NOT_MINTED");
+        require((owner = getGobblerData[id].owner) != address(0), "NOT_MINTED");
     }
 
     function balanceOf(address owner) external view returns (uint256) {
         require(owner != address(0), "ZERO_ADDRESS");
 
-        return _balanceOf[owner];
+        return getUserData[owner].gobblersOwned;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -67,12 +74,15 @@ abstract contract PagesERC721 {
 
     mapping(uint256 => address) public getApproved;
 
-    mapping(address => mapping(address => bool)) internal _isApprovedForAll;
+    mapping(address => mapping(address => bool)) public isApprovedForAll;
 
-    function isApprovedForAll(address owner, address operator) public view returns (bool isApproved) {
-        if (operator == address(artGobblers)) return true; // Skip approvals for the ArtGobblers contract.
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
-        return _isApprovedForAll[owner][operator];
+    constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -80,9 +90,9 @@ abstract contract PagesERC721 {
     //////////////////////////////////////////////////////////////*/
 
     function approve(address spender, uint256 id) external {
-        address owner = _ownerOf[id];
+        address owner = getGobblerData[id].owner;
 
-        require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "NOT_AUTHORIZED");
+        require(msg.sender == owner || isApprovedForAll[owner][msg.sender], "NOT_AUTHORIZED");
 
         getApproved[id] = spender;
 
@@ -90,7 +100,7 @@ abstract contract PagesERC721 {
     }
 
     function setApprovalForAll(address operator, bool approved) external {
-        _isApprovedForAll[msg.sender][operator] = approved;
+        isApprovedForAll[msg.sender][operator] = approved;
 
         emit ApprovalForAll(msg.sender, operator, approved);
     }
@@ -99,30 +109,7 @@ abstract contract PagesERC721 {
         address from,
         address to,
         uint256 id
-    ) public {
-        require(from == _ownerOf[id], "WRONG_FROM");
-
-        require(to != address(0), "INVALID_RECIPIENT");
-
-        require(
-            msg.sender == from || isApprovedForAll(from, msg.sender) || msg.sender == getApproved[id],
-            "NOT_AUTHORIZED"
-        );
-
-        // Underflow of the sender's balance is impossible because we check for
-        // ownership above and the recipient's balance can't realistically overflow.
-        unchecked {
-            _balanceOf[from]--;
-
-            _balanceOf[to]++;
-        }
-
-        _ownerOf[id] = to;
-
-        delete getApproved[id];
-
-        emit Transfer(from, to, id);
-    }
+    ) public virtual;
 
     function safeTransferFrom(
         address from,
@@ -131,12 +118,12 @@ abstract contract PagesERC721 {
     ) external {
         transferFrom(from, to, id);
 
-        if (to.code.length != 0)
-            require(
+        require(
+            to.code.length == 0 ||
                 ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, "") ==
-                    ERC721TokenReceiver.onERC721Received.selector,
-                "UNSAFE_RECIPIENT"
-            );
+                ERC721TokenReceiver.onERC721Received.selector,
+            "UNSAFE_RECIPIENT"
+        );
     }
 
     function safeTransferFrom(
@@ -147,12 +134,12 @@ abstract contract PagesERC721 {
     ) external {
         transferFrom(from, to, id);
 
-        if (to.code.length != 0)
-            require(
+        require(
+            to.code.length == 0 ||
                 ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, data) ==
-                    ERC721TokenReceiver.onERC721Received.selector,
-                "UNSAFE_RECIPIENT"
-            );
+                ERC721TokenReceiver.onERC721Received.selector,
+            "UNSAFE_RECIPIENT"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -171,18 +158,38 @@ abstract contract PagesERC721 {
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address to, uint256 id) internal {
-        // Does not check the token has not been already minted
-        // or is being minted to address(0) because ids in Pages.sol
-        // are set using a monotonically increasing counter and only
-        // minted to safe addresses or msg.sender who cannot be zero.
+        // Does not check if the token was already minted or the recipient is address(0)
+        // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
 
-        // Counter overflow is incredibly unrealistic.
         unchecked {
-            _balanceOf[to]++;
+            ++getUserData[to].gobblersOwned;
         }
 
-        _ownerOf[id] = to;
+        getGobblerData[id].owner = to;
 
         emit Transfer(address(0), to, id);
+    }
+
+    function _batchMint(
+        address to,
+        uint256 amount,
+        uint256 lastMintedId
+    ) internal returns (uint256) {
+        // Doesn't check if the tokens were already minted or the recipient is address(0)
+        // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
+        // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
+
+        unchecked {
+            getUserData[to].gobblersOwned += uint32(amount);
+
+            for (uint256 i = 0; i < amount; ++i) {
+                getGobblerData[++lastMintedId].owner = to;
+
+                emit Transfer(address(0), to, lastMintedId);
+            }
+        }
+
+        return lastMintedId;
     }
 }
