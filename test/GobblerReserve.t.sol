@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -16,11 +15,10 @@ import {ChainlinkV1RandProvider} from "../src/utils/rand/ChainlinkV1RandProvider
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {MockERC1155} from "solmate/test/utils/mocks/MockERC1155.sol";
 import {LibString} from "solmate/utils/LibString.sol";
 
 /// @notice Unit test for the Gobbler Reserve contract.
-contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
+contract GobblerReserveTest is DSTestPlus {
     using LibString for uint256;
 
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
@@ -102,14 +100,12 @@ contract GobblerReserveTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(gobblers.ownerOf(11), address(community));
 
         uint256[] memory idsToWithdraw = new uint256[](1);
-        uint256[] memory amountsToWithdraw = new uint256[](1);
-        amountsToWithdraw[0] = 1;
 
         idsToWithdraw[0] = 10;
-        team.withdraw(address(this), idsToWithdraw, amountsToWithdraw);
+        team.withdraw(address(this), idsToWithdraw);
 
         idsToWithdraw[0] = 11;
-        community.withdraw(address(this), idsToWithdraw, amountsToWithdraw);
+        community.withdraw(address(this), idsToWithdraw);
 
         assertEq(gobblers.ownerOf(10), address(this));
         assertEq(gobblers.ownerOf(11), address(this));

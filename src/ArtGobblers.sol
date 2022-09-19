@@ -71,7 +71,7 @@ import {LibGOO} from "goo-issuance/LibGOO.sol";
 import {LogisticVRGDA} from "VRGDAs/LogisticVRGDA.sol";
 
 import {RandProvider} from "./utils/rand/RandProvider.sol";
-import {GobblersERC1155B} from "./utils/token/GobblersERC1155B.sol";
+import {GobblersERC721} from "./utils/token/GobblersERC721.sol";
 
 import {Goo} from "./Goo.sol";
 import {Pages} from "./Pages.sol";
@@ -80,7 +80,7 @@ import {Pages} from "./Pages.sol";
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
 /// @notice An experimental decentralized art factory by Justin Roiland and Paradigm.
-contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenReceiver {
+contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiver {
     using LibString for uint256;
     using FixedPointMathLib for uint256;
 
@@ -131,9 +131,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     /*//////////////////////////////////////////////////////////////
                            METADATA CONSTANTS
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice The name displayed for the contract on Etherscan.
-    string public constant name = "Art Gobblers";
 
     /// @notice URI for gobblers that have yet to be revealed.
     string public UNREVEALED_URI;
@@ -219,25 +216,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
     GobblerRevealsData public gobblerRevealsData;
 
     /*//////////////////////////////////////////////////////////////
-                             EMISSION STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Struct holding data relevant to each user's account.
-    struct UserData {
-        // The total number of gobblers currently owned by the user.
-        uint32 gobblersOwned;
-        // The sum of the multiples of all gobblers the user holds.
-        uint32 emissionMultiple;
-        // User's virtual goo balance at time of last checkpointing.
-        uint128 lastBalance;
-        // Timestamp of the last virtual goo balance checkpoint.
-        uint64 lastTimestamp;
-    }
-
-    /// @notice Maps user addresses to their account data.
-    mapping(address => UserData) public getUserData;
-
-    /*//////////////////////////////////////////////////////////////
                             GOBBLED ART STATE
     //////////////////////////////////////////////////////////////*/
 
@@ -320,6 +298,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         string memory _baseUri,
         string memory _unrevealedUri
     )
+        GobblersERC721("Art Gobblers", "GOBBLER") // TODO: use d1ll0n thing?
+        Owned(msg.sender)
         LogisticVRGDA(
             69.42e18, // Target price.
             0.31e18, // Price decay percent.
@@ -327,7 +307,6 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             toWadUnsafe(MAX_MINTABLE),
             0.0023e18 // Time scale.
         )
-        Owned(msg.sender) // Deployer starts as owner.
     {
         mintStart = _mintStart;
         merkleRoot = _merkleRoot;
@@ -367,15 +346,13 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         // If the user's proof is invalid, revert.
         if (!MerkleProofLib.verify(proof, merkleRoot, keccak256(abi.encodePacked(msg.sender)))) revert InvalidProof();
 
-        hasClaimedMintlistGobbler[msg.sender] = true; // Before mint to mitigate reentrancy.
+        hasClaimedMintlistGobbler[msg.sender] = true;
 
         unchecked {
-            getUserData[msg.sender].gobblersOwned += 1; // Update the user's # of gobblers owned.
-
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
-
-            _mint(msg.sender, gobblerId, "");
         }
+
+        _mint(msg.sender, gobblerId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -405,11 +382,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         unchecked {
             ++numMintedFromGoo; // Before mint to mitigate reentrancy.
 
-            getUserData[msg.sender].gobblersOwned += 1; // Update the user's # of gobblers owned.
-
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
 
-            _mint(msg.sender, gobblerId, "");
+            _mint(msg.sender, gobblerId);
         }
     }
 
@@ -467,10 +442,10 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
                 getGobblerData[id].owner = address(0);
 
-                amounts[i] = 1;
-            }
+                emit Transfer(msg.sender, address(0), id); // TODO: measure exactly how much gas this uses.
 
-            emit TransferBatch(msg.sender, msg.sender, address(0), gobblerIds[:cost], amounts);
+                amounts[i] = 1; // TODO: should this be above?
+            }
 
             /*//////////////////////////////////////////////////////////////
                                  LEGENDARY MINTING LOGIC
@@ -497,7 +472,7 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds[:cost]);
 
-            _mint(msg.sender, gobblerId, "");
+            _mint(msg.sender, gobblerId);
         }
     }
 
@@ -721,7 +696,8 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
 
     /// @notice Returns a token's URI if it has been minted.
     /// @param gobblerId The id of the token to get the URI for.
-    function uri(uint256 gobblerId) public view virtual override returns (string memory) {
+    // TODO: DOES THIS COMPLY WITH 721, like should ti be rveerting?
+    function tokenURI(uint256 gobblerId) public view virtual override returns (string memory) {
         // Between 0 and lastRevealed are revealed normal gobblers.
         if (gobblerId <= gobblerRevealsData.lastRevealedId) {
             // 0 is not a valid id:
@@ -856,12 +832,9 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         getUserData[community].gobblersOwned += uint32(numGobblersEach);
 
         // Mint numGobblersEach gobblers to both the team and community reserve.
-        lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId, "");
-        lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId, "");
+        lastMintedGobblerId = _batchMint(team, numGobblersEach, currentNonLegendaryId);
+        lastMintedGobblerId = _batchMint(community, numGobblersEach, lastMintedGobblerId);
 
-        // Note: There is reentrancy here. The _batchMint calls above can enable an
-        // adversary to reenter before currentNonLegendaryId is updated, but since we
-        // assume the reserves are both trusted addresses, we can safely ignore this risk.
         currentNonLegendaryId = uint128(lastMintedGobblerId); // Set currentNonLegendaryId.
 
         emit ReservedGobblersMinted(msg.sender, lastMintedGobblerId, numGobblersEach);
@@ -883,94 +856,31 @@ contract ArtGobblers is GobblersERC1155B, LogisticVRGDA, Owned, ERC1155TokenRece
         return getUserData[user].emissionMultiple;
     }
 
-    /// @notice Convenience function to get the gobblers owned by a user.
-    /// @param user The user to get gobblersOwned for.
-    function getGobblersOwnedByUser(address user) external view returns (uint256) {
-        return getUserData[user].gobblersOwned;
-    }
-
     /*//////////////////////////////////////////////////////////////
                              ERC1155B LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function safeBatchTransferFrom(
+    function transferFrom(
         address from,
         address to,
-        uint256[] calldata ids,
-        uint256[] calldata amounts,
-        bytes calldata data
+        uint256 id
     ) public override {
-        require(ids.length == amounts.length, "LENGTH_MISMATCH");
+        require(from == getGobblerData[id].owner, "WRONG_FROM");
 
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+        require(to != address(0), "INVALID_RECIPIENT");
 
-        // Storing these outside the loop saves ~15 gas per iteration.
-        uint256 id;
-        uint256 amount;
-
-        unchecked {
-            uint32 emissionMultipleTotal; // Will use to set each user's multiple.
-
-            for (uint256 i = 0; i < ids.length; i++) {
-                id = ids[i];
-                amount = amounts[i];
-
-                // Can only transfer from the owner.
-                require(from == getGobblerData[id].owner, "WRONG_FROM");
-
-                // Can only transfer 1 with ERC1155B.
-                require(amount == 1, "INVALID_AMOUNT");
-
-                getGobblerData[id].owner = to;
-
-                emissionMultipleTotal += getGobblerData[id].emissionMultiple;
-            }
-
-            // Note: ids.length is technically not the true number of unique gobblers transferred, as
-            // a user could transfer the same gobbler to themselves multiple times. However, this
-            // shouldn't cause problems in practice, as finalizeGobblerTransfer is implemented in
-            // such a way that self-transfers should cancel themselves out to result in a no-op.
-            finalizeGobblerTransfer(from, to, emissionMultipleTotal, uint32(ids.length));
-        }
-
-        emit TransferBatch(msg.sender, from, to, ids, amounts);
-
-        if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
-                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes calldata data
-    ) public override {
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
-
-        require(from == getGobblerData[id].owner, "WRONG_FROM"); // Can only transfer from the owner.
-
-        // Can only transfer 1 with ERC1155B.
-        require(amount == 1, "INVALID_AMOUNT");
+        require(
+            msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
+            "NOT_AUTHORIZED"
+        );
 
         getGobblerData[id].owner = to;
 
         finalizeGobblerTransfer(from, to, getGobblerData[id].emissionMultiple, 1);
 
-        emit TransferSingle(msg.sender, from, to, id, amount);
+        delete getApproved[id]; // TODO: do this conditionally?
 
-        if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
-                    ERC1155TokenReceiver.onERC1155Received.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+        emit Transfer(from, to, id);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import {DSTest} from "ds-test/test.sol";
-import {ERC1155TokenReceiver} from "solmate/tokens/ERC1155.sol";
 import {Utilities} from "./utils/Utilities.sol";
 import {console} from "./utils/Console.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -14,7 +13,7 @@ import {Pages} from "../src/Pages.sol";
 import {LinkToken} from "./utils/mocks/LinkToken.sol";
 import {VRFCoordinatorMock} from "chainlink/v0.8/mocks/VRFCoordinatorMock.sol";
 
-contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
+contract BenchmarksTest is DSTest {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
     Utilities internal utils;
@@ -109,16 +108,13 @@ contract BenchmarksTest is DSTest, ERC1155TokenReceiver {
         gobblers.mintFromGoo(type(uint256).max, false);
     }
 
-    function testBatchTransferGobblers() public {
-        uint256[] memory ids = new uint256[](100);
-        uint256[] memory amounts = new uint256[](100);
-        for (uint256 i = 0; i < 100; i++) {
-            ids[i] = i + 1;
-            amounts[i] = 1;
-        }
+    // TODO: tranfer gobbler test
+    // TODO: tranfer gobbler test
 
-        gobblers.safeBatchTransferFrom(address(this), address(0xBEEF), ids, amounts, "");
-    }
+    // TODO: tranfer gobbler test
+    // TODO: tranfer gobbler test
+    // TODO: tranfer gobbler test
+    // TODO: tranfer gobbler test
 
     function testAddGoo() public {
         gobblers.addGoo(1e18);

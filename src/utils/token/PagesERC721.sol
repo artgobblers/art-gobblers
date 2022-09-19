@@ -25,7 +25,7 @@ abstract contract PagesERC721 {
 
     string public symbol;
 
-    function tokenURI(uint256 id) public view virtual returns (string memory);
+    function tokenURI(uint256 id) external view virtual returns (string memory);
 
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
@@ -51,11 +51,11 @@ abstract contract PagesERC721 {
 
     mapping(address => uint256) internal _balanceOf;
 
-    function ownerOf(uint256 id) public view virtual returns (address owner) {
+    function ownerOf(uint256 id) external view returns (address owner) {
         require((owner = _ownerOf[id]) != address(0), "NOT_MINTED");
     }
 
-    function balanceOf(address owner) public view virtual returns (uint256) {
+    function balanceOf(address owner) external view returns (uint256) {
         require(owner != address(0), "ZERO_ADDRESS");
 
         return _balanceOf[owner];
@@ -69,7 +69,7 @@ abstract contract PagesERC721 {
 
     mapping(address => mapping(address => bool)) internal _isApprovedForAll;
 
-    function isApprovedForAll(address owner, address operator) public view virtual returns (bool isApproved) {
+    function isApprovedForAll(address owner, address operator) public view returns (bool isApproved) {
         if (operator == address(artGobblers)) return true; // Skip approvals for the ArtGobblers contract.
 
         return _isApprovedForAll[owner][operator];
@@ -79,7 +79,7 @@ abstract contract PagesERC721 {
                               ERC721 LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function approve(address spender, uint256 id) public virtual {
+    function approve(address spender, uint256 id) external {
         address owner = _ownerOf[id];
 
         require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "NOT_AUTHORIZED");
@@ -89,7 +89,7 @@ abstract contract PagesERC721 {
         emit Approval(owner, spender, id);
     }
 
-    function setApprovalForAll(address operator, bool approved) public virtual {
+    function setApprovalForAll(address operator, bool approved) external {
         _isApprovedForAll[msg.sender][operator] = approved;
 
         emit ApprovalForAll(msg.sender, operator, approved);
@@ -99,7 +99,7 @@ abstract contract PagesERC721 {
         address from,
         address to,
         uint256 id
-    ) public virtual {
+    ) public {
         require(from == _ownerOf[id], "WRONG_FROM");
 
         require(to != address(0), "INVALID_RECIPIENT");
@@ -128,7 +128,7 @@ abstract contract PagesERC721 {
         address from,
         address to,
         uint256 id
-    ) public virtual {
+    ) external {
         transferFrom(from, to, id);
 
         if (to.code.length != 0)
@@ -144,7 +144,7 @@ abstract contract PagesERC721 {
         address to,
         uint256 id,
         bytes calldata data
-    ) public virtual {
+    ) external {
         transferFrom(from, to, id);
 
         if (to.code.length != 0)
@@ -159,7 +159,7 @@ abstract contract PagesERC721 {
                               ERC165 LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
         return
             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
@@ -170,7 +170,7 @@ abstract contract PagesERC721 {
                         INTERNAL MINT/BURN LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _mint(address to, uint256 id) internal virtual {
+    function _mint(address to, uint256 id) internal {
         // Does not check the token has not been already minted
         // or is being minted to address(0) because ids in Pages.sol
         // are set using a monotonically increasing counter and only
