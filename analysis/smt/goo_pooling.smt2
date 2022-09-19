@@ -1,6 +1,6 @@
 ; authors: hrkrshnn, leonardoalt
 ; prove that combined staking is always at least as good as staking goo into separate gobblers
-; should be unsat 
+; should be unsat
 
 (define-fun sqrt2 ((n Real) (r Real)) Bool
 	(= n (* r r))
