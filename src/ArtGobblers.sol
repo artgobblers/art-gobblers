@@ -426,9 +426,6 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
                                     BATCH BURN LOGIC
             //////////////////////////////////////////////////////////////*/
 
-            // Generate an amounts array locally to use in the event below.
-            uint256[] memory amounts = new uint256[](cost);
-
             uint256 id; // Storing outside the loop saves ~7 gas per iteration.
 
             for (uint256 i = 0; i < cost; ++i) {
@@ -442,9 +439,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
                 getGobblerData[id].owner = address(0);
 
-                emit Transfer(msg.sender, address(0), id); // TODO: measure exactly how much gas this uses.
-
-                amounts[i] = 1; // TODO: should this be above?
+                emit Transfer(msg.sender, address(0), id);
             }
 
             /*//////////////////////////////////////////////////////////////
