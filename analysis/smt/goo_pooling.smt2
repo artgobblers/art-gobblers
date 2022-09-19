@@ -55,14 +55,14 @@
 (declare-const sqr_3 Real)
 
 (assert (and
-		(>= t 0)
-		(>= s1 0)
-		(>= s2 0)
-		(>= m1 0)
-		(>= m2 0)
-		(>= sqr_1 0)
-		(>= sqr_2 0)
-		(>= sqr_3 0)
+         (>= t 0)
+         (>= s1 0)
+         (>= s2 0)
+         (>= m1 0)
+         (>= m2 0)
+         (>= sqr_1 0)
+         (>= sqr_2 0)
+         (>= sqr_3 0)
 ))
 
 (assert (and
