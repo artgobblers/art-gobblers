@@ -51,7 +51,7 @@ abstract contract GobblersERC721 {
         uint32 emissionMultiple;
         // User's goo balance at time of last checkpointing.
         uint128 lastBalance;
-        // Timestamp of the last  goo balance checkpoint.
+        // Timestamp of the last goo balance checkpoint.
         uint64 lastTimestamp;
     }
 
