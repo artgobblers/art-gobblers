@@ -3,7 +3,7 @@
 Additional analysis for Art Gobblers, including python implementations for differential fuzzing, as well as automatic theorem proving of certain key assumptions.
 
 
-## Differential testing
+## Differential fuzzing
 
 In order to run differential fuzz tests, first install requirements with:
 
