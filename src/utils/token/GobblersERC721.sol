@@ -158,8 +158,6 @@ abstract contract GobblersERC721 {
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address to, uint256 id) internal {
-        getGobblerData[id].owner = to;
-
         // Does not check if the token was already minted or the recipient is address(0)
         // because ArtGobblers.sol manages its ids in such a way that it ensures it won't
         // double mint and will only mint to safe addresses or msg.sender who cannot be zero.
