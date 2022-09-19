@@ -11,7 +11,7 @@ In order to run differential fuzz tests, first install requirements with:
 pip install -r requirements.txt
 ```
 
-Then run FFI tests from parent directory
+Then run FFI tests from the root directory:
 
 ```
 FOUNDRY_PROFILE="FFI" forge test
