@@ -873,7 +873,23 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
         getGobblerData[id].owner = to;
 
-        finalizeGobblerTransfer(from, to, getGobblerData[id].emissionMultiple, 1);
+        uint256 emissionMultiple = getGobblerData[id].emissionMultiple;
+
+        unchecked {
+            // We update their last balance before updating their emission multiple to avoid
+            // penalizing them by retroactively applying their new (lower) emission multiple.
+            getUserData[from].lastBalance = uint128(gooBalance(from));
+            getUserData[from].lastTimestamp = uint64(block.timestamp);
+            getUserData[from].emissionMultiple -= uint32(emissionMultiple);
+            getUserData[from].gobblersOwned -= 1;
+
+            // We update their last balance before updating their emission multiple to avoid
+            // overpaying them by retroactively applying their new (higher) emission multiple.
+            getUserData[to].lastBalance = uint128(gooBalance(to));
+            getUserData[to].lastTimestamp = uint64(block.timestamp);
+            getUserData[to].emissionMultiple += uint32(emissionMultiple);
+            getUserData[to].gobblersOwned += 1;
+        }
 
         emit Transfer(from, to, id);
     }
@@ -909,36 +925,5 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         getUserData[user].lastTimestamp = uint64(block.timestamp);
 
         emit GooBalanceUpdated(user, updatedBalance);
-    }
-
-    /// @dev Finalizes the transfer of gobbler(s) from one user to another, by
-    /// updating the sender and recipient's emission multiples and gobblers owned.
-    /// It also updates lastBalance/lastTimestamp for correct balance calculations.
-    /// @dev Should be invoked whenever gobbler(s) are transferred between two users.
-    /// @param from The user who has sent the gobbler(s).
-    /// @param to The user who has received the gobbler(s).
-    /// @param emissionsMultipleTotal The sum of the multiples of the gobbler(s) transferred.
-    /// @param gobblersTransferred The number of gobbler(s) transferred.
-    function finalizeGobblerTransfer(
-        address from,
-        address to,
-        uint32 emissionsMultipleTotal,
-        uint32 gobblersTransferred
-    ) internal {
-        unchecked {
-            // We update their last balance before updating their emission multiple to avoid
-            // penalizing them by retroactively applying their new (lower) emission multiple.
-            getUserData[from].lastBalance = uint128(gooBalance(from));
-            getUserData[from].lastTimestamp = uint64(block.timestamp);
-            getUserData[from].emissionMultiple -= emissionsMultipleTotal;
-            getUserData[from].gobblersOwned -= gobblersTransferred;
-
-            // We update their last balance before updating their emission multiple to avoid
-            // overpaying them by retroactively applying their new (higher) emission multiple.
-            getUserData[to].lastBalance = uint128(gooBalance(to));
-            getUserData[to].lastTimestamp = uint64(block.timestamp);
-            getUserData[to].emissionMultiple += emissionsMultipleTotal;
-            getUserData[to].gobblersOwned += gobblersTransferred;
-        }
     }
 }
