@@ -349,6 +349,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         hasClaimedMintlistGobbler[msg.sender] = true;
 
         unchecked {
+            // Overflow should be impossible due to supply cap of 10,000.
             emit GobblerClaimed(msg.sender, gobblerId = ++currentNonLegendaryId);
         }
 
@@ -380,7 +381,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             : goo.burnForGobblers(msg.sender, currentPrice);
 
         unchecked {
-            ++numMintedFromGoo;
+            ++numMintedFromGoo; // Overflow should be impossible due to supply cap of 10,000.
 
             emit GobblerPurchased(msg.sender, gobblerId = ++currentNonLegendaryId, currentPrice);
         }
@@ -735,8 +736,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         if (nft == address(this)) revert Cannibalism();
 
         unchecked {
-            // Increment the # of copies gobbled by the gobbler.
-            // Counter overflow is unrealistic on human timescales.
+            // Increment the # of copies gobbled by the gobbler. Unchecked is
+            // safe, as an NFT can't have more than type(uint256).max copies.
             ++getCopiesOfArtGobbledByGobbler[gobblerId][nft][id];
         }
 
