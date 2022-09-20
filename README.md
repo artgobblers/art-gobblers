@@ -32,7 +32,6 @@ To build the contracts:
 git clone https://github.com/artgobblers/art-gobblers.git
 cd art-gobblers
 forge install 
-forge build
 ```
 
 ### Run Tests
