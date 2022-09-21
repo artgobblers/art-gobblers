@@ -760,7 +760,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         return LibGOO.computeGOOBalance(
             getUserData[user].emissionMultiple,
             getUserData[user].lastBalance,
-            uint(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp))
+            uint256(toDaysWadUnsafe(block.timestamp - getUserData[user].lastTimestamp))
         );
     }
 
