@@ -154,7 +154,7 @@ contract RandProviderTest is DSTestPlus {
 
     /// @notice Mint a number of gobblers to the given address
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        for (uint256 i = 0; i < num; i++) {
+        for (uint256 i = 0; i < num; ++i) {
             vm.startPrank(address(gobblers));
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();

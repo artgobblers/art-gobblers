@@ -318,7 +318,7 @@ contract ArtGobblersTest is DSTestPlus {
 
         vm.warp(block.timestamp + timeDelta);
 
-        for (uint256 i = 0; i < numMint; i++) {
+        for (uint256 i = 0; i < numMint; ++i) {
             vm.startPrank(address(gobblers));
             uint256 price = gobblers.gobblerPrice();
             goo.mintForGobblers(users[0], price);
@@ -444,7 +444,7 @@ contract ArtGobblersTest is DSTestPlus {
 
         assertEq(gobblers.getGobblerEmissionMultiple(mintedLegendaryId), emissionMultipleSum * 2);
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < ids.length; ++i) {
             hevm.expectRevert("NOT_MINTED");
             gobblers.ownerOf(ids[i]);
         }
@@ -574,7 +574,7 @@ contract ArtGobblersTest is DSTestPlus {
         // We expect the first legendary to have this id.
         uint256 nextMintLegendaryId = 9991;
         mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
-        for (int256 i = 0; i < 10; i++) {
+        for (int256 i = 0; i < 10; ++i) {
             vm.warp(block.timestamp + 400 days);
 
             mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
@@ -602,7 +602,7 @@ contract ArtGobblersTest is DSTestPlus {
         // Starting price should be 69.
         assertEq(cost, 69);
         setRandomnessAndReveal(cost, "seed");
-        for (uint256 i = 1; i <= cost; i++) ids.push(i);
+        for (uint256 i = 1; i <= cost; ++i) ids.push(i);
 
         ids[0] = mintedLegendaryId; // Try to pass in the legendary we just minted as well.
         vm.prank(users[0]);
@@ -728,7 +728,7 @@ contract ArtGobblersTest is DSTestPlus {
     function testMultiReveal() public {
         mintGobblerToAddress(users[0], 100);
         // first 100 gobblers should be unrevealed
-        for (uint256 i = 1; i <= 100; i++) {
+        for (uint256 i = 1; i <= 100; ++i) {
             assertEq(gobblers.tokenURI(i), gobblers.UNREVEALED_URI());
         }
 
@@ -736,11 +736,11 @@ contract ArtGobblersTest is DSTestPlus {
 
         setRandomnessAndReveal(50, "seed");
         // first 50 gobblers should now be revealed
-        for (uint256 i = 1; i <= 50; i++) {
+        for (uint256 i = 1; i <= 50; ++i) {
             assertTrue(!stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
         // and next 50 should remain unrevealed
-        for (uint256 i = 51; i <= 100; i++) {
+        for (uint256 i = 51; i <= 100; ++i) {
             assertTrue(stringEquals(gobblers.tokenURI(i), gobblers.UNREVEALED_URI()));
         }
     }
@@ -1038,7 +1038,7 @@ contract ArtGobblersTest is DSTestPlus {
     function testLongRunningMintMaxFromGoo() public {
         uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; ++i) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
@@ -1052,7 +1052,7 @@ contract ArtGobblersTest is DSTestPlus {
     function testLongRunningMintMaxFromGooRevert() public {
         uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoo + 1; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo + 1; ++i) {
             vm.warp(block.timestamp + 1 days);
 
             if (i == maxMintableWithGoo) vm.expectRevert("UNDEFINED");
@@ -1071,7 +1071,7 @@ contract ArtGobblersTest is DSTestPlus {
     function testLongRunningMintMaxReserved() public {
         uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; ++i) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
@@ -1087,7 +1087,7 @@ contract ArtGobblersTest is DSTestPlus {
     function testLongRunningMintMaxTeamRevert() public {
         uint256 maxMintableWithGoo = gobblers.MAX_MINTABLE();
 
-        for (uint256 i = 0; i < maxMintableWithGoo; i++) {
+        for (uint256 i = 0; i < maxMintableWithGoo; ++i) {
             vm.warp(block.timestamp + 1 days);
             uint256 cost = gobblers.gobblerPrice();
             vm.prank(address(gobblers));
@@ -1108,7 +1108,7 @@ contract ArtGobblersTest is DSTestPlus {
 
     /// @notice Mint a number of gobblers to the given address
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        for (uint256 i = 0; i < num; i++) {
+        for (uint256 i = 0; i < num; ++i) {
             vm.startPrank(address(gobblers));
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();

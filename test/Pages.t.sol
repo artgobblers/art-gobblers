@@ -144,7 +144,7 @@ contract PagesTest is DSTestPlus {
 
         uint256 targetPrice = uint256(pages.targetPrice());
 
-        for (uint256 i = 0; i < numMint; i++) {
+        for (uint256 i = 0; i < numMint; ++i) {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
@@ -166,7 +166,7 @@ contract PagesTest is DSTestPlus {
 
         uint256 targetPrice = uint256(pages.targetPrice());
 
-        for (uint256 i = 0; i < numMint; i++) {
+        for (uint256 i = 0; i < numMint; ++i) {
             uint256 price = pages.pagePrice();
             goo.mintForGobblers(user, price);
             vm.prank(user);
@@ -195,7 +195,7 @@ contract PagesTest is DSTestPlus {
 
     /// @notice Mint a number of pages to the given address
     function mintPageToAddress(address addr, uint256 num) internal {
-        for (uint256 i = 0; i < num; i++) {
+        for (uint256 i = 0; i < num; ++i) {
             goo.mintForGobblers(addr, pages.pagePrice());
 
             vm.prank(addr);
