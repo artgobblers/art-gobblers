@@ -670,8 +670,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
                 assembly {
                     mstore(0, randomSeed) // Store the random seed in scratch space.
 
-                    // Moduloing by 1 << 64 (2 ** 64) is equivalent to a uint64 cast.
-                    randomSeed := mod(keccak256(0, 32), shl(64, 1))
+                    // Moduloing by 2 ** 64 is equivalent to a uint64 cast.
+                    randomSeed := mod(keccak256(0, 32), exp(2, 64))
                 }
             }
 
