@@ -680,8 +680,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
                 assembly {
                     mstore(0, randomSeed) // Store the random seed in scratch space.
 
-                    // Moduloing by 1 << 64 (2 ** 64) is equivalent to a uint64 cast.
-                    randomSeed := mod(keccak256(0, 32), shl(64, 1))
+                    // Moduloing by 2 ** 64 is equivalent to a uint64 cast.
+                    randomSeed := mod(keccak256(0, 32), exp(2, 64))
                 }
             }
 
@@ -852,10 +852,10 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     /// the supply of goo minted gobblers and the supply of gobblers minted to reserves.
     function mintReservedGobblers(uint256 numGobblersEach) external returns (uint256 lastMintedGobblerId) {
         unchecked {
-            // Optimistically increment numMintedForReserves, may be reverted below. Overflow in this
-            // calculation is possible but numGobblersEach would have to be so large that it would cause the
-            // loop in _batchMint to run out of gas quickly. Shift left by 1 is equivalent to multiplying by 2.
-            uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach << 1);
+            // Optimistically increment numMintedForReserves, may be reverted below.
+            // Overflow in this calculation is possible but numGobblersEach would have to
+            // be so large that it would cause the loop in _batchMint to run out of gas quickly.
+            uint256 newNumMintedForReserves = numMintedForReserves += (numGobblersEach * 2);
 
             // Ensure that after this mint gobblers minted to reserves won't comprise more than 20% of
             // the sum of the supply of goo minted gobblers and the supply of gobblers minted to reserves.

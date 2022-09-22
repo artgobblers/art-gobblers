@@ -163,6 +163,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
         // URIs:
         string memory _baseUri
     )
+        PagesERC721(_artGobblers, "Toilet Paper", "TP")
         LogisticToLinearVRGDA(
             4.2069e18, // Target price.
             0.31e18, // Price decay percent.
@@ -172,7 +173,6 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
             SWITCH_DAY_WAD, // Target switch day.
             9e18 // Pages to target per day.
         )
-        PagesERC721(_artGobblers, "Toilet Paper", "TP")
     {
         mintStart = _mintStart;
 
@@ -254,7 +254,7 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
             if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert ReserveImbalance();
 
             // Mint the pages to the community reserve while updating lastMintedPageId.
-            for (uint256 i = 0; i < numPages; i++) _mint(community, ++lastMintedPageId);
+            for (uint256 i = 0; i < numPages; ++i) _mint(community, ++lastMintedPageId);
 
             currentId = uint128(lastMintedPageId); // Update currentId with the last minted page id.
 

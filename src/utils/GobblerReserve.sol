@@ -32,9 +32,9 @@ contract GobblerReserve is Owned {
     /// @param to The address to transfer the gobblers to.
     /// @param ids The ids of the gobblers to transfer.
     function withdraw(address to, uint256[] calldata ids) external onlyOwner {
-        // This is quite inefficient, but it's okay because this is not a hot path.
+        // This is quite inefficient, but that's fine, it's not a hot path.
         unchecked {
-            for (uint256 i = 0; i < ids.length; i++) {
+            for (uint256 i = 0; i < ids.length; ++i) {
                 artGobblers.transferFrom(address(this), to, ids[i]);
             }
         }

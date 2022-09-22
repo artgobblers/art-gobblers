@@ -136,7 +136,7 @@ contract BenchmarksTest is DSTest {
         uint256 legendaryGobblerCost = legendaryCost;
 
         uint256[] memory ids = new uint256[](legendaryGobblerCost);
-        for (uint256 i = 0; i < legendaryGobblerCost; i++) ids[i] = i + 1;
+        for (uint256 i = 0; i < legendaryGobblerCost; ++i) ids[i] = i + 1;
 
         gobblers.mintLegendaryGobbler(ids);
     }
@@ -150,7 +150,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function mintGobblerToAddress(address addr, uint256 num) internal {
-        for (uint256 i = 0; i < num; i++) {
+        for (uint256 i = 0; i < num; ++i) {
             vm.startPrank(address(gobblers));
             goo.mintForGobblers(addr, gobblers.gobblerPrice());
             vm.stopPrank();
@@ -161,7 +161,7 @@ contract BenchmarksTest is DSTest {
     }
 
     function mintPageToAddress(address addr, uint256 num) internal {
-        for (uint256 i = 0; i < num; i++) {
+        for (uint256 i = 0; i < num; ++i) {
             vm.startPrank(address(gobblers));
             goo.mintForGobblers(addr, pages.pagePrice());
             vm.stopPrank();
