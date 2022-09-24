@@ -838,6 +838,7 @@ contract ArtGobblersTest is DSTestPlus {
     /// @notice Test that a goo approval reflects in gooAllowance.
     function testGooApproval() public {
         uint256 allowance = 1234569420;
+        assertEq(gobblers.gooAllowance(users[0], users[1]), 0);
         vm.prank(users[0]);
         gobblers.approveGoo(users[1], allowance);
         assertEq(gobblers.gooAllowance(users[0], users[1]), allowance);
@@ -846,6 +847,7 @@ contract ArtGobblersTest is DSTestPlus {
     /// @notice Test that a goo allowance can be revoked by setting it back to zero.
     function testGooRevokeApproval() public {
         uint256 allowance = 1234569420;
+        assertEq(gobblers.gooAllowance(users[0], users[1]), 0);
         vm.prank(users[0]);
         gobblers.approveGoo(users[1], allowance);
         assertEq(gobblers.gooAllowance(users[0], users[1]), allowance);
@@ -855,11 +857,39 @@ contract ArtGobblersTest is DSTestPlus {
     }
 
     /// @notice Test that an internal goo transfer works under ideal conditions.
-    function testGooTransfer() public {}
+    function testGooTransfer() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        // Emissions-generating goo balance of users[1] is zero
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        vm.prank(users[0]);
+        gobblers.transferGoo(users[1], transferAmount);
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), transferAmount);
+        assertEq(gobblers.gooBalance(users[0]) - goo.balanceOf(users[0]), initialBalance - transferAmount);
+    }
 
     /// @notice Test that an internal goo transfer reverts if attempting
     /// to transfer more goo than sender owns.
-    function testCantTransferMoreGooThanOwned() public {}
+    function testCantTransferMoreGooThanOwned() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        // Emissions-generating goo balance of users[1] is zero
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        vm.prank(users[0]);
+        vm.expectRevert(stdError.arithmeticError);
+        gobblers.transferGoo(users[1], initialBalance + 1);
+        // No goo was transferred
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        assertEq(gobblers.gooBalance(users[0]) - goo.balanceOf(users[0]), initialBalance);
+    }
 
     /// @notice Test that an account can internally transfer goo on behalf of
     /// another account given an adequate allowance.
