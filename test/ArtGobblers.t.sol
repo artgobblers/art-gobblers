@@ -880,7 +880,6 @@ contract ArtGobblersTest is DSTestPlus {
         setRandomnessAndReveal(1, "seed");
         vm.warp(block.timestamp + 100000);
         uint256 initialBalance = gobblers.gooBalance(users[0]);
-        uint256 transferAmount = initialBalance / 10; //10%
         // Emissions-generating goo balance of users[1] is zero
         assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
         vm.prank(users[0]);
@@ -893,11 +892,58 @@ contract ArtGobblersTest is DSTestPlus {
 
     /// @notice Test that an account can internally transfer goo on behalf of
     /// another account given an adequate allowance.
-    function testGooTransferFrom() public {}
+    function testGooTransferFrom() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        // Emissions-generating goo balance of users[1] is zero
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        // user0 has not yet approved user2 for any amount
+        assertEq(gobblers.gooAllowance(users[0], users[2]), 0);
+        vm.prank(users[0]);
+        // user0 approves user2 for transferAmount
+        gobblers.approveGoo(users[2], transferAmount);
+        assertEq(gobblers.gooAllowance(users[0], users[2]), transferAmount);
+        // user2 transfers goo from user0 to user1
+        vm.prank(users[2]);
+        gobblers.transferGooFrom(users[0], users[1], transferAmount);
+        // End balance and approval states as expected
+        assertEq(gobblers.gooBalance(users[0]) - goo.balanceOf(users[0]), initialBalance - transferAmount);
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), transferAmount);
+        assertEq(gobblers.gooBalance(users[2]) - goo.balanceOf(users[2]), 0);
+        assertEq(gobblers.gooAllowance(users[0], users[2]), 0);
+    }
 
     /// @notice Test that an account cannot internally transfer goo on behalf of
     /// another account without adequate allowance.
-    function testCantTransferFromMoreGooThanApproved() public {}
+    function testCantTransferFromMoreGooThanApproved() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        // Emissions-generating goo balance of users[1] is zero
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        // user0 has not yet approved user2 for any amount
+        assertEq(gobblers.gooAllowance(users[0], users[2]), 0);
+        vm.prank(users[0]);
+        // user0 approves user2 for transferAmount
+        gobblers.approveGoo(users[2], transferAmount);
+        assertEq(gobblers.gooAllowance(users[0], users[2]), transferAmount);
+        // user2 attempts to transfer too much goo from user0 to user1
+        vm.prank(users[2]);
+        vm.expectRevert(stdError.arithmeticError);
+        gobblers.transferGooFrom(users[0], users[1], transferAmount + 1);
+        // No balances were changed
+        assertEq(gobblers.gooBalance(users[0]) - goo.balanceOf(users[0]), initialBalance);
+        assertEq(gobblers.gooBalance(users[1]) - goo.balanceOf(users[1]), 0);
+        assertEq(gobblers.gooBalance(users[2]) - goo.balanceOf(users[2]), 0);
+        assertEq(gobblers.gooAllowance(users[0], users[2]), transferAmount);
+    }
 
     /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance.
     function testCantAddMoreGooThanOwned() public {
