@@ -835,6 +835,27 @@ contract ArtGobblersTest is DSTestPlus {
         assertEq(gobblers.gooBalance(users[0]), additionAmount);
     }
 
+    /// @notice Test that a goo approval reflects in gooAllowance.
+    function testGooApproval() public{}
+
+    /// @notice Test that a goo allowance can be revoked by setting it back to zero.
+    function testGooRevokeApproval() public {}
+
+    /// @notice Test that an internal goo transfer works under ideal conditions.
+    function testGooTransfer() public{}
+
+    /// @notice Test that an internal goo transfer reverts if attempting
+    /// to transfer more goo than sender owns.
+    function testCantTransferMoreGooThanOwned() public{}
+
+    /// @notice Test that an account can internally transfer goo on behalf of
+    /// another account given an adequate allowance.
+    function testGooTransferFrom() public{}
+
+    /// @notice Test that an account cannot internally transfer goo on behalf of
+    /// another account without adequate allowance.
+    function testCantTransferFromMoreGooThanApproved public{}
+
     /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance.
     function testCantAddMoreGooThanOwned() public {
         mintGobblerToAddress(users[0], 1);
