@@ -836,25 +836,38 @@ contract ArtGobblersTest is DSTestPlus {
     }
 
     /// @notice Test that a goo approval reflects in gooAllowance.
-    function testGooApproval() public{}
+    function testGooApproval() public {
+        uint256 allowance = 1234569420;
+        vm.prank(users[0]);
+        gobblers.approveGoo(users[1], allowance);
+        assertEq(gobblers.gooAllowance(users[0], users[1]), allowance);
+    }
 
     /// @notice Test that a goo allowance can be revoked by setting it back to zero.
-    function testGooRevokeApproval() public {}
+    function testGooRevokeApproval() public {
+        uint256 allowance = 1234569420;
+        vm.prank(users[0]);
+        gobblers.approveGoo(users[1], allowance);
+        assertEq(gobblers.gooAllowance(users[0], users[1]), allowance);
+        vm.prank(users[0]);
+        gobblers.approveGoo(users[1], 0);
+        assertEq(gobblers.gooAllowance(users[0], users[1]), 0);
+    }
 
     /// @notice Test that an internal goo transfer works under ideal conditions.
-    function testGooTransfer() public{}
+    function testGooTransfer() public {}
 
     /// @notice Test that an internal goo transfer reverts if attempting
     /// to transfer more goo than sender owns.
-    function testCantTransferMoreGooThanOwned() public{}
+    function testCantTransferMoreGooThanOwned() public {}
 
     /// @notice Test that an account can internally transfer goo on behalf of
     /// another account given an adequate allowance.
-    function testGooTransferFrom() public{}
+    function testGooTransferFrom() public {}
 
     /// @notice Test that an account cannot internally transfer goo on behalf of
     /// another account without adequate allowance.
-    function testCantTransferFromMoreGooThanApproved public{}
+    function testCantTransferFromMoreGooThanApproved() public {}
 
     /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance.
     function testCantAddMoreGooThanOwned() public {
