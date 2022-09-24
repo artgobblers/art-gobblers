@@ -241,6 +241,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
     event ArtGobbled(address indexed user, uint256 indexed gobblerId, address indexed nft, uint256 id);
 
+    event GooTransfer(address indexed from, address indexed to, uint256 gooAmount);
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -784,6 +786,20 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
         // Mint the corresponding amount of ERC20 goo.
         goo.mintForGobblers(msg.sender, gooAmount);
+    }
+
+    /// @notice Transfer goo directly from your emission balance,
+    /// to a recipient's emission balance.
+    /// @param to The recipient's address.
+    /// @param gooAmount The amount of goo to transfer.
+    function transferGoo(address to, uint256 gooAmount) external {
+        // Decrease msg.sender's virtual goo balance.
+        updateUserGooBalance(msg.sender, gooAmount, GooBalanceUpdateType.DECREASE);
+
+        // Increase recipient's virtual goo balance.
+        updateUserGooBalance(to, gooAmount, GooBalanceUpdateType.INCREASE);
+
+        emit GooTransfer(msg.sender, to, gooAmount);
     }
 
     /// @notice Burn an amount of a user's virtual goo balance. Only callable
