@@ -945,6 +945,30 @@ contract ArtGobblersTest is DSTestPlus {
         assertEq(gobblers.gooAllowance(users[0], users[2]), transferAmount);
     }
 
+    function testGooSelfTransfer() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        vm.prank(users[0]);
+        gobblers.transferGoo(users[0], transferAmount);
+        assertEq(gobblers.gooBalance(users[0]), initialBalance);
+    }
+
+    function testGooSelfTransferFrom() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        setRandomnessAndReveal(1, "seed");
+        vm.warp(block.timestamp + 100000);
+        uint256 initialBalance = gobblers.gooBalance(users[0]);
+        uint256 transferAmount = initialBalance / 10; //10%
+        vm.prank(users[0]);
+        gobblers.transferGooFrom(users[0], users[0], transferAmount);
+        assertEq(gobblers.gooBalance(users[0]), initialBalance);
+    }
+
     /// @notice Test that we can't add goo when we don't have the corresponding ERC20 balance.
     function testCantAddMoreGooThanOwned() public {
         mintGobblerToAddress(users[0], 1);

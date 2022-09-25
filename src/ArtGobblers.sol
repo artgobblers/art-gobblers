@@ -813,20 +813,21 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         // Will revert due to underflow if we're decreasing by more than the user's current balance.
         uint256 fromUpdatedBalance = gooBalance(msg.sender) - gooAmount;
         getUserData[msg.sender].lastBalance = uint128(fromUpdatedBalance);
+        getUserData[msg.sender].lastTimestamp = uint64(block.timestamp);
+
         // Don't need to do checked addition in the increase case.
         uint256 toUpdatedBalance;
         unchecked {
             toUpdatedBalance = gooBalance(to) + gooAmount;
             getUserData[to].lastBalance = uint128(toUpdatedBalance);
+            getUserData[to].lastTimestamp = uint64(block.timestamp);
         }
-
-        // Update both accounts lastTimestamp now
-        getUserData[msg.sender].lastTimestamp = uint64(block.timestamp);
-        getUserData[to].lastTimestamp = uint64(block.timestamp);
 
         emit GooBalanceUpdated(msg.sender, fromUpdatedBalance);
         emit GooBalanceUpdated(to, toUpdatedBalance);
         emit GooTransfer(msg.sender, to, gooAmount);
+
+        return true;
     }
 
     /// @notice Transfer goo directly from a user's emission balance,
@@ -839,23 +840,21 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         address to,
         uint256 gooAmount
     ) external returns (bool) {
-        uint256 allowed = gooAllowance[from][msg.sender]; // Saves gas for limited approvals.
-
+        uint256 allowed = (from == msg.sender) ? type(uint256).max : gooAllowance[from][msg.sender];
         if (allowed != type(uint256).max) gooAllowance[from][msg.sender] = allowed - gooAmount;
 
         // Will revert due to underflow if we're decreasing by more than the user's current balance.
         uint256 fromUpdatedBalance = gooBalance(from) - gooAmount;
         getUserData[from].lastBalance = uint128(fromUpdatedBalance);
+        getUserData[from].lastTimestamp = uint64(block.timestamp);
+
         // Don't need to do checked addition in the increase case.
         uint256 toUpdatedBalance;
         unchecked {
             toUpdatedBalance = gooBalance(to) + gooAmount;
             getUserData[to].lastBalance = uint128(toUpdatedBalance);
+            getUserData[to].lastTimestamp = uint64(block.timestamp);
         }
-
-        // Update both accounts lastTimestamp now
-        getUserData[from].lastTimestamp = uint64(block.timestamp);
-        getUserData[to].lastTimestamp = uint64(block.timestamp);
 
         emit GooBalanceUpdated(from, fromUpdatedBalance);
         emit GooBalanceUpdated(to, toUpdatedBalance);
