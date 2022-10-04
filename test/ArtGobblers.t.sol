@@ -610,6 +610,51 @@ contract ArtGobblersTest is DSTestPlus {
         gobblers.mintLegendaryGobbler(ids);
     }
 
+    function testCanReuseSacrificedGobblers() public {
+        address user = users[0];
+
+        // setup legendary mint
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        mintGobblerToAddress(user, gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            ids.push(curId);
+            assertEq(gobblers.ownerOf(curId), users[0]);
+        }
+
+        // do token approvals for vulnerability exploit
+        vm.startPrank(user);
+        for (uint256 i = 0; i < ids.length; i++) {
+            gobblers.approve(user, ids[i]);
+        }
+        vm.stopPrank();
+
+        // mint legendary
+        vm.prank(user);
+        uint256 mintedLegendaryId = gobblers.mintLegendaryGobbler(ids);
+
+        // confirm user owns legendary
+        assertEq(gobblers.ownerOf(mintedLegendaryId), user);
+
+        // show that contract initially thinks tokens are burnt
+        for (uint256 i = 0; i < ids.length; i++) {
+            vm.expectRevert("NOT_MINTED");
+            gobblers.ownerOf(ids[i]);
+        }
+
+        // should not be able to revive burned gobblers 
+        vm.startPrank(user);
+        for (uint256 i = 0; i < ids.length; i++) {
+            vm.expectRevert("NOT_AUTHORIZED");
+            gobblers.transferFrom(address(0), user, ids[i]);
+        }
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                                   URIS
     //////////////////////////////////////////////////////////////*/
