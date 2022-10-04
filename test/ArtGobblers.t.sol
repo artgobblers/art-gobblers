@@ -646,7 +646,7 @@ contract ArtGobblersTest is DSTestPlus {
             gobblers.ownerOf(ids[i]);
         }
 
-        // should not be able to revive burned gobblers 
+        // should not be able to revive burned gobblers
         vm.startPrank(user);
         for (uint256 i = 0; i < ids.length; i++) {
             vm.expectRevert("NOT_AUTHORIZED");
