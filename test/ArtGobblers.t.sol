@@ -469,7 +469,7 @@ contract ArtGobblersTest is DSTestPlus {
 
         uint256 finalBalance = gobblers.balanceOf(users[0]);
 
-        // Check balance is computed correctly 
+        // Check balance is computed correctly
         assertEq(finalBalance, initialBalance - cost + 1);
     }
 
