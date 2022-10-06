@@ -456,8 +456,9 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             getUserData[msg.sender].lastBalance = uint128(gooBalance(msg.sender)); // Checkpoint balance.
             getUserData[msg.sender].lastTimestamp = uint64(block.timestamp); // Store time alongside it.
             getUserData[msg.sender].emissionMultiple += uint32(burnedMultipleTotal); // Update multiple.
-            // We subtract the amount of gobblers burned, and then add 1 to factor in the new legendary.
-            getUserData[msg.sender].gobblersOwned = uint32(getUserData[msg.sender].gobblersOwned - cost + 1);
+            // Update the total number of gobblers owned by the user. The call to _mint
+            // below will increase the count by 1 to account for the new legendary gobbler.
+            getUserData[msg.sender].gobblersOwned -= uint32(cost);
 
             // New start price is the max of LEGENDARY_GOBBLER_INITIAL_START_PRICE and cost * 2.
             legendaryGobblerAuctionData.startPrice = uint120(
