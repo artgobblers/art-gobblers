@@ -450,6 +450,29 @@ contract ArtGobblersTest is DSTestPlus {
         }
     }
 
+    /// @notice Test that owned counts are computed properly when minting a legendary
+    function testLegendaryMintBalance() public {
+        uint256 startTime = block.timestamp + 30 days;
+        vm.warp(startTime);
+        // Mint full interval to kick off first auction.
+        mintGobblerToAddress(users[0], gobblers.LEGENDARY_AUCTION_INTERVAL());
+        uint256 cost = gobblers.legendaryGobblerPrice();
+        assertEq(cost, 69);
+        setRandomnessAndReveal(cost, "seed");
+        for (uint256 curId = 1; curId <= cost; curId++) {
+            ids.push(curId);
+        }
+
+        uint256 initialBalance = gobblers.balanceOf(users[0]);
+        vm.prank(users[0]);
+        gobblers.mintLegendaryGobbler(ids);
+
+        uint256 finalBalance = gobblers.balanceOf(users[0]);
+
+        // Check balance is computed correctly
+        assertEq(finalBalance, initialBalance - cost + 1);
+    }
+
     /// @notice Test that Legendary Gobblers can be minted at 0 cost.
     function testMintFreeLegendaryGobbler() public {
         uint256 startTime = block.timestamp + 30 days;
