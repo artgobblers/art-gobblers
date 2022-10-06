@@ -438,6 +438,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
                 burnedMultipleTotal += getGobblerData[id].emissionMultiple;
 
+                delete getApproved[id];
+
                 emit Transfer(msg.sender, getGobblerData[id].owner = address(0), id);
             }
 
