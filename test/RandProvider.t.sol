@@ -127,15 +127,6 @@ contract RandProviderTest is DSTestPlus {
         gobblers.upgradeRandProvider(newProvider);
     }
 
-    function testRandomnessIsNotUpgradableWithPendingSeed() public {
-        mintGobblerToAddress(users[0], 1);
-        vm.warp(block.timestamp + 1 days);
-        gobblers.requestRandomSeed();
-        RandProvider newProvider = new ChainlinkV1RandProvider(ArtGobblers(address(0)), address(0), address(0), 0, 0);
-        vm.expectRevert(ArtGobblers.SeedPending.selector);
-        gobblers.upgradeRandProvider(newProvider);
-    }
-
     function testRandomnessIsUpgradable() public {
         mintGobblerToAddress(users[0], 1);
         vm.warp(block.timestamp + 1 days);
@@ -147,6 +138,44 @@ contract RandProviderTest is DSTestPlus {
         //final address is correct
         assertEq(address(gobblers.randProvider()), address(newProvider));
     }
+
+    function testRandomnessIsResetWithPendingSeed() public {
+        mintGobblerToAddress(users[0], 1);
+        vm.warp(block.timestamp + 1 days);
+        gobblers.requestRandomSeed();
+        (, , , uint256 toBeRevealed, bool waiting) = gobblers.gobblerRevealsData();
+        // Waiting for one gobbler to be revealed
+        assertTrue(waiting);
+        assertEq(toBeRevealed, 1);
+
+        // Upgrade provider
+        RandProvider newProvider = new ChainlinkV1RandProvider(
+            gobblers,
+            address(vrfCoordinator),
+            address(linkToken),
+            keyHash,
+            fee
+        );
+        gobblers.upgradeRandProvider(newProvider);
+
+        // State is reset
+        (, , , toBeRevealed, waiting) = gobblers.gobblerRevealsData();
+        assertFalse(waiting);
+        assertEq(toBeRevealed, 0);
+
+        // Randomness can still be fulfilled 
+        bytes32 requestId = gobblers.requestRandomSeed();
+        (, , , toBeRevealed, waiting) = gobblers.gobblerRevealsData();
+        assertTrue(waiting);
+        assertEq(toBeRevealed, 1);
+
+        uint256 randomness = uint256(keccak256(abi.encodePacked("seed")));
+        vrfCoordinator.callBackWithRandomness(requestId, randomness, address(newProvider));
+        //randomness from vrf should be set in gobblers contract
+        (uint256 randomSeed, , , , ) = gobblers.gobblerRevealsData();
+        assertEq(randomSeed, uint64(randomness));
+    }
+
 
     /*//////////////////////////////////////////////////////////////
                                  HELPERS
