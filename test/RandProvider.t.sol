@@ -163,7 +163,7 @@ contract RandProviderTest is DSTestPlus {
         assertFalse(waiting);
         assertEq(toBeRevealed, 0);
 
-        // Randomness can still be fulfilled 
+        // Randomness can still be fulfilled
         bytes32 requestId = gobblers.requestRandomSeed();
         (, , , toBeRevealed, waiting) = gobblers.gobblerRevealsData();
         assertTrue(waiting);
@@ -175,7 +175,6 @@ contract RandProviderTest is DSTestPlus {
         (uint256 randomSeed, , , , ) = gobblers.gobblerRevealsData();
         assertEq(randomSeed, uint64(randomness));
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                  HELPERS
