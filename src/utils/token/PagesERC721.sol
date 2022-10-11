@@ -185,4 +185,26 @@ abstract contract PagesERC721 {
 
         emit Transfer(address(0), to, id);
     }
+
+    function _batchMint(
+        address to,
+        uint256 amount,
+        uint256 lastMintedId
+    ) internal returns (uint256) {
+        // Doesn't check if the tokens were already minted or the recipient is address(0)
+        // because Pages.sol manages its ids in a way that it ensures it won't double
+        // mint and will only mint to safe addresses or msg.sender who cannot be zero.
+
+        unchecked {
+            _balanceOf[to] += amount;
+
+            for (uint256 i = 0; i < amount; ++i) {
+                _ownerOf[++lastMintedId] = to;
+
+                emit Transfer(address(0), to, lastMintedId);
+            }
+        }
+
+        return lastMintedId;
+    }
 }

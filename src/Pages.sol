@@ -239,16 +239,16 @@ contract Pages is PagesERC721, LogisticToLinearVRGDA {
     function mintCommunityPages(uint256 numPages) external returns (uint256 lastMintedPageId) {
         unchecked {
             // Optimistically increment numMintedForCommunity, may be reverted below.
-            // Overflow in this calculation is possible but numPages would have to
-            // be so large that it would cause the loop to run out of gas quickly.
+            // Overflow in this calculation is possible but numPages would have to be so
+            // large that it would cause the loop in _batchMint to run out of gas quickly.
             uint256 newNumMintedForCommunity = numMintedForCommunity += uint128(numPages);
 
             // Ensure that after this mint pages minted to the community reserve won't comprise more than
             // 10% of the new total page supply. currentId is equivalent to the current total supply of pages.
             if (newNumMintedForCommunity > ((lastMintedPageId = currentId) + numPages) / 10) revert ReserveImbalance();
 
-            // Mint the pages to the community reserve while updating lastMintedPageId.
-            for (uint256 i = 0; i < numPages; ++i) _mint(community, ++lastMintedPageId);
+            // Mint the pages to the community reserve and update lastMintedPageId once minting is complete.
+            lastMintedPageId = _batchMint(community, numPages, lastMintedPageId);
 
             currentId = uint128(lastMintedPageId); // Update currentId with the last minted page id.
 
