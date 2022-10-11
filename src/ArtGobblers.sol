@@ -437,13 +437,15 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
                 if (id >= FIRST_LEGENDARY_GOBBLER_ID) revert CannotBurnLegendary(id);
 
-                require(getGobblerData[id].owner == msg.sender, "WRONG_FROM");
+                GobblerData storage gobbler = getGobblerData[id];
 
-                burnedMultipleTotal += getGobblerData[id].emissionMultiple;
+                require(gobbler.owner == msg.sender, "WRONG_FROM");
+
+                burnedMultipleTotal += gobbler.emissionMultiple;
 
                 delete getApproved[id];
 
-                emit Transfer(msg.sender, getGobblerData[id].owner = address(0), id);
+                emit Transfer(msg.sender, gobbler.owner = address(0), id);
             }
 
             /*//////////////////////////////////////////////////////////////
