@@ -409,7 +409,10 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     /// @param gobblerIds The ids of the standard gobblers to burn.
     /// @return gobblerId The id of the legendary gobbler that was minted.
     function mintLegendaryGobbler(uint256[] calldata gobblerIds) external returns (uint256 gobblerId) {
-        gobblerId = FIRST_LEGENDARY_GOBBLER_ID + legendaryGobblerAuctionData.numSold; // Assign id.
+        // Get the number of legendary gobblers sold up until this point.
+        uint256 numSold = legendaryGobblerAuctionData.numSold;
+
+        gobblerId = FIRST_LEGENDARY_GOBBLER_ID + numSold; // Assign id.
 
         // If the gobbler id would be greater than the max supply, there are no remaining legendaries.
         if (gobblerId > MAX_SUPPLY) revert NoRemainingLegendaryGobblers();
@@ -464,7 +467,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             legendaryGobblerAuctionData.startPrice = uint120(
                 cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost * 2
             );
-            legendaryGobblerAuctionData.numSold += 1; // Increment the # of legendaries sold.
+            legendaryGobblerAuctionData.numSold = uint128(numSold + 1); // Increment the # of legendaries sold.
 
             // If gobblerIds has 1,000 elements this should cost around ~270,000 gas.
             emit LegendaryGobblerMinted(msg.sender, gobblerId, gobblerIds[:cost]);
