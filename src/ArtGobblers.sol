@@ -498,7 +498,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             if (numMintedAtStart > mintedFromGoo) revert LegendaryAuctionNotStarted(numMintedAtStart - mintedFromGoo);
 
             // Compute how many gobblers were minted since the auction began.
-            uint256 numMintedSinceStart = numMintedFromGoo - numMintedAtStart;
+            uint256 numMintedSinceStart = mintedFromGoo - numMintedAtStart;
 
             // prettier-ignore
             // If we've minted the full interval or beyond it, the price has decayed to 0.
