@@ -466,7 +466,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             getUserData[msg.sender].gobblersOwned -= uint32(cost);
 
             // New start price is the max of LEGENDARY_GOBBLER_INITIAL_START_PRICE and cost * 2.
-            legendaryGobblerAuctionData.startPrice = uint120(
+            legendaryGobblerAuctionData.startPrice = uint128(
                 cost <= LEGENDARY_GOBBLER_INITIAL_START_PRICE / 2 ? LEGENDARY_GOBBLER_INITIAL_START_PRICE : cost * 2
             );
             legendaryGobblerAuctionData.numSold = uint128(numSold + 1); // Increment the # of legendaries sold.
@@ -513,7 +513,6 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Request a new random seed for revealing gobblers.
-    /// @dev Can only be called every 24 hours at the earliest.
     function requestRandomSeed() external returns (bytes32) {
         uint256 nextRevealTimestamp = gobblerRevealsData.nextRevealTimestamp;
 
@@ -538,7 +537,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
             // Lock in the number of gobblers to be revealed from seed.
             gobblerRevealsData.toBeRevealed = uint56(toBeRevealed);
 
-            // We want at most one batch of reveals every 24 hours.
+            // We enable reveals for a set of gobblers every 24 hours.
             // Timestamp overflow is impossible on human timescales.
             gobblerRevealsData.nextRevealTimestamp = uint64(nextRevealTimestamp + 1 days);
 
