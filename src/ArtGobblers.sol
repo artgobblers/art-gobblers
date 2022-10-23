@@ -205,7 +205,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         // Next reveal cannot happen before this timestamp.
         uint64 nextRevealTimestamp;
         // Id of latest gobbler which has been revealed so far.
-        uint56 lastRevealedId;
+        uint64 lastRevealedId;
         // Remaining gobblers to be revealed with the current seed.
         uint56 toBeRevealed;
         // Whether we are waiting to receive a seed from Chainlink.
@@ -685,7 +685,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
             // Update all relevant reveal state.
             gobblerRevealsData.randomSeed = uint64(randomSeed);
-            gobblerRevealsData.lastRevealedId = uint56(lastRevealedId);
+            gobblerRevealsData.lastRevealedId = uint64(lastRevealedId);
             gobblerRevealsData.toBeRevealed = uint56(totalRemainingToBeRevealed - numGobblers);
 
             emit GobblersRevealed(msg.sender, numGobblers, lastRevealedId);
