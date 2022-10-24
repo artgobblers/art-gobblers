@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 /// @title Randomness Provider Interface.
 /// @author FrankieIsLost <frankie@paradigm.xyz>
 /// @author transmissions11 <t11s@paradigm.xyz>
-/// @dev Generic asynchronous randomness provider interface.
+/// @notice Generic asynchronous randomness provider interface.
 interface RandProvider {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
