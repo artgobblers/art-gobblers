@@ -85,11 +85,27 @@ contract PagesTest is DSTestPlus {
     }
 
     function testCanMintMultipleCommunity() public {
-        mintPageToAddress(user, 18);
+        mintPageToAddress(user, 90);
 
-        pages.mintCommunityPages(2);
-        assertEq(pages.ownerOf(19), address(community));
-        assertEq(pages.ownerOf(20), address(community));
+        pages.mintCommunityPages(10);
+        assertEq(pages.ownerOf(91), address(community));
+        assertEq(pages.ownerOf(92), address(community));
+        assertEq(pages.ownerOf(93), address(community));
+        assertEq(pages.ownerOf(94), address(community));
+        assertEq(pages.ownerOf(95), address(community));
+        assertEq(pages.ownerOf(96), address(community));
+        assertEq(pages.ownerOf(97), address(community));
+        assertEq(pages.ownerOf(98), address(community));
+        assertEq(pages.ownerOf(99), address(community));
+        assertEq(pages.ownerOf(100), address(community));
+
+        assertEq(pages.numMintedForCommunity(), 10);
+        assertEq(pages.currentId(), 100);
+
+        // Ensure id doesn't get messed up.
+        mintPageToAddress(user, 1);
+        assertEq(pages.ownerOf(101), user);
+        assertEq(pages.currentId(), 101);
     }
 
     function testCantMintTooFastCommunity() public {
