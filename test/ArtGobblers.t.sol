@@ -610,6 +610,9 @@ contract ArtGobblersTest is DSTestPlus {
         // Minting any more should fail.
         vm.expectRevert(ArtGobblers.NoRemainingLegendaryGobblers.selector);
         gobblers.mintLegendaryGobbler(ids);
+
+        vm.expectRevert(ArtGobblers.NoRemainingLegendaryGobblers.selector);
+        gobblers.legendaryGobblerPrice();
     }
 
     /// @notice Test that Legendary Gobblers can't be burned to mint another legendary.
