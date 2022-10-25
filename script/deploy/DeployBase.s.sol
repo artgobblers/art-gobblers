@@ -26,6 +26,7 @@ abstract contract DeployBase is Script {
     string private gobblerBaseUri;
     string private gobblerUnrevealedUri;
     string private pagesBaseUri;
+    bytes32 private immutable provanenceHash;
 
     // Deploy addresses.
     GobblerReserve public teamReserve;
@@ -46,7 +47,8 @@ abstract contract DeployBase is Script {
         uint256 _chainlinkFee,
         string memory _gobblerBaseUri,
         string memory _gobblerUnrevealedUri,
-        string memory _pagesBaseUri
+        string memory _pagesBaseUri,
+        bytes32 _provenanceHash
     ) {
         teamColdWallet = _teamColdWallet;
         communityWallet = _communityWallet;
@@ -59,6 +61,7 @@ abstract contract DeployBase is Script {
         gobblerBaseUri = _gobblerBaseUri;
         gobblerUnrevealedUri = _gobblerUnrevealedUri;
         pagesBaseUri = _pagesBaseUri;
+        provanenceHash = _provenanceHash;
     }
 
     function run() external {
@@ -98,7 +101,8 @@ abstract contract DeployBase is Script {
             address(communityReserve),
             randProvider,
             gobblerBaseUri,
-            gobblerUnrevealedUri
+            gobblerUnrevealedUri,
+            provanenceHash
         );
 
         // Deploy pages contract.

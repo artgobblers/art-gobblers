@@ -40,7 +40,8 @@ contract GobblersCorrectnessTest is DSTestPlus {
             address(0),
             RandProvider(address(0)),
             "",
-            ""
+            "",
+            keccak256(abi.encodePacked("provenance"))
         );
 
         MAX_MINTABLE = gobblers.MAX_MINTABLE();

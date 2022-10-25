@@ -16,6 +16,8 @@ contract DeployGoerli is DeployBase {
     string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
     string public constant pagesBaseUri = "https://testnet.ag.xyz/api/nfts/pages/";
 
+    address public immutable provenance = address(0xBEEB00);
+
     constructor()
         DeployBase(
             // Team cold wallet:
@@ -39,7 +41,9 @@ contract DeployGoerli is DeployBase {
             // Gobbler unrevealed URI:
             gobblerUnrevealedUri,
             // Pages base URI:
-            pagesBaseUri
+            pagesBaseUri,
+            // Provenance hash:
+            keccak256(abi.encodePacked(provenance))
         )
     {}
 }

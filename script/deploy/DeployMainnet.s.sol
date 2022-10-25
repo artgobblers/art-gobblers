@@ -14,10 +14,13 @@ contract DeployMainnet is DeployBase {
     ///Mon Oct 31 2022 21:20:00 GMT+0000
     uint256 public immutable mintStart = 1667251200;
 
-    //TODO: CONSTANTS 
+    //TODO: CONSTANTS
     string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
     string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
     string public constant pagesBaseUri = "https://testnet.ag.xyz/api/nfts/pages/";
+
+    //TODO: PROVENANCE
+    address public immutable provenance = address(0xBEEB00);
 
     constructor()
         DeployBase(
@@ -42,7 +45,9 @@ contract DeployMainnet is DeployBase {
             // Gobbler unrevealed URI:
             gobblerUnrevealedUri,
             // Pages base URI:
-            pagesBaseUri
+            pagesBaseUri,
+            // Provenance hash:
+            keccak256(abi.encodePacked(provenance))
         )
     {}
 }
