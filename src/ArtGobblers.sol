@@ -569,8 +569,13 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     /// @notice Upgrade the rand provider contract. Useful if current VRF is sunset.
     /// @param newRandProvider The new randomness provider contract address.
     function upgradeRandProvider(RandProvider newRandProvider) external onlyOwner {
-        // Revert if waiting for seed, so we don't interrupt requests in flight.
-        if (gobblerRevealsData.waitingForSeed) revert SeedPending();
+        // Reset reveal state when we upgrade while the seed is pending. This gives us a
+        // safeguard against malfunctions since we won't be stuck waiting for a seed forever.
+        if (gobblerRevealsData.waitingForSeed) {
+            gobblerRevealsData.waitingForSeed = false;
+            gobblerRevealsData.toBeRevealed = 0;
+            gobblerRevealsData.nextRevealTimestamp -= 1 days;
+        }
 
         randProvider = newRandProvider; // Update the randomness provider.
 
