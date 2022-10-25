@@ -73,7 +73,7 @@ The following auditors were engaged to review the project before launch:
 
 - [samczsun](https://samczsun.com) (No report)
 - [Spearbit](https://spearbit.com) (Report pending)
-- [code4rena](https://code423n4.com) (Audit pending)
+- [code4rena](https://code423n4.com) (Report pending)
 - [Riley Holterhus](https://www.rileyholterhus.com) (No Report)
 
 ## License
