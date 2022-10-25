@@ -99,7 +99,7 @@ abstract contract DeployBase is Script {
         );
 
         // Deploy pages contract.
-        pages = new Pages(mintStart, goo, teamColdWallet, artGobblers, pagesBaseUri);
+        pages = new Pages(mintStart, goo, address(communityReserve), artGobblers, pagesBaseUri);
 
         vm.stopBroadcast();
     }

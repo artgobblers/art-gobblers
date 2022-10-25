@@ -63,10 +63,8 @@ contract ChainlinkV1RandProvider is RandProvider, VRFConsumerBase {
         // The caller must be the ArtGobblers contract, revert otherwise.
         if (msg.sender != address(artGobblers)) revert NotGobblers();
 
-        emit RandomBytesRequested(requestId);
-
-        // Will revert if we don't have enough LINK to afford the request.
-        return requestRandomness(chainlinkKeyHash, chainlinkFee);
+        // The requestRandomness call will revert if we don't have enough LINK to afford the request.
+        emit RandomBytesRequested(requestId = requestRandomness(chainlinkKeyHash, chainlinkFee));
     }
 
     /// @dev Handles VRF response by calling back into the ArtGobblers contract.
