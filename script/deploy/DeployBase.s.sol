@@ -16,6 +16,7 @@ import {ArtGobblers} from "../../src/ArtGobblers.sol";
 abstract contract DeployBase is Script {
     // Environment specific variables.
     address private immutable teamColdWallet;
+    address private immutable communityWallet;
     bytes32 private immutable merkleRoot;
     uint256 private immutable mintStart;
     address private immutable vrfCoordinator;
@@ -36,6 +37,7 @@ abstract contract DeployBase is Script {
 
     constructor(
         address _teamColdWallet,
+        address _communityWallet,
         bytes32 _merkleRoot,
         uint256 _mintStart,
         address _vrfCoordinator,
@@ -47,6 +49,7 @@ abstract contract DeployBase is Script {
         string memory _pagesBaseUri
     ) {
         teamColdWallet = _teamColdWallet;
+        communityWallet = _communityWallet;
         merkleRoot = _merkleRoot;
         mintStart = _mintStart;
         vrfCoordinator = _vrfCoordinator;
@@ -99,7 +102,7 @@ abstract contract DeployBase is Script {
         );
 
         // Deploy pages contract.
-        pages = new Pages(mintStart, goo, teamColdWallet, artGobblers, pagesBaseUri);
+        pages = new Pages(mintStart, goo, communityWallet, artGobblers, pagesBaseUri);
 
         vm.stopBroadcast();
     }
