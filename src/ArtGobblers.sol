@@ -763,7 +763,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     /// @notice Calculate a user's virtual goo balance.
     /// @param user The user to query balance for.
     function gooBalance(address user) public view returns (uint256) {
-        // Compute the user's virtual goo balance by leveraging LibGOO.
+        // Compute the user's virtual goo balance using LibGOO.
         // prettier-ignore
         return LibGOO.computeGOOBalance(
             getUserData[user].emissionMultiple,
