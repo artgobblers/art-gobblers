@@ -5,6 +5,7 @@ import {DeployBase} from "./DeployBase.s.sol";
 
 contract DeployGoerli is DeployBase {
     address public immutable coldWallet = 0x126620598A797e6D9d2C280b5dB91b46F27A8330;
+    address public immutable communityWallet = 0x126620598A797e6D9d2C280b5dB91b46F27A8330;
 
     address public immutable root = 0x1D18077167c1177253555e45B4b5448B11E30b4b;
 
@@ -19,6 +20,8 @@ contract DeployGoerli is DeployBase {
         DeployBase(
             // Team cold wallet:
             coldWallet,
+            // Community wallet:
+            communityWallet,
             // Merkle root:
             keccak256(abi.encodePacked(root)),
             // Mint start:
