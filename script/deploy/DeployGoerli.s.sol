@@ -4,20 +4,20 @@ pragma solidity >=0.8.0;
 import {DeployBase} from "./DeployBase.s.sol";
 
 contract DeployGoerli is DeployBase {
-    address public immutable coldWallet = 0x126620598A797e6D9d2C280b5dB91b46F27A8330;
-    address public immutable communityWallet = 0x126620598A797e6D9d2C280b5dB91b46F27A8330;
+     address public immutable coldWallet = 0xE974159205528502237758439da8c4dcc03D3023;
+    address public immutable communityWallet = 0xDf2aAeead21Cf2BFF3965E858332aC8c8364E991;
     address public immutable governorWallet = 0x2719E6FdDd9E33c077866dAc6bcdC40eB54cD4f7;
 
-    address public immutable root = 0x1D18077167c1177253555e45B4b5448B11E30b4b;
+    bytes32 public immutable root = 0xae49de097f1b61ff3ff428b660ddf98b6a8f64ed0f9b665709b13d3721b79405;
 
-    // Tue Sep 22 2022 01:22:45:00 GMT+0000
-    uint256 public immutable mintStart = 1663809768;
+    // Fri Oct 28 2022 12:38:52 GMT+0000
+    uint256 public immutable mintStart = 1667251200;
 
-    string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
-    string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
-    string public constant pagesBaseUri = "https://testnet.ag.xyz/api/nfts/pages/";
+    string public constant gobblerBaseUri = "https://nfts.artgobblers.com/api/gobblers/";
+    string public constant gobblerUnrevealedUri = "https://nfts.artgobblers.com/api/gobblers/unrevealed";
+    string public constant pagesBaseUri = "https://nfts.artgobblers.com/api/pages/";
 
-    address public immutable provenance = address(0xBEEB00);
+    bytes32 public immutable provenance = 0x628f3ac523165f5cf33334938a6211f0065ce6dc20a095d5274c34df8504d6e4;
 
     constructor()
         DeployBase(
@@ -28,7 +28,7 @@ contract DeployGoerli is DeployBase {
             // Community wallet:
             communityWallet,
             // Merkle root:
-            keccak256(abi.encodePacked(root)),
+            root,
             // Mint start:
             mintStart,
             // VRF coordinator:
@@ -46,7 +46,7 @@ contract DeployGoerli is DeployBase {
             // Pages base URI:
             pagesBaseUri,
             // Provenance hash:
-            keccak256(abi.encodePacked(provenance))
+            provenance
         )
     {}
 }
