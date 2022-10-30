@@ -16,7 +16,7 @@ contract DeployMainnet is DeployBase {
     string public constant pagesBaseUri = "https://nfts.artgobblers.com/api/pages/";
 
     //TODO: PROVENANCE
-    bytes32 public immutable provenance = bytes32(uint256(0xbeeb00));
+    bytes32 public immutable provenance = 0x628f3ac523165f5cf33334938a6211f0065ce6dc20a095d5274c34df8504d6e4;
 
     constructor()
         DeployBase(
