@@ -45,7 +45,7 @@ contract DeployMainnet is DeployBase {
             // Provenance hash:
             provenance,
             // Use custom private keys:
-            false
+            true
         )
     {}
 }

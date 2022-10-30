@@ -74,11 +74,11 @@ abstract contract DeployBase is Script {
 
         // Precomputed contract addresses, based on contract deploy nonces.
         address gobblerAddress = LibRLP.computeAddress(
-            useCustomPrivateKeys ? gobblerKey : tx.origin,
+            useCustomPrivateKeys ? vm.addr(gobblerKey) : tx.origin,
             useCustomPrivateKeys ? 0 : vm.getNonce(tx.origin) + 4
         );
         address pageAddress = LibRLP.computeAddress(
-            useCustomPrivateKeys ? pagesKey : tx.origin,
+            useCustomPrivateKeys ? vm.addr(pagesKey) : tx.origin,
             useCustomPrivateKeys ? 0 : vm.getNonce(tx.origin) + 3
         );
 
