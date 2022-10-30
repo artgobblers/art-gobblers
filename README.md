@@ -14,9 +14,9 @@ See our [overview of the system](https://www.paradigm.xyz/2022/09/artgobblers), 
 
 | Contract    | Mainnet                                                                                                               | Goerli                                                                                                                       |
 |-------------|-----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| ArtGobblers | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://goerli.etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) |
-| Pages       | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://goerli.etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) |
-| GOo         | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://goerli.etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) |
+| `ArtGobblers` | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://goerli.etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) |
+| `Pages`       | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://goerli.etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) |
+| `Goo`         | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://goerli.etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) |
 
 ## State Diagrams
 
