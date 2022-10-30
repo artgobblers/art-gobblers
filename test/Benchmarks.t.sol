@@ -153,7 +153,7 @@ contract BenchmarksTest is DSTest {
         pages.mintCommunityPages(1);
     }
 
-    function deployGobblers() public {
+    function testDeployGobblers() public {
         new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
@@ -168,12 +168,12 @@ contract BenchmarksTest is DSTest {
         );
     }
 
-    function deployGoo() public {
+    function testDeployGoo() public {
         new Goo(gobblerAddress, pageAddress);
     }
 
-    function deployPages() public {
-        new Goo(gobblerAddress, pageAddress);
+    function testDeployPages() public {
+        new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");
     }
 
     function mintGobblerToAddress(address addr, uint256 num) internal {
