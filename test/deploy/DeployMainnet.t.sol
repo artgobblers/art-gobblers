@@ -68,7 +68,8 @@ contract DeployMainnetTest is DSTestPlus {
 
     function testGobblerClaim() public {
         ArtGobblers gobblers = deployScript.artGobblers();
-        //address is in merkle root
+
+        // Address is in the merkle root.
         address minter = 0x0fb90B14e4BF3a2e5182B9b3cBD03e8d33b5b863;
 
         //merkle proof
