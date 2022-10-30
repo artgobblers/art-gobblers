@@ -15,6 +15,13 @@ contract DeployRinkebyTest is DSTestPlus {
     DeployRinkeby deployScript;
 
     function setUp() public {
+        vm.setEnv("DEPLOYER_PRIVATE_KEY", "0x69ee2e10ef03dd13d2526850344cf4bfd9993a0e870ef719ef3b56b30bb44883");
+        vm.setEnv("GOBBLER_PRIVATE_KEY", "0xcc53d2d8db2eee0ea8db8e2c2e3f34ea3ceabf007a194e79c428955de9454cb4");
+        vm.setEnv("PAGES_PRIVATE_KEY", "0x11ce2702ada29d2af62fe330432ed1ad8418f5150ecbced66fa74e11805ca185");
+        vm.setEnv("GOO_PRIVATE_KEY", "0xf5b41f80806337a465a117c36b83f5f6d2c54bced4662f80a9c7c99d7ea1c9a0");
+
+        vm.deal(vm.addr(vm.envUint("DEPLOYER_PRIVATE_KEY")), type(uint64).max);
+
         deployScript = new DeployRinkeby();
         deployScript.run();
     }
