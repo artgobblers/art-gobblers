@@ -42,7 +42,7 @@ contract BenchmarksTest is DSTest {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 2 contract deploys, and pages after 3
+        // Gobblers contract will be deployed after 2 contract deploys, and pages after 3.
         gobblerAddress = utils.predictContractAddress(address(this), 2);
         pageAddress = utils.predictContractAddress(address(this), 3);
 

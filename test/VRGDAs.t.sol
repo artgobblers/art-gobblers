@@ -39,7 +39,7 @@ contract VRGDAsTest is DSTestPlus {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 2 contract deploys, and pages after 3
+        // Gobblers contract will be deployed after 2 contract deploys, and pages after 3.
         address gobblerAddress = utils.predictContractAddress(address(this), 2);
         address pagesAddress = utils.predictContractAddress(address(this), 3);
 
