@@ -15,6 +15,7 @@ import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
 abstract contract DeployBase is Script {
     // Environment specific variables.
+    address private immutable governorWallet;
     address private immutable teamColdWallet;
     address private immutable communityWallet;
     bytes32 private immutable merkleRoot;
@@ -26,7 +27,7 @@ abstract contract DeployBase is Script {
     string private gobblerBaseUri;
     string private gobblerUnrevealedUri;
     string private pagesBaseUri;
-    bytes32 private immutable provanenceHash;
+    bytes32 private immutable provenanceHash;
 
     // Deploy addresses.
     GobblerReserve public teamReserve;
@@ -37,6 +38,7 @@ abstract contract DeployBase is Script {
     Pages public pages;
 
     constructor(
+        address _governorWallet,
         address _teamColdWallet,
         address _communityWallet,
         bytes32 _merkleRoot,
@@ -50,6 +52,7 @@ abstract contract DeployBase is Script {
         string memory _pagesBaseUri,
         bytes32 _provenanceHash
     ) {
+        governorWallet = _governorWallet;
         teamColdWallet = _teamColdWallet;
         communityWallet = _communityWallet;
         merkleRoot = _merkleRoot;
@@ -61,16 +64,24 @@ abstract contract DeployBase is Script {
         gobblerBaseUri = _gobblerBaseUri;
         gobblerUnrevealedUri = _gobblerUnrevealedUri;
         pagesBaseUri = _pagesBaseUri;
-        provanenceHash = _provenanceHash;
+        provenanceHash = _provenanceHash;
     }
 
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 gobblerKey = vm.envUint("GOBBLER_PRIVATE_KEY");
+        uint256 pagesKey = vm.envUint("PAGES_PRIVATE_KEY");
+        uint256 gooKey = vm.envUint("GOO_PRIVATE_KEY");
+
+        address gobblerDeployerAddress = vm.addr(gobblerKey);
+        address pagesDeployerAddress = vm.addr(pagesKey);
+        address gooDeployerAddress = vm.addr(gooKey);
 
         // Precomputed contract addresses, based on contract deploy nonces.
-        // tx.origin is the address who will actually broadcast the contract creations below.
-        address gobblerAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 4);
-        address pageAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 5);
+        address gobblerAddress = LibRLP.computeAddress(gobblerDeployerAddress, 0);
+        address pageAddress = LibRLP.computeAddress(pagesDeployerAddress, 0);
+
+        vm.startBroadcast(deployerKey);
 
         // Deploy team and community reserves, owned by cold wallet.
         teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
@@ -83,6 +94,15 @@ abstract contract DeployBase is Script {
             chainlinkFee
         );
 
+        // Fund each of the other deployer addresses.
+        payable(gobblerDeployerAddress).transfer(0.25 ether);
+        payable(pagesDeployerAddress).transfer(0.25 ether);
+        payable(gooDeployerAddress).transfer(0.25 ether);
+
+        vm.stopBroadcast();
+
+        vm.startBroadcast(gooKey);
+
         // Deploy goo contract.
         goo = new Goo(
             // Gobblers contract address:
@@ -90,6 +110,10 @@ abstract contract DeployBase is Script {
             // Pages contract address:
             pageAddress
         );
+
+        vm.stopBroadcast();
+
+        vm.startBroadcast(gobblerKey);
 
         // Deploy gobblers contract,
         artGobblers = new ArtGobblers(
@@ -102,8 +126,14 @@ abstract contract DeployBase is Script {
             randProvider,
             gobblerBaseUri,
             gobblerUnrevealedUri,
-            provanenceHash
+            provenanceHash
         );
+
+        artGobblers.transferOwnership(governorWallet);
+
+        vm.stopBroadcast();
+
+        vm.startBroadcast(pagesKey);
 
         // Deploy pages contract.
         pages = new Pages(mintStart, goo, communityWallet, artGobblers, pagesBaseUri);

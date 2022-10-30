@@ -2,27 +2,27 @@
 pragma solidity >=0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {DeployRinkeby} from "../../script/deploy/DeployRinkeby.s.sol";
+import {DeployMainnet} from "../../script/deploy/DeployMainnet.s.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {console} from "forge-std/console.sol";
 
 import {Pages} from "../../src/Pages.sol";
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
-contract DeployRinkebyTest is DSTestPlus {
+contract DeployMainnetTest is DSTestPlus {
     Vm internal immutable vm = Vm(HEVM_ADDRESS);
 
-    DeployRinkeby deployScript;
+    DeployMainnet deployScript;
 
     function setUp() public {
         vm.setEnv("DEPLOYER_PRIVATE_KEY", "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         vm.setEnv("GOBBLER_PRIVATE_KEY", "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
         vm.setEnv("PAGES_PRIVATE_KEY", "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
-        vm.setEnv("GOO_PRIVATE_KEY", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
+        vm.setEnv("GOO_PRIVATE_KEY", "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
 
         vm.deal(vm.addr(vm.envUint("DEPLOYER_PRIVATE_KEY")), type(uint64).max);
 
-        deployScript = new DeployRinkeby();
+        deployScript = new DeployMainnet();
         deployScript.run();
     }
 
@@ -39,16 +39,12 @@ contract DeployRinkebyTest is DSTestPlus {
     }
 
     /// @notice Test that merkle root was correctly set.
-    function testMerkleRoot() public {
-        vm.warp(deployScript.mintStart());
-        // Use merkle root as user to test simple proof.
-        address user = deployScript.root();
-        bytes32[] memory proof;
-        ArtGobblers gobblers = deployScript.artGobblers();
-        vm.prank(user);
-        gobblers.claimGobbler(proof);
-        // Verify gobbler ownership.
-        assertEq(gobblers.ownerOf(1), user);
+    function testGobblerOwnership() public {
+        assertEq(deployScript.artGobblers().owner(), deployScript.governorWallet());
+    }
+
+    function testRoot() public {
+        assertEq(deployScript.root(), deployScript.artGobblers().merkleRoot());
     }
 
     /// @notice Test cold wallet was appropriately set.
