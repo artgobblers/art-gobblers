@@ -72,7 +72,7 @@ contract DeployMainnetTest is DSTestPlus {
         // Address is in the merkle root.
         address minter = 0x0fb90B14e4BF3a2e5182B9b3cBD03e8d33b5b863;
 
-        //merkle proof
+        // Merkle proof.
         bytes32[] memory proof = new bytes32[](11);
         proof[0] = 0x541a56539b694a70dde9dabe952bb520f496fce67614316102d0a842d3615f2a;
         proof[1] = 0x48b4e269c7ce862127a0acc74a4ea667571fc3d7794d3c738ba5012ab356e1bd;
@@ -86,14 +86,15 @@ contract DeployMainnetTest is DSTestPlus {
         proof[9] = 0x7413ded58393d42ce39eaedd07d8b57f62e5c068d5608300cc7cccd96ca40380;
         proof[10] = 0xf3927c3b5a5dcce415463d504510cc3a3da57a48199a96f49e0257e2cd66d3a5;
 
-        //initial balance should be zero
+        // Initial balance should be zero.
         assertEq(gobblers.balanceOf(minter), 0);
 
-        //move time and mint
+        // Move time and mint.
         vm.warp(gobblers.mintStart());
         vm.prank(minter);
         gobblers.claimGobbler(proof);
-        //check that balance has increased
+
+        // Check that balance has increased.
         assertEq(gobblers.balanceOf(minter), 1);
     }
 }
