@@ -211,7 +211,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         uint64 lastRevealedId;
         // Remaining gobblers to be revealed with the current seed.
         uint56 toBeRevealed;
-        // Whether we are waiting to receive a seed from Chainlink.
+        // Whether we are waiting to receive a seed from the provider.
         bool waitingForSeed;
     }
 
