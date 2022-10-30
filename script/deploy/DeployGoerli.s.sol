@@ -10,7 +10,7 @@ contract DeployGoerli is DeployBase {
 
     bytes32 public immutable root = 0xae49de097f1b61ff3ff428b660ddf98b6a8f64ed0f9b665709b13d3721b79405;
 
-    // Fri Oct 28 2022 12:38:52 GMT+0000
+    // Mon Oct 31 2022 21:20:00 GMT+0000
     uint256 public immutable mintStart = 1667251200;
 
     string public constant gobblerBaseUri = "https://nfts.artgobblers.com/api/gobblers/";
