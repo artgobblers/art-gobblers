@@ -69,14 +69,18 @@ forge snapshot
 
 ### Deploy Contracts
 
-In order to deploy the art gobblers contracts, set the relevant constants in the `DeployMainnet` script, and run the following command 
+In order to deploy the art gobblers contracts, set the relevant constants in the `DeployMainnet` script, and run the following command(s):
 
 ```sh
-DEPLOYER_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY GOBBLER_PRIVATE_KEY=$GOBBLER_PRIVATE_KEY
-PAGES_PRIVATE_KEY=$PAGES_PRIVATE_KEY GOO_PRIVATE_KEY=$GOO_PRIVATE_KEY forge script script/deploy/DeployMainnet.s.sol:DeployMainnet --rpc-url $RPC_URL --verify --etherscan-api-key $API_KEY
+export DEPLOYER_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY 
+export GOBBLER_PRIVATE_KEY=$GOBBLER_PRIVATE_KEY
+export PAGES_PRIVATE_KEY=$PAGES_PRIVATE_KEY 
+export GOO_PRIVATE_KEY=$GOO_PRIVATE_KEY
+
+forge script script/deploy/DeployMainnet.s.sol:DeployMainnet --rpc-url $RPC_URL --verify --etherscan-api-key $API_KEY
 ```
 
-We use [profanity2](https://github.com/1inch/profanity2) to generate vanity addresses for the gobbler, pages and goo contracts, so each of these contracts is deployed using a different private key. Only the DEPLOYER_PRIVATE_KEY needs to hold deploy funds--during the deploy script execution, this account transfers funds to the other deploy accounts before those deploy the relevant contracts. 
+We use [profanity2](https://github.com/1inch/profanity2) to generate vanity addresses for the `ArtGobblers`, `Pages` and `Goo` contracts. As a result, each of these contracts must be deployed using a unique private key. To simplify deployment, the deployment script ensures that only `DEPLOYER_PRIVATE_KEY` needs to be seeded with ETH, by automatically transferring 0.25 ETH to each other deployer address before it is used.
 
 ## Audits
 
