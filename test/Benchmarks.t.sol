@@ -26,6 +26,9 @@ contract BenchmarksTest is DSTest {
     Goo private goo;
     Pages private pages;
 
+    address gobblerAddress;
+    address pageAddress;
+
     uint256 legendaryCost;
 
     bytes32 private keyHash;
@@ -40,8 +43,8 @@ contract BenchmarksTest is DSTest {
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
         //gobblers contract will be deployed after 2 contract deploys, and pages after 3
-        address gobblerAddress = utils.predictContractAddress(address(this), 2);
-        address pageAddress = utils.predictContractAddress(address(this), 3);
+        gobblerAddress = utils.predictContractAddress(address(this), 2);
+        pageAddress = utils.predictContractAddress(address(this), 3);
 
         randProvider = new ChainlinkV1RandProvider(
             ArtGobblers(gobblerAddress),
@@ -148,6 +151,29 @@ contract BenchmarksTest is DSTest {
 
     function testMintCommunityPages() public {
         pages.mintCommunityPages(1);
+    }
+
+    function deployGobblers() public { 
+        new ArtGobblers(
+            keccak256(abi.encodePacked(users[0])),
+            block.timestamp,
+            goo,
+            Pages(pageAddress),
+            address(0xBEEF),
+            address(0xBEEF),
+            randProvider,
+            "base",
+            "",
+            keccak256(abi.encodePacked("provenance"))
+        );
+    }
+
+    function deployGoo() public {
+        new Goo(gobblerAddress, pageAddress);
+    }
+
+    function deployPages() public {
+        new Goo(gobblerAddress, pageAddress);
     }
 
     function mintGobblerToAddress(address addr, uint256 num) internal {
