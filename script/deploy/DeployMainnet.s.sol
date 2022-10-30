@@ -10,14 +10,13 @@ contract DeployMainnet is DeployBase {
 
     bytes32 public immutable root = 0xae49de097f1b61ff3ff428b660ddf98b6a8f64ed0f9b665709b13d3721b79405;
 
-    ///Mon Oct 31 2022 21:20:00 GMT+0000
+    // Mon Oct 31 2022 21:20:00 GMT+0000
     uint256 public immutable mintStart = 1667251200;
 
     string public constant gobblerBaseUri = "https://nfts.artgobblers.com/api/gobblers/";
     string public constant gobblerUnrevealedUri = "https://nfts.artgobblers.com/api/gobblers/unrevealed";
     string public constant pagesBaseUri = "https://nfts.artgobblers.com/api/pages/";
 
-    //TODO: PROVENANCE
     bytes32 public immutable provenance = 0x628f3ac523165f5cf33334938a6211f0065ce6dc20a095d5274c34df8504d6e4;
 
     constructor()
