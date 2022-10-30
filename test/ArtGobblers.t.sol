@@ -52,7 +52,7 @@ contract ArtGobblersTest is DSTestPlus {
         linkToken = new LinkToken();
         vrfCoordinator = new VRFCoordinatorMock(address(linkToken));
 
-        //gobblers contract will be deployed after 4 contract deploys, and pages after 5
+        // Gobblers contract will be deployed after 4 contract deploys, and pages after 5.
         address gobblerAddress = utils.predictContractAddress(address(this), 4);
         address pagesAddress = utils.predictContractAddress(address(this), 5);
 
