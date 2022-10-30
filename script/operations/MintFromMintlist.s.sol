@@ -3,14 +3,12 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Script.sol";
 
-
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
 contract MintFromMintlist is Script {
-   
-    // Art Gobblers address on network we want to run script for. 
+    // Art Gobblers address on network we want to run script for.
     ArtGobblers public gobblers = ArtGobblers(0x60Bb1E329d8f783D55fECB1E8d748838753fF169);
-   
+
     function run() external {
         //address is in merkle root
         address minter = 0x7eD52863829AB99354F3a0503A622e82AcD5F7d3;
