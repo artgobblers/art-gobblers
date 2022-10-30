@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import {DeployBase} from "./DeployBase.s.sol";
 
 contract DeployGoerli is DeployBase {
-     address public immutable coldWallet = 0xE974159205528502237758439da8c4dcc03D3023;
+    address public immutable coldWallet = 0xE974159205528502237758439da8c4dcc03D3023;
     address public immutable communityWallet = 0xDf2aAeead21Cf2BFF3965E858332aC8c8364E991;
     address public immutable governorWallet = 0x2719E6FdDd9E33c077866dAc6bcdC40eB54cD4f7;
 
