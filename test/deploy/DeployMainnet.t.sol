@@ -38,7 +38,7 @@ contract DeployMainnetTest is DSTestPlus {
         assertEq(address(deployScript.pages().goo()), address(deployScript.goo()));
     }
 
-    /// @notice Test that gobblers ownership is correctly transferred to governor. 
+    /// @notice Test that gobblers ownership is correctly transferred to governor.
     function testGobblerOwnership() public {
         assertEq(deployScript.artGobblers().owner(), deployScript.governorWallet());
     }
@@ -68,7 +68,7 @@ contract DeployMainnetTest is DSTestPlus {
 
     function testGobblerClaim() public {
         ArtGobblers gobblers = deployScript.artGobblers();
-        //address is in merkle root 
+        //address is in merkle root
         address minter = 0x0fb90B14e4BF3a2e5182B9b3cBD03e8d33b5b863;
 
         //merkle proof
@@ -85,9 +85,9 @@ contract DeployMainnetTest is DSTestPlus {
         proof[9] = 0x7413ded58393d42ce39eaedd07d8b57f62e5c068d5608300cc7cccd96ca40380;
         proof[10] = 0xf3927c3b5a5dcce415463d504510cc3a3da57a48199a96f49e0257e2cd66d3a5;
 
-        //initial balance should be zero 
+        //initial balance should be zero
         assertEq(gobblers.balanceOf(minter), 0);
-        
+
         //move time and mint
         vm.warp(gobblers.mintStart());
         vm.prank(minter);
