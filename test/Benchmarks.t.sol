@@ -153,7 +153,7 @@ contract BenchmarksTest is DSTest {
         pages.mintCommunityPages(1);
     }
 
-    function deployGobblers() public { 
+    function deployGobblers() public {
         new ArtGobblers(
             keccak256(abi.encodePacked(users[0])),
             block.timestamp,
