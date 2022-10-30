@@ -43,7 +43,9 @@ contract DeployMainnet is DeployBase {
             // Pages base URI:
             pagesBaseUri,
             // Provenance hash:
-            provenance
+            provenance,
+            // Use custom private keys:
+            false
         )
     {}
 }

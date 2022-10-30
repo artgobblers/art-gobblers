@@ -26,7 +26,8 @@ abstract contract DeployBase is Script {
     string private gobblerBaseUri;
     string private gobblerUnrevealedUri;
     string private pagesBaseUri;
-    bytes32 private immutable provanenceHash;
+    bytes32 private immutable provenanceHash;
+    bool private immutable useCustomPrivateKeys;
 
     // Deploy addresses.
     GobblerReserve public teamReserve;
@@ -48,7 +49,8 @@ abstract contract DeployBase is Script {
         string memory _gobblerBaseUri,
         string memory _gobblerUnrevealedUri,
         string memory _pagesBaseUri,
-        bytes32 _provenanceHash
+        bytes32 _provenanceHash,
+        bool _useCustomPrivateKeys
     ) {
         teamColdWallet = _teamColdWallet;
         communityWallet = _communityWallet;
@@ -61,16 +63,26 @@ abstract contract DeployBase is Script {
         gobblerBaseUri = _gobblerBaseUri;
         gobblerUnrevealedUri = _gobblerUnrevealedUri;
         pagesBaseUri = _pagesBaseUri;
-        provanenceHash = _provenanceHash;
+        provenanceHash = _provenanceHash;
+        useCustomPrivateKeys = _useCustomPrivateKeys;
     }
 
     function run() external {
-        vm.startBroadcast();
+        uint256 gobblerKey = useCustomPrivateKeys ? vm.envUint("GOBBLER_PRIVATE_KEY") : 0;
+        uint256 pagesKey = useCustomPrivateKeys ? vm.envUint("PAGES_PRIVATE_KEY") : 0;
+        uint256 gooKey = useCustomPrivateKeys ? vm.envUint("GOO_PRIVATE_KEY") : 0;
 
         // Precomputed contract addresses, based on contract deploy nonces.
-        // tx.origin is the address who will actually broadcast the contract creations below.
-        address gobblerAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 4);
-        address pageAddress = LibRLP.computeAddress(tx.origin, vm.getNonce(tx.origin) + 5);
+        address gobblerAddress = LibRLP.computeAddress(
+            useCustomPrivateKeys ? gobblerKey : tx.origin,
+            useCustomPrivateKeys ? 0 : vm.getNonce(tx.origin) + 4
+        );
+        address pageAddress = LibRLP.computeAddress(
+            useCustomPrivateKeys ? pagesKey : tx.origin,
+            useCustomPrivateKeys ? 0 : vm.getNonce(tx.origin) + 3
+        );
+
+        vm.startBroadcast();
 
         // Deploy team and community reserves, owned by cold wallet.
         teamReserve = new GobblerReserve(ArtGobblers(gobblerAddress), teamColdWallet);
@@ -83,6 +95,12 @@ abstract contract DeployBase is Script {
             chainlinkFee
         );
 
+        if (useCustomPrivateKeys) {
+            vm.stopBroadcast();
+
+            vm.startBroadcast(gooKey);
+        }
+
         // Deploy goo contract.
         goo = new Goo(
             // Gobblers contract address:
@@ -90,6 +108,12 @@ abstract contract DeployBase is Script {
             // Pages contract address:
             pageAddress
         );
+
+        if (useCustomPrivateKeys) {
+            vm.stopBroadcast();
+
+            vm.startBroadcast(gobblerKey);
+        }
 
         // Deploy gobblers contract,
         artGobblers = new ArtGobblers(
@@ -102,8 +126,14 @@ abstract contract DeployBase is Script {
             randProvider,
             gobblerBaseUri,
             gobblerUnrevealedUri,
-            provanenceHash
+            provenanceHash
         );
+
+        if (useCustomPrivateKeys) {
+            vm.stopBroadcast();
+
+            vm.startBroadcast(pagesKey);
+        }
 
         // Deploy pages contract.
         pages = new Pages(mintStart, goo, communityWallet, artGobblers, pagesBaseUri);

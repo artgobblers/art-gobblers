@@ -42,7 +42,9 @@ contract DeployRinkeby is DeployBase {
             // Pages base URI:
             pagesBaseUri,
             // Provenance hash:
-            keccak256(abi.encodePacked(provenance))
+            keccak256(abi.encodePacked(provenance)),
+            // Use custom private keys:
+            false
         )
     {}
 }
