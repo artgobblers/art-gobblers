@@ -132,14 +132,14 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
                            METADATA CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice URI for gobblers that have yet to be revealed.
+    /// @notice Provenance hash for gobbler metadata.
+    bytes32 public immutable PROVENANCE_HASH;
+
+    /// @notice URI for gobblers pending reveal.
     string public UNREVEALED_URI;
 
     /// @notice Base URI for minted gobblers.
     string public BASE_URI;
-
-    /// @notice Provenance hash for gobbler metadata.
-    bytes32 public immutable PROVENANCE_HASH;
 
     /*//////////////////////////////////////////////////////////////
                              MINTLIST STATE
