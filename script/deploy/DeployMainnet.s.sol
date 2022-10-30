@@ -4,23 +4,19 @@ pragma solidity >=0.8.0;
 import {DeployBase} from "./DeployBase.s.sol";
 
 contract DeployMainnet is DeployBase {
-    //TODO: COLD WALLET
-    address public immutable coldWallet = address(0xDEADBEA7);
-    //TODO: COMMUNITY WALLET
-    address public immutable communityWallet = address(0xBEEFBABE);
-    //TODO: ROOT
-    address public immutable root = address(0xB0BABABE);
+    address public immutable coldWallet = 0xE974159205528502237758439da8c4dcc03D3023;
+    address public immutable communityWallet = 0xDf2aAeead21Cf2BFF3965E858332aC8c8364E991;
+    bytes32 public immutable root = 0xae49de097f1b61ff3ff428b660ddf98b6a8f64ed0f9b665709b13d3721b79405;
 
     ///Mon Oct 31 2022 21:20:00 GMT+0000
     uint256 public immutable mintStart = 1667251200;
 
-    //TODO: CONSTANTS
-    string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
-    string public constant gobblerUnrevealedUri = "https://testnet.ag.xyz/api/nfts/unrevealed";
-    string public constant pagesBaseUri = "https://testnet.ag.xyz/api/nfts/pages/";
+    string public constant gobblerBaseUri = "https://nfts.artgobblers.com/api/gobblers/";
+    string public constant gobblerUnrevealedUri = "https://nfts.artgobblers.com/api/gobblers/unrevealed";
+    string public constant pagesBaseUri = "https://nfts.artgobblers.com/api/pages/";
 
     //TODO: PROVENANCE
-    address public immutable provenance = address(0xBEEB00);
+    bytes32 public immutable provenance = bytes32(uint256(0xbeeb00));
 
     constructor()
         DeployBase(
@@ -29,7 +25,7 @@ contract DeployMainnet is DeployBase {
             // Community wallet:
             communityWallet,
             // Merkle root:
-            keccak256(abi.encodePacked(root)),
+            root,
             // Mint start:
             mintStart,
             // VRF coordinator:
@@ -47,7 +43,7 @@ contract DeployMainnet is DeployBase {
             // Pages base URI:
             pagesBaseUri,
             // Provenance hash:
-            keccak256(abi.encodePacked(provenance))
+            provenance
         )
     {}
 }
