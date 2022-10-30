@@ -80,7 +80,7 @@ export GOO_PRIVATE_KEY=$GOO_PRIVATE_KEY
 forge script script/deploy/DeployMainnet.s.sol:DeployMainnet --rpc-url $RPC_URL --verify --etherscan-api-key $API_KEY
 ```
 
-We use [profanity2](https://github.com/1inch/profanity2) to generate vanity addresses for the `ArtGobblers`, `Pages` and `Goo` contracts. As a result, each of these contracts must be deployed using a unique private key. To simplify deployment, the deployment script ensures that only `DEPLOYER_PRIVATE_KEY` needs to be seeded with ETH, by automatically transferring 0.25 ETH to each other deployer address before it is used.
+We use [profanity2](https://github.com/1inch/profanity2) to generate vanity addresses for the `ArtGobblers`, `Pages` and `Goo` contracts. As a result, each of these contracts must be deployed using a unique private key. To simplify deployment, the deployment script ensures that only `DEPLOYER_PRIVATE_KEY` needs to be seeded with ETH, by automatically transferring 0.25 ETH from it to the other deployers before they are used.
 
 ## Audits
 
