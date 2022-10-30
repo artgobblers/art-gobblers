@@ -6,7 +6,7 @@ import "forge-std/Script.sol";
 
 import {ArtGobblers} from "../../src/ArtGobblers.sol";
 
-contract MintFromWhitelist is Script {
+contract MintFromMintlist is Script {
    
     // Art Gobblers address on network we want to run script for. 
     ArtGobblers public gobblers = ArtGobblers(0x60Bb1E329d8f783D55fECB1E8d748838753fF169);
