@@ -12,8 +12,8 @@ See our [overview of the system](https://www.paradigm.xyz/2022/09/artgobblers), 
 
 ## Deployments
 
-| Contract    | Mainnet                                                                                                               | Goerli                                                                                                                       |
-|-------------|-----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| Contract      | Mainnet                                                                                                               | Goerli                                                                                                                       |
+|---------------|-----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
 | `ArtGobblers` | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) | [0x60bb1e2aa1c9acafb4d34f71585d7e959f387769](https://goerli.etherscan.io/address/0x60bb1e2aa1c9acafb4d34f71585d7e959f387769) |
 | `Pages`       | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) | [0x600df00d3e42f885249902606383ecdcb65f2e02](https://goerli.etherscan.io/address/0x600df00d3e42f885249902606383ecdcb65f2e02) |
 | `Goo`         | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) | [0x600000000a36f3cd48407e35eb7c5c910dc1f7a8](https://goerli.etherscan.io/address/0x600000000a36f3cd48407e35eb7c5c910dc1f7a8) |
@@ -25,7 +25,6 @@ See our [overview of the system](https://www.paradigm.xyz/2022/09/artgobblers), 
 ![Legendary Gobbler Auctions](assets/state-machines/legendary-gobbler-auctions.png)
 ![Page Auctions](assets/state-machines/page-auctions.png)
 
-
 ## Usage
 
 You will need a copy of [Foundry](https://github.com/foundry-rs/foundry) installed before proceeding. See the [installation guide](https://github.com/foundry-rs/foundry#installation) for details.
@@ -35,18 +34,18 @@ To build the contracts:
 ```sh
 git clone https://github.com/artgobblers/art-gobblers.git
 cd art-gobblers
-forge install 
+forge install
 ```
 
 ### Run Tests
 
-In order to run unit tests, run: 
+In order to run unit tests, run:
 
 ```sh
 forge test
 ```
 
-For longer fuzz campaigns, run: 
+For longer fuzz campaigns, run:
 
 ```sh
 FOUNDRY_PROFILE="intense" forge test
@@ -54,9 +53,9 @@ FOUNDRY_PROFILE="intense" forge test
 
 For differential fuzzing against a python implementation, see [here](./analysis/README.md).
 
-### Run Slither 
+### Run Slither
 
-After [installing Slither](https://github.com/crytic/slither#how-to-install), run: 
+After [installing Slither](https://github.com/crytic/slither#how-to-install), run:
 
 ```sh
 slither src/ --solc-remaps 'ds-test/=lib/ds-test/src/ solmate/=lib/solmate/src/ forge-std/=lib/forge-std/src/ chainlink/=lib/chainlink/contracts/src/ VRGDAs/=lib/VRGDAs/src/ goo-issuance/=lib/goo-issuance/src/'
@@ -65,7 +64,7 @@ slither src/ --solc-remaps 'ds-test/=lib/ds-test/src/ solmate/=lib/solmate/src/ 
 
 ### Update Gas Snapshots
 
-To update the gas snapshots, run: 
+To update the gas snapshots, run:
 
 ```sh
 forge snapshot
@@ -76,15 +75,15 @@ forge snapshot
 In order to deploy the art gobblers contracts, set the relevant constants in the `DeployMainnet` script, and run the following command(s):
 
 ```sh
-export DEPLOYER_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY 
+export DEPLOYER_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY
 export GOBBLER_PRIVATE_KEY=$GOBBLER_PRIVATE_KEY
-export PAGES_PRIVATE_KEY=$PAGES_PRIVATE_KEY 
+export PAGES_PRIVATE_KEY=$PAGES_PRIVATE_KEY
 export GOO_PRIVATE_KEY=$GOO_PRIVATE_KEY
 
 forge script script/deploy/DeployMainnet.s.sol:DeployMainnet --rpc-url $RPC_URL --verify --etherscan-api-key $API_KEY
 ```
 
-We use [profanity2](https://github.com/1inch/profanity2) to securely generate vanity addresses for the `ArtGobblers`, `Pages`, and `Goo` contracts. As a result, each of these contracts must be deployed using a unique private key. To simplify deployment, the deployment script ensures that only `DEPLOYER_PRIVATE_KEY` needs to be seeded with ETH, by automatically transferring 0.25 ETH from it to the other deployers before they are used. 
+We use [profanity2](https://github.com/1inch/profanity2) to securely generate vanity addresses for the `ArtGobblers`, `Pages`, and `Goo` contracts. As a result, each of these contracts must be deployed using a unique private key. To simplify deployment, the deployment script ensures that only `DEPLOYER_PRIVATE_KEY` needs to be seeded with ETH, by automatically transferring 0.25 ETH from it to the other deployers before they are used.
 
 To ensure security in case the private keys generated by [profanity2](https://github.com/1inch/profanity2) are [compromised](https://blog.1inch.io/a-vulnerability-disclosed-in-profanity-an-ethereum-vanity-address-tool-68ed7455fc8c), the script immediately revokes `GOBBLER_PRIVATE_KEY`'s ownership over `ArtGobblers` and transfers it to a configurable address. `Pages` and `Goo` do not grant any special authority to their respective deployers.
 
