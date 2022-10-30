@@ -10,6 +10,7 @@ contract DeployRinkeby is DeployBase {
 
     address public immutable root = 0x1D18077167c1177253555e45B4b5448B11E30b4b;
 
+    // Monday, June 27, 2022 10:42:48 PM
     uint256 public immutable mintStart = 1656369768;
 
     string public constant gobblerBaseUri = "https://testnet.ag.xyz/api/nfts/gobblers/";
