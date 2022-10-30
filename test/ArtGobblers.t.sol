@@ -82,7 +82,8 @@ contract ArtGobblersTest is DSTestPlus {
             address(community),
             randProvider,
             "base",
-            ""
+            "",
+            keccak256(abi.encodePacked("provenance"))
         );
 
         pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");

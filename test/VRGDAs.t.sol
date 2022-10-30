@@ -62,7 +62,8 @@ contract VRGDAsTest is DSTestPlus {
             address(0xBEEF),
             randProvider,
             "base",
-            ""
+            "",
+            keccak256(abi.encodePacked("provenance"))
         );
 
         pages = new Pages(block.timestamp, goo, address(0xBEEF), gobblers, "");

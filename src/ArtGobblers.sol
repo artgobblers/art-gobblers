@@ -132,7 +132,10 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
                            METADATA CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice URI for gobblers that have yet to be revealed.
+    /// @notice Provenance hash for gobbler metadata.
+    bytes32 public immutable PROVENANCE_HASH;
+
+    /// @notice URI for gobblers pending reveal.
     string public UNREVEALED_URI;
 
     /// @notice Base URI for minted gobblers.
@@ -284,6 +287,7 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
     /// @param _randProvider Address of the randomness provider.
     /// @param _baseUri Base URI for revealed gobblers.
     /// @param _unrevealedUri URI for unrevealed gobblers.
+    /// @param _provenanceHash Provenance Hash for gobbler metadata.
     constructor(
         // Mint config:
         bytes32 _merkleRoot,
@@ -296,7 +300,9 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
         RandProvider _randProvider,
         // URIs:
         string memory _baseUri,
-        string memory _unrevealedUri
+        string memory _unrevealedUri,
+        // Provenance:
+        bytes32 _provenanceHash
     )
         GobblersERC721("Art Gobblers", "GOBBLER")
         Owned(msg.sender)
@@ -319,6 +325,8 @@ contract ArtGobblers is GobblersERC721, LogisticVRGDA, Owned, ERC1155TokenReceiv
 
         BASE_URI = _baseUri;
         UNREVEALED_URI = _unrevealedUri;
+
+        PROVENANCE_HASH = _provenanceHash;
 
         // Set the starting price for the first legendary gobbler auction.
         legendaryGobblerAuctionData.startPrice = uint128(LEGENDARY_GOBBLER_INITIAL_START_PRICE);
