@@ -93,7 +93,7 @@ The following auditors were engaged to review the project before launch:
 
 - [samczsun](https://samczsun.com) (No report)
 - [Spearbit](https://spearbit.com) (Report [here](https://github.com/spearbit/portfolio/blob/master/pdfs/ArtGobblers-Spearbit-Security-Review.pdf))
-- [code4rena](https://code423n4.com) (Report here)
+- [code4rena](https://code423n4.com) (Report pending)
 - [Riley Holterhus](https://www.rileyholterhus.com) (No Report)
 
 ## License
